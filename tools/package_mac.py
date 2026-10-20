@@ -23,6 +23,7 @@ for name,entry in lock['packages'].items():
 for name in sorted(production):shutil.copytree(root/name,app/name)
 for name in ['LICENSE','LICENSES.chromium.html']:shutil.copy2(root/'.runtime/electron'/name,resources/('Electron-'+name))
 shutil.copy2(root/'THIRD_PARTY_NOTICES.md',resources/'THIRD_PARTY_NOTICES.md')
+shutil.copy2(root/'LICENSE',resources/'Script-Call-MIT-LICENSE.txt')
 shutil.copytree(root/'licenses',resources/'licenses')
 icons=root/'tmp/CallSheet.iconset';icons.mkdir(parents=True,exist_ok=True)
 for n in [16,32,128,256,512]:

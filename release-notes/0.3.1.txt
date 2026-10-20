@@ -1,0 +1,11 @@
+Script Call 0.3.1 — first update-enabled release
+
+Script Call is now open source under the MIT license for original code and fictional demo fixtures. Existing third-party and branding notices remain in effect.
+
+Includes the refined G-Casper front/back layouts, Original Narrative templates and Production Desk import/reimport. The Last Light and legacy demos remain included with their stable scene, shot and import identities.
+
+Signed stable updates verify the per-app Ed25519 metadata signature, native app signature, SHA-512, operating-system requirements and CPU architecture. Download and restart require your choice; installation saves and creates a local recovery backup.
+
+Install this notarized version manually once to establish the update public key. Later releases can update through the app. Existing project storage, template choices, issued PDF bytes and recovery filename remain compatible.
+
+Source: https://github.com/OfficialSquidProductions/script-call

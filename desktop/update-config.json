@@ -1,9 +1,9 @@
 {
-  "enabled": false,
+  "enabled": true,
   "channel": "stable",
-  "manifestUrl": null,
-  "publicKey": null,
-  "artifactBaseUrl": null,
+  "manifestUrl": "https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/stable-{platform}-{arch}.json",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAkBuxgN++9XtdvpWs0poz1ndCgLx41/Gz3x8/b7SjBZc=\n-----END PUBLIC KEY-----\n",
+  "artifactBaseUrl": "https://github.com/OfficialSquidProductions/script-call-updates/releases/download/",
   "publisherName": null,
-  "reason": "Release updates need an approved signing public key, signed installers and a client-accessible HTTPS distribution endpoint. The source repository is private."
+  "reason": "Signed stable releases by Squid Productions."
 }

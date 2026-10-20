@@ -1,12 +1,13 @@
 'use strict';
 // Publisher-only tooling. This command reads an existing private key; it never creates one.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
-const {loadReleaseKey,artifactURL}=require('./release_key.cjs');
+const {artifactURL}=require('./release_key.cjs');
+const {signPayload}=require('./release_signer.cjs');
 const {APP_ID,configuration,verifyEnvelope,version,httpsURL}=require('../desktop/update-policy.cjs');
 function prepare({artifact,appBundle,platform,arch,notesFile,out,config=require('../desktop/update-config.json'),packageVersion=require('../package.json').version,keyFile=process.env.SCRIPT_CALL_UPDATE_KEY_FILE}){
  configuration(config);version(packageVersion);
  if(!['arm64','x64'].includes(arch)||platform!==process.platform||!['darwin','win32'].includes(platform))throw Error('Prepare releases on the matching native OS with an explicit supported architecture.');
- const key=loadReleaseKey({keyFile});if(key.asymmetricKeyType!=='ed25519'||crypto.createPublicKey(key).export({type:'spki',format:'pem'})!==crypto.createPublicKey(config.publicKey).export({type:'spki',format:'pem'}))throw Error('Signing key does not match the public key trusted by installed apps.');
+
  let minimumSystemVersion;
  const notes=fs.readFileSync(notesFile,'utf8').trim();if(!notes||notes.length>20000)throw Error('Provide release notes under 20,000 characters.');
  if(platform==='darwin'){
@@ -27,8 +28,8 @@ function prepare({artifact,appBundle,platform,arch,notesFile,out,config=require(
  }
  const bytes=fs.readFileSync(artifact),file=path.basename(artifact);if(!new RegExp('^Script-Call-'+packageVersion.replaceAll('.','\\.')+'-'+platform+'-'+arch+'\\.'+(platform==='darwin'?'zip':'exe')+'$').test(file))throw Error('Use versioned artifact name Script-Call-VERSION-PLATFORM-ARCH.zip (or .exe).');
  const now=Date.now(),manifest={schema:1,appId:APP_ID,channel:'stable',version:packageVersion,issuedAt:new Date(now).toISOString(),expiresAt:new Date(now+30*86400000).toISOString(),notes,artifacts:{[platform+'-'+arch]:{url:artifactURL(config.artifactBaseUrl,packageVersion,file),size:bytes.length,minimumSystemVersion,sha512:crypto.createHash('sha512').update(bytes).digest('base64')}}};
- const envelope={payload:Buffer.from(JSON.stringify(manifest)).toString('base64')};envelope.signature=crypto.sign(null,Buffer.from(envelope.payload,'base64'),key).toString('base64');verifyEnvelope(envelope,config,'0.0.0',platform,arch);
- const dest=path.join(out,packageVersion,platform+'-'+arch);if(fs.existsSync(dest))throw Error('Release output already exists; increase the version.');fs.mkdirSync(dest,{recursive:true});fs.copyFileSync(artifact,path.join(dest,file));fs.writeFileSync(path.join(dest,'stable.json'),JSON.stringify(envelope,null,2)+'\n');fs.writeFileSync(path.join(dest,'release-notes.txt'),notes+'\n');fs.writeFileSync(path.join(dest,'SHA512SUMS'),crypto.createHash('sha512').update(bytes).digest('hex')+'  '+file+'\n');return dest;
+ const envelope={payload:Buffer.from(JSON.stringify(manifest)).toString('base64')};envelope.signature=signPayload(Buffer.from(envelope.payload,'base64'),config,{keyFile});verifyEnvelope(envelope,config,'0.0.0',platform,arch);
+ const dest=path.join(out,packageVersion,platform+'-'+arch);if(fs.existsSync(dest))throw Error('Release output already exists; increase the version.');fs.mkdirSync(dest,{recursive:true});fs.copyFileSync(artifact,path.join(dest,file));fs.writeFileSync(path.join(dest,'stable.json'),JSON.stringify(envelope,null,2)+'\n');fs.writeFileSync(path.join(dest,'stable-'+platform+'-'+arch+'.json'),JSON.stringify(envelope,null,2)+'\n');fs.writeFileSync(path.join(dest,'release-notes.txt'),notes+'\n');fs.writeFileSync(path.join(dest,'SHA512SUMS'),crypto.createHash('sha512').update(bytes).digest('hex')+'  '+file+'\n');return dest;
 }
 if(require.main===module){try{const [artifact,appBundle,arch,notesFile,out='build/releases']=process.argv.slice(2);console.log(prepare({artifact,appBundle:appBundle==='-'?undefined:appBundle,arch,platform:process.platform,notesFile,out}));}catch(e){console.error('Release blocked: '+e.message);process.exitCode=1;}}
 module.exports={prepare};
