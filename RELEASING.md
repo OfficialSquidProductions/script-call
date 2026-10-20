@@ -8,7 +8,7 @@ Script Call 0.3.0 builds and runs locally on Apple Silicon. The complete update 
 
 A separate Developer ID signed baseline archive is prepared locally at `build/release/Script-Call-0.3.0.xcarchive`; its code signature was verified. It has not been notarized or uploaded. The ordinary launcher still uses the local ad-hoc build. No publisher key, new credentials, signing certificate, persistent permission or cloud service was created. `desktop/update-config.json` is disabled until the following are approved and available:
 
-- An existing approved **per-app Ed25519 signing key** (or action-specific authorization to provision one). Commit only its PEM public key; keep the private key outside the repo and app. The release tool reads `SCRIPT_CALL_UPDATE_KEY_FILE` and never generates a key.
+- An existing approved **per-app Ed25519 signing key** (or action-specific authorization to provision one). Commit only its PEM public key; keep the private key outside the repo and app. The release tool can read the approved per-app login Keychain item `org.squidproductions.script-call.release-signing` / `ed25519-v1` directly into memory, or an existing approved file via `SCRIPT_CALL_UPDATE_KEY_FILE`. It never generates or stores a key.
 - Access to the existing Developer ID / notarization setup for Script Call; Windows needs an approved signing certificate with the exact full subject in `publisherName`.
 - A client-accessible HTTPS release endpoint. The private GitHub source repo and its private assets cannot be read anonymously by clients. Choose an approved existing authenticated distribution service with user sign-in, or explicitly approve public release-only distribution. Do not make source or assets public merely to unblock updates. No paid service or new legal terms are authorized.
 
@@ -38,7 +38,8 @@ The Mac signing configuration grants only the V8 JIT entitlement required by Ele
 Increase `package.json` version and add nonempty `release-notes/VERSION.txt`. Update the lockfile with npm. Run on the matching native OS. Pass a new ZIP output path for Mac, the signed bundle, the target architecture, notes and the output root:
 
 ```sh
-export SCRIPT_CALL_UPDATE_KEY_FILE=/approved/private/location/script-call-release.pem
+# macOS: uses the approved per-app login Keychain item by default.
+# Other platforms or an existing approved file: set SCRIPT_CALL_UPDATE_KEY_FILE.
 npm run release:prepare -- build/Script-Call-0.3.1-darwin-arm64.zip 'build/release/mac-arm64/Script Call.app' arm64 release-notes/0.3.1.txt build/releases
 # On Windows, use an existing signed NSIS installer and '-' for the app-bundle argument:
 npm run release:prepare -- build/Script-Call-0.3.1-win32-x64.exe - x64 release-notes/0.3.1.txt build/releases
@@ -64,3 +65,15 @@ For client acceptance, install a signed version N with the enabled config into a
 ## Recovery
 
 Updates replace application code only; project stores remain outside the bundle. `autoInstallOnAppQuit` is false. Closing the update dialog leaves your current app running. Installation calls the renderer's existing save flush before requesting a main-process consistent SQLite backup; failed saves or backups block restart. A running PDF issue blocks installation. If a release regresses, preserve the data folder and use the prior signed app manually; do not auto-downgrade or restore databases over current work. Data migrations must retain backwards compatibility or supply a separately reviewed recovery procedure.
+
+## Proposed smallest activation approval (not yet granted)
+
+Approve one new per-app **Ed25519** key in this Mac's encrypted, non-synchronizing **login Keychain**, service `org.squidproductions.script-call.release-signing`, account `ed25519-v1`. The software key is read into the local signing process's memory only while the Keychain is unlocked; no plaintext key file, client secret, GitHub secret or uploaded key is proposed. Standard Keychain prompts remain in effect; no allow-all access grant. Only its PEM public key is committed and embedded in the Developer ID signed app. Losing the key requires a new manually installed trust bootstrap unless a separately approved recovery copy exists.
+
+Recommended distribution is a new **public** `OfficialSquidProductions/script-call-updates` repository, while `OfficialSquidProductions/script-call` remains private. The proposed repository was not found during authenticated read-only checks; it has not been created. Public assets would be a notarized `Script-Call-VERSION-darwin-arm64.zip`, `stable-darwin-arm64.json`, `SHA512SUMS`, release notes, and minimal README/license notices. Tags in the public repository would reference only that minimal metadata, never the private source history. No Windows binary is proposed until its signing and native tests pass. No archives, debug logs, production records, issued PDFs, private samples or credentials would be uploaded.
+
+The intended feed is `https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/stable-{platform}-{arch}.json`. Artifacts live at `https://github.com/OfficialSquidProductions/script-call-updates/releases/download/vVERSION/Script-Call-VERSION-darwin-arm64.zip`. Everyone on the internet could download, inspect and copy the Electron app, including its shipped JavaScript/resources and fictional demos. Keeping Git history private does not make distributed Electron contents secret.
+
+The first enabled release should be **0.3.1**, installed manually once to establish the public-key trust anchor; preserve the existing 0.3.0 source tag. A subsequent signed release must pass the actual two-version upgrade check before describing the updater as live verified. Existing Apple signing/notarization accounts are reused; Script Call code is uploaded to Apple for notarization, never private keys. Existing Xcode account metadata, Developer ID availability, prior accepted notarizations and matching developer-id upload/export options were verified without reading credential values. A current Apple server login has not been tested and no Script Call upload was attempted.
+
+No additional paid hosting, CI runner, subscription or new credential is proposed: builds/signing run locally and distribution uses GitHub Releases with the existing Apple membership. GitHub's [free plan](https://github.com/pricing) supports public repositories; [release asset limits](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) allow files under 2 GiB and no total release/bandwidth limit. Stop for approval if a new charge, agreement, credential, access grant or visibility change is required.
