@@ -10,7 +10,7 @@ function configuration(c){
  httpsURL(c.manifestUrl);const base=httpsURL(c.artifactBaseUrl);if(!base.pathname.endsWith('/'))throw Error('Artifact base URL must end in /.');
  const key=crypto.createPublicKey(c.publicKey);if(key.asymmetricKeyType!=='ed25519')throw Error('An Ed25519 public key is required.');return key;
 }
-function verifyEnvelope(envelope,c,current,platform,arch,now=Date.now()){
+function verifyEnvelope(envelope,c,current,platform,arch,now=Date.now(),systemVersion=require('node:os').release()){
  const key=configuration(c);version(current);
  if(!envelope||typeof envelope.payload!=='string'||typeof envelope.signature!=='string'||envelope.payload.length>180000)throw Error('Invalid signed release envelope.');
  const bytes=Buffer.from(envelope.payload,'base64'),sig=Buffer.from(envelope.signature,'base64');
@@ -22,6 +22,7 @@ function verifyEnvelope(envelope,c,current,platform,arch,now=Date.now()){
  if(typeof m.notes!=='string'||!m.notes.trim()||m.notes.length>20000)throw Error('Release notes are required.');
  if(!newer(m.version,current))return null;
  const a=m.artifacts?.[platform+'-'+arch];if(!a)throw Error('No compatible artifact for this operating system and architecture.');
+ version(a.minimumSystemVersion);version(systemVersion);if(newer(a.minimumSystemVersion,systemVersion))throw Error('This update requires a newer operating system.');
  const url=httpsURL(a.url),base=httpsURL(c.artifactBaseUrl);
  if(url.origin!==base.origin||!url.pathname.startsWith(base.pathname)||url.pathname.includes('%')||url.pathname.includes('..'))throw Error('Artifact URL is outside the approved release destination.');
  const suffix=platform==='darwin'?'.zip':platform==='win32'?'.exe':null;

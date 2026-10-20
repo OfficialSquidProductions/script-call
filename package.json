@@ -65,7 +65,9 @@
       ],
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
-      "gatekeeperAssess": true
+      "gatekeeperAssess": true,
+      "entitlements": "desktop/entitlements.mac.plist",
+      "entitlementsInherit": "desktop/entitlements.mac.plist"
     },
     "artifactName": "Script-Call-${version}-${os}-${arch}.${ext}"
   }
