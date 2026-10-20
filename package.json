@@ -1,0 +1,72 @@
+{
+  "name": "callsheet-local-prototype",
+  "productName": "Script Call",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Script Call \u2014 local-first call sheets by Squid Productions",
+  "author": "Squid Productions",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "test:desktop": "node tests/desktop.cjs",
+    "build:mac": "python3 tools/package_mac.py",
+    "build:win": "electron-builder --win nsis --publish never",
+    "test:gcasper": "node tests/gcasper.cjs",
+    "test:updates": "node --test tests/updates.test.cjs",
+    "test:import": "node tests/productiondesk-desktop.cjs",
+    "release:prepare": "node tools/prepare_release.cjs",
+    "release:publish": "node tools/publish_release.cjs",
+    "build:release:mac": "electron-builder --mac zip dmg --publish never"
+  },
+  "dependencies": {
+    "fflate": "0.8.2",
+    "suncalc": "1.9.0",
+    "electron-updater": "6.8.9"
+  },
+  "devDependencies": {
+    "electron": "44.9.1",
+    "electron-builder": "26.15.3",
+    "playwright": "1.62.1"
+  },
+  "build": {
+    "appId": "org.squidproductions.callsheet.prototype",
+    "productName": "Script Call",
+    "directories": {
+      "output": "build/release"
+    },
+    "files": [
+      "desktop/**",
+      "core/**",
+      "web/**",
+      "fixtures/*.json",
+      "fixtures/*.fountain",
+      "package.json",
+      "THIRD_PARTY_NOTICES.md",
+      "!fixtures/provenance.json",
+      "licenses/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "web/assets/icon.ico",
+      "verifyUpdateCodeSignature": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": null,
+    "mac": {
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": true
+    },
+    "artifactName": "Script-Call-${version}-${os}-${arch}.${ext}"
+  }
+}

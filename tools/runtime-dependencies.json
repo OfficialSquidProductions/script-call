@@ -1,0 +1,19 @@
+{
+  "fflate": {
+    "version": "0.8.2",
+    "url": "https://registry.npmjs.org/fflate/-/fflate-0.8.2.tgz",
+    "shasum": "fc8631f5347812ad6028bbe4a2308b2792aa1dea",
+    "integrity": "sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A=="
+  },
+  "suncalc": {
+    "version": "1.9.0",
+    "url": "https://registry.npmjs.org/suncalc/-/suncalc-1.9.0.tgz",
+    "shasum": "26212353fae61edb287c2d558fc4932ecf0e1532",
+    "integrity": "sha512-vMJ8Byp1uIPoj+wb9c1AdK4jpkSKVAywgHX0lqY7zt6+EWRRC3Z+0Ucfjy/0yxTVO1hwwchZe4uoFNqrIC24+A=="
+  },
+  "electron": {
+    "version": "44.9.1",
+    "url": "https://github.com/electron/electron/releases/download/v44.9.1/electron-v44.9.1-darwin-arm64.zip",
+    "sha256": "ff597552c9c7b0b16c39a7fb93a346ee7148afbd372ebcf0c18415482c49fbea"
+  }
+}

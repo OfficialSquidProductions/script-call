@@ -1,0 +1,33 @@
+# Production work, private source references and local evidence never leave this machine.
+.local-data/
+development/
+output/
+planning/
+verification/
+PROTOTYPE.md
+RESUME.md
+fixtures/provenance.json
+.runtime/
+node_modules/
+build/
+tmp/
+.DS_Store
+*.sqlite
+*.sqlite-*
+*.callsheet
+*.productiondesk
+!fixtures/last-light.productiondesk
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+*.log
+
+# Historical local visual/provenance verification helpers (retained on disk).
+tools/fidelity.cjs
+tools/generate_demo.py
+tools/verify_*.py
+tools/verify_shared_demo.cjs

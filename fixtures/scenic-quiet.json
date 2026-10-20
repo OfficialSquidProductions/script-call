@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "id": "fixture-scenic-quiet-v1",
+  "title": "The quiet hours",
+  "company": "Squid Productions - fictional demo",
+  "demo": true,
+  "fixtureVersion": 1,
+  "defaults": {
+    "generalCall": "07:00",
+    "meal": "12:30",
+    "wrap": "18:00",
+    "zone": "America/Los_Angeles",
+    "primaryLocationId": "loc-living",
+    "notes": "FICTIONAL DEMO. Addresses, crew, calls and dates are illustrative. Verify every operational detail before a real shoot."
+  },
+  "people": [
+    {
+      "id": "scenic-alex",
+      "name": "Alex",
+      "type": "cast",
+      "role": "Cast",
+      "department": "Cast",
+      "character": "Alex",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "scenic-jamie",
+      "name": "Jamie",
+      "type": "cast",
+      "role": "Cast",
+      "department": "Cast",
+      "character": "Jamie",
+      "email": "",
+      "phone": ""
+    }
+  ],
+  "locations": [
+    {
+      "id": "loc-living",
+      "name": "Living room",
+      "address": "Scenic fictional living room - address to be confirmed",
+      "latitude": null,
+      "longitude": null,
+      "zone": "America/Los_Angeles",
+      "parking": "Demo parking - replace with verified instructions.",
+      "hospital": "DEMO ONLY - enter a suitable verified emergency facility.",
+      "emergencyPhone": "DEMO - not a real emergency contact",
+      "verified": false
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scenic-demo",
+      "sourceId": "demo",
+      "number": "1",
+      "slug": "INT. LIVING ROOM — NIGHT",
+      "synopsis": "An intimate conversation after everyone else has gone home.",
+      "eighths": 0,
+      "castIds": [
+        "scenic-alex",
+        "scenic-jamie"
+      ],
+      "locationId": "loc-living",
+      "script": "",
+      "durationMinutes": 60,
+      "shots": [
+        {
+          "id": "scenic-object-13",
+          "number": "13",
+          "name": "A · Wide master",
+          "size": "Wide",
+          "lens": 35,
+          "notes": "Establish the distance between Alex and Jamie. Hold the frame as the conversation settles."
+        },
+        {
+          "id": "scenic-object-14",
+          "number": "14",
+          "name": "B · Jamie close-up",
+          "size": "Close-up",
+          "lens": 85,
+          "notes": "Stay on Jamie through the pause. Keep the practical soft in the background."
+        }
+      ]
+    }
+  ],
+  "days": [
+    {
+      "id": "quiet-day-1",
+      "label": "Day 01",
+      "date": "2026-11-10",
+      "unit": "A",
+      "overrides": {},
+      "schedule": [
+        {
+          "id": "quiet-item-1",
+          "type": "scene",
+          "sceneId": "scenic-demo",
+          "description": "",
+          "start": "19:00",
+          "offset": 0,
+          "duration": 60
+        }
+      ],
+      "calls": [
+        {
+          "id": "quiet-call-scenic-alex",
+          "personId": "scenic-alex",
+          "call": "18:00",
+          "offset": 0,
+          "pickup": "",
+          "makeup": "",
+          "ready": "19:00",
+          "notes": ""
+        },
+        {
+          "id": "quiet-call-scenic-jamie",
+          "personId": "scenic-jamie",
+          "call": "18:00",
+          "offset": 0,
+          "pickup": "",
+          "makeup": "",
+          "ready": "19:00",
+          "notes": ""
+        }
+      ],
+      "weather": {
+        "mode": "manual",
+        "summary": "Indoor demo - no forecast requested.",
+        "approved": false
+      },
+      "layout": {
+        "preset": "narrative",
+        "paper": "A4",
+        "clock": "24",
+        "temperature": "C",
+        "mono": false,
+        "includeContacts": false,
+        "order": [
+          "logistics",
+          "schedule",
+          "cast",
+          "crew",
+          "notes",
+          "advance"
+        ],
+        "hidden": [],
+        "custom": []
+      },
+      "baseRevisionId": null
+    }
+  ],
+  "provenance": {
+    "source": "Scenic/dist/app.js demo()",
+    "sceneSourceId": "demo",
+    "note": "Legacy Quiet Hours example from the old Desktop/Scenic 1.4.16 source branch. Current released Scenic 1.4.22 shares The Last Light.",
+    "addedFictionalFields": [
+      "date",
+      "calls",
+      "duration",
+      "address placeholders"
+    ]
+  }
+}
