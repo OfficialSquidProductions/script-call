@@ -6,10 +6,18 @@ Binary assets and signed update metadata: https://github.com/OfficialSquidProduc
 
 ## Current status and website coordination
 
-0.3.1 is the current public notarized bootstrap. The real 0.3.1 → 0.3.2 test downloaded the signed ZIP and replaced/relaunched the bundle, then found an unreadable root-owned logo: a private source mode of 0600 had been preserved into the public app. The failed test's SQLite store retained the pending edit, original issued PDF bytes, template, import IDs and performer edit. Version 0.3.2 is superseded/prerelease and 0.3.1 was explicitly restored as latest stable.
+**0.3.3 is the current public, signed and notarized Apple Silicon release (macOS 13+).** The actual native 0.3.1 → 0.3.3 test passed: anonymous signed bootstrap, shipped update UI, signed public ZIP download, native bundle replacement/relaunch, Gatekeeper/ticket/signature checks, and reopening the same isolated store without launcher environment variables. The pending edit, Narrative template, Production Desk model/import IDs/local performer, recovery backup and original issued PDF bytes survived. The before/after PDF SHA-256 was `a97df42a8c7ac8d8244a0748100a6908d02c0d359c7fd2aafc106d3d4737e01b`. A fresh included Last Light demo still had 8 scenes, 16 shots and 3 days with stable IDs; branding and preview images decoded with no renderer errors.
 
-0.3.3 normalizes public app resources to readable modes before signing; the source logo bytes/mode, user data and Keychain material are unchanged. Release preflight rejects private resource modes. Apple accepted/exported the signed 0.3.3 archive. Its real 0.3.1 → 0.3.3 native test remains pending; do not call the updater fully validated until that passes. The publisher now uploads into a draft and verifies every remote asset digest/size before promoting latest, so clients never see metadata before its ZIP is ready.
+The earlier 0.3.1 → 0.3.2 test found a resource-permission bug after native installation changed bundle ownership. Version 0.3.2 remains superseded/prerelease and must not be reactivated. Version 0.3.3 normalizes only shipped public resource modes before signing; the source logo, user data and Keychain material remain unchanged. Release preflight rejects private resource modes. The publisher uploads to a draft and verifies every remote asset digest/size before promoting latest.
 
+Local evidence is in `verification/live-update-0.3.1-to-0.3.3/result.json`, `verification/script-call-public-0.3.3.json` and `verification/script-call-notarized-local-bootstrap.json` (ignored because local paths and fictional issued PDF evidence are not release inputs). Core/update/release safety tests: 56 passed; desktop: 19; G-Casper: 12; source and packaged Production Desk importer: 11 each.
+
+- [Stable download](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip)
+- [Immutable 0.3.3 ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/download/v0.3.3/Script-Call-0.3.3-darwin-arm64.zip)
+- [Release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.3)
+- [Signed stable feed](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/stable-darwin-arm64.json)
+
+Older update-disabled prototypes require one manual bootstrap installation. For the existing workspace, save/close the old app and run `Start Script Call.command`; the verified notarized bundle is already staged at `build/mac/Script Call.app` and the launcher retains `.local-data`. General fresh installations extract the ZIP and move Script Call.app to a writable installation location. Once update-enabled, the app checks after startup and daily; users choose download and **Save, back up & restart**. Automatic install-on-quit is disabled.
 The website is reported live at https://scriptcall.squidproductions.org/; the website task manages its downloads/help/release pages and gh-pages branch. Its `/updates/` is HTML, so the app intentionally retains the signed GitHub JSON feed. Read [the routing contract](docs/WEBSITE-ROUTING.md); never substitute an HTML landing page for machine metadata.
 
 Windows has no verified signing publisher or native runtime/installer test. Do not distribute a Windows update until those checks pass.
@@ -50,16 +58,17 @@ The command checks the exact Developer ID signed, notarized bundle and architect
 
 ## Publish and verify
 
-Commit/push source, tag its exact revision, then publish the prepared artifacts with existing GitHub authentication:
+Commit/push source, then publish prepared artifacts with existing GitHub authentication. Keep first-time website download activation pending until real native acceptance passes; tag the exact source revision after acceptance. Do not move an existing tag:
 
 ```sh
 git push origin main
+npm run release:publish -- build/releases/VERSION/darwin-arm64
+# Run tests/live-update.cjs against signed notarized N and N+1, then:
 git tag vVERSION
 git push origin vVERSION
-npm run release:publish -- build/releases/VERSION/darwin-arm64
 ```
 
-The publisher verifies the exact approved public updates repository, the manifest signature and artifact hash, refuses existing releases, and uploads only reviewed release files. The updates repository's own tags refer to minimal release metadata; the source tag lives in the public source repository. No CI runner, new subscription or paid hosting is used. The website task must verify its HTTPS redirects to the stable signed metadata and download backend before production bootstrap distribution. Keep versioned files immutable; maintain the stable download alias as a byte-identical copy of the current versioned ZIP.
+The publisher verifies the exact approved public updates repository, the manifest signature and artifact hash, refuses existing releases, and uploads only reviewed release files. The updates repository's own tags refer to minimal release metadata; the source tag lives in the public source repository. No CI runner, new subscription or paid hosting is used. The website task owns the download buttons; they should point to the verified stable download URL above. The native app uses the signed GitHub feed directly. Keep versioned files immutable; maintain the stable download alias as a byte-identical copy of the current versioned ZIP.
 
 Native acceptance uses signed notarized N and N+1, actual metadata/download/install/relaunch, an isolated persisted custom store, local edits, both templates, Production Desk import IDs, an issued PDF byte hash and a new separate Last Light demo after upgrade. Record signature/ticket/Gatekeeper checks and exact public URLs/hashes. Also test offline, invalid signatures/hashes, wrong OS/architecture/channel and failed save/backup handling.
 
@@ -68,3 +77,5 @@ Native acceptance uses signed notarized N and N+1, actual metadata/download/inst
 Native macOS restart need not retain launcher environment variables. An explicit `CALLSHEET_DATA_DIR` choice is therefore remembered in a user-private installation-local `.script-call-profile-USER.json` beside the app, outside its signed bundle. Native bundle replacement preserves it. If the setting cannot be persisted, installation is blocked; malformed/shared settings refuse silent fallback. No project data is moved. Ordinary installations retain the legacy Call Sheet Prototype profile and `local-projects/` path. The original project launcher retains `.local-data/`.
 
 Updating saves edits and creates a consistent SQLite backup before restart. Automatic install-on-quit is disabled. Failed saves/backups or an active PDF issue block installation. Preserve the previous signed app and backups for manual recovery; do not auto-downgrade or overwrite current databases.
+
+Signed metadata expires after 30 days to limit replay. Publish a new, tested version with fresh metadata when shipping subsequent changes; expired/offline checks fail gracefully and never remove the installed app. Preserve the signing Keychain item and existing Developer ID account. No new hosting subscription or signing credentials are required.
