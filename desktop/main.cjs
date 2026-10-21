@@ -8,8 +8,8 @@ const ROOT=path.resolve(__dirname,'..');let win,store,font,logo,updates,issueBus
 protocol.registerSchemesAsPrivileged([{scheme:'callsheet',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 app.setName('Script Call');
 // Keep the original default profile and origin: branding must never orphan projects.
-app.setPath('userData',path.join(app.getPath('appData'),'Call Sheet Prototype'));
-if(process.env.CALLSHEET_DATA_DIR)app.setPath('userData',process.env.CALLSHEET_DATA_DIR);
+const profileLocation=require('./data-location.cjs').dataLocation({explicit:process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
+app.setPath('userData',profileLocation.userData);
 if(!app.requestSingleInstanceLock())app.quit();
 app.on('second-instance',()=>{if(win){win.show();win.focus();}});
 const safeName=s=>String(s).replace(/[^a-zA-Z0-9_.-]+/g,'_').slice(0,120)||'CallSheet';
@@ -26,7 +26,7 @@ function frozen(projectId,dayId){const s=store.get(projectId),day=s.project.days
 async function saveFile(bytes,defaultPath,filter){const r=await dialog.showSaveDialog(win,{defaultPath,filters:[filter]});if(r.canceled)return {canceled:true};const target=r.filePath,tmp=target+'.'+D.id()+'.tmp';try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,target);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}return {path:target};}
 const actions={
  bootstrap(){if(!store.list().length)store.create(D.newProject());return {projects:store.list(),fontAvailable:!!font,version:app.getVersion(),dataDirectory:store.dir,updates:updates.status()};},
- updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>updates.download(),updateInstall:()=>updates.install(),updatePreferences:a=>updates.preferences(a.automatic),
+ updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>updates.download(),updateInstall:()=>{if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
  list:()=>store.list(),get:a=>store.get(a.id),save:a=>store.save(a.project,a.version),
  create:a=>store.create(D.newProject(String(a.title||'Untitled production').slice(0,200))),
  demo(a){if(!['last-light','scenic-quiet'].includes(a.name))throw Error('Unknown demo.');const p=JSON.parse(fs.readFileSync(path.join(ROOT,'fixtures',a.name+'.json'),'utf8'));p.fixtureId=p.id;p.id=D.id();p.createdAt=new Date().toISOString();p.sheetDefaults=D.sheetDefaults();p.days.forEach(d=>{d.layout=D.defaultLayout();d.sheetOverrides={};d.background=[];});return store.create(p);},
@@ -70,7 +70,7 @@ const actions={
  }
 };
 app.whenReady().then(()=>{
- const dir=process.env.CALLSHEET_DATA_DIR||path.join(app.getPath('userData'),'local-projects');store=new Store(dir);store.backup();font=headingFont();logo='data:image/png;base64,'+fs.readFileSync(path.join(ROOT,'web/assets/SP_PURPLE.png')).toString('base64');
+ const dir=profileLocation.storeDirectory;store=new Store(dir);store.backup();font=headingFont();logo='data:image/png;base64,'+fs.readFileSync(path.join(ROOT,'web/assets/SP_PURPLE.png')).toString('base64');
  updates=new Updates({app,config:updateConfig,backup:()=>store.backup(),busy:()=>issueBusy,notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('update-status',state);}});
  protocol.handle('callsheet',request=>{
   const u=new URL(request.url);if(u.host!=='app')return new Response('Not found',{status:404});

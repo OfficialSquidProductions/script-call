@@ -1,79 +1,66 @@
 # Script Call releases
 
-Source: https://github.com/OfficialSquidProductions/script-call — private. A source push updates the repository only. It does not distribute binaries or activate automatic updates.
+Source: https://github.com/OfficialSquidProductions/script-call — public. Original code and fictional demo fixtures are MIT licensed; third-party licenses and branding notices remain in THIRD_PARTY_NOTICES.md.
 
-## Current delivery status
+Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
-Script Call 0.3.0 builds and runs locally on Apple Silicon. The complete update policy/controller is implemented and tested, including real Electron updater metadata parsing; native installation of a signed live release has not been tested. The local app is ad-hoc signed. The authorized Keychain context exposes the existing Developer ID Application identity for team FZ298DXLS3. The initial sandbox-only probe could not see it. No new Apple signing identity is needed; notarization access for this release still needs to be exercised with the established setup. Windows execution, Windows Authenticode verification and a live two-version upgrade remain untested.
+## Current status and website coordination
 
-A separate Developer ID signed baseline archive is prepared locally at `build/release/Script-Call-0.3.0.xcarchive`; its code signature was verified. It has not been notarized or uploaded. The ordinary launcher still uses the local ad-hoc build. No publisher key, new credentials, signing certificate, persistent permission or cloud service was created. `desktop/update-config.json` is disabled until the following are approved and available:
+0.3.1 is an update-enabled bootstrap candidate. Its storage-safe Mac archive was accepted by Apple and exported with a notarization ticket. Full source/desktop/demo/import checks pass. Public binary publication is held while the separate Squarespace task verifies `https://scriptcall.squidproductions.org/` routing. The unshipped candidate currently embeds the supported direct GitHub signed-metadata URL. Read [the website routing contract](docs/WEBSITE-ROUTING.md) before committing a production website feed URL. Do not claim a live end-to-end upgrade until the native two-version test passes.
 
-- An existing approved **per-app Ed25519 signing key** (or action-specific authorization to provision one). Commit only its PEM public key; keep the private key outside the repo and app. The release tool can read the approved per-app login Keychain item `org.squidproductions.script-call.release-signing` / `ed25519-v1` directly into memory, or an existing approved file via `SCRIPT_CALL_UPDATE_KEY_FILE`. It never generates or stores a key.
-- Access to the existing Developer ID / notarization setup for Script Call; Windows needs an approved signing certificate with the exact full subject in `publisherName`.
-- A client-accessible HTTPS release endpoint. The private GitHub source repo and its private assets cannot be read anonymously by clients. Choose an approved existing authenticated distribution service with user sign-in, or explicitly approve public release-only distribution. Do not make source or assets public merely to unblock updates. No paid service or new legal terms are authorized.
+Windows has no verified signing publisher or native runtime/installer test. Do not distribute a Windows update until those checks pass.
 
-## Configuration and native build
+## Local signing key and trust
 
-Set `enabled`, the `stable` channel, `publicKey`, `manifestUrl`, `artifactBaseUrl` and (for Windows) `publisherName` in `desktop/update-config.json`. `manifestUrl` can contain `{platform}` and `{arch}`, for example an approved static endpoint ending in `/stable/{platform}-{arch}.json`. The signed envelope at each URL contains that platform's artifact. `artifactBaseUrl` must be a permanent credential-free HTTPS prefix ending in `/`; only signed URLs under this prefix are accepted. HTTPS-only metadata redirects are bounded. Signed metadata expires after at most 31 days. Refresh its envelope before expiry without changing an immutable versioned artifact; existing running versions refuse downgrades and same-version offers.
+The approved per-app Ed25519 key is stored in the local encrypted, non-synchronizing login Keychain: service `org.squidproductions.script-call.release-signing`, account `ed25519-v1`. Existing Developer ID/Apple account setup is reused; no new Apple credentials or broad access grants were created. The signed `tools/release-key.swift` helper creates that item once and refuses replacement. It exposes only public-key and signature operations; private key bytes stay in the helper/Keychain. Normal Keychain access controls remain in effect.
 
-The initial enabled release must be installed manually to establish its trusted public key. Existing 0.2.x builds cannot acquire an updater through a source push. A later key rotation must first ship a trusted app carrying the new public key through the existing signed release chain.
+The helper is compiled locally as `.runtime/script-call-release-key` and signed with the existing Developer ID and stable identifier `org.squidproductions.scriptcall.releasekey`. Publisher commands use it by default; `SCRIPT_CALL_RELEASE_HELPER` can select the same approved helper at another path. The helper is never bundled into client apps. Only its PEM public key is embedded in `desktop/update-config.json`. An existing explicitly approved key file remains supported via `SCRIPT_CALL_UPDATE_KEY_FILE`; do not create or export a plaintext key file for this Mac workflow. Never upload keys or credentials to GitHub or clients.
 
-Use the existing authorized signing environment; never put tokens/certificates/passwords in `package.json` or the app. Preserve `appId`, profile name, origin and archive formats.
+The first enabled version must be installed manually to establish the trusted public key. Key rotation must ship through the existing trusted chain, or require a manual trust-reset install. Losing the key requires a manual trust reset unless a separate recovery copy was explicitly approved.
 
-```sh
-npm ci
-npm test
-npm run test:desktop
-npm run test:gcasper
-npm run test:import
-npm run build:release:mac
-# On the supported Windows host, with its existing signing setup:
-npm run build:win
-```
+## Build, sign and notarize
 
-The Mac signing configuration grants only the V8 JIT entitlement required by Electron, without device or personal-data entitlements. `python3 tools/sign_mac.py --app PATH_TO_PREPARED_APP --identity EXISTING_DEVELOPER_ID` can sign a separate prepared bundle with an existing identity. Mac release preparation checks Developer ID signing, Gatekeeper acceptance, stapled notarization, bundle ID and version. Notarize and staple using your established release setup before preparation. The tool creates the ZIP itself from the checked bundle, avoiding an unchecked supplied archive. Name it `Script-Call-VERSION-darwin-ARCH.zip`. Local `build:mac` uses ad-hoc signing and intentionally cannot pass release preparation. Windows preparation requires an Authenticode-valid installer whose signer matches the pinned full subject; the native NSIS updater rechecks the signature during download. Rename its installer to `Script-Call-VERSION-win32-ARCH.exe`.
+Use Node.js 24+ and the locked dependencies. Run `npm ci`, `npm test`, `npm run test:desktop`, `npm run test:gcasper`, `npm run test:import` and the packaged smoke test. `CALLSHEET_PLAYWRIGHT`/`CALLSHEET_ELECTRON` can select already installed test tools. All tests use temporary stores; never use a real production folder as a test profile.
 
-## Prepare immutable versioned artifacts
+The prepared Apple Silicon workspace uses `npm run build:mac` to stage an ad-hoc local bundle from its verified Electron runtime. A clean configured release environment can use `npm run build:release:mac`. The Mac signing configuration includes only the V8 JIT entitlement needed by Electron. No device/personal-data entitlements or disabled library validation are required.
 
-Increase `package.json` version and add nonempty `release-notes/VERSION.txt`. Update the lockfile with npm. Run on the matching native OS. Pass a new ZIP output path for Mac, the signed bundle, the target architecture, notes and the output root:
+Create a separate signed archive using the existing identity/team:
 
 ```sh
-# macOS: uses the approved per-app login Keychain item by default.
-# Other platforms or an existing approved file: set SCRIPT_CALL_UPDATE_KEY_FILE.
-npm run release:prepare -- build/Script-Call-0.3.1-darwin-arm64.zip 'build/release/mac-arm64/Script Call.app' arm64 release-notes/0.3.1.txt build/releases
-# On Windows, use an existing signed NSIS installer and '-' for the app-bundle argument:
-npm run release:prepare -- build/Script-Call-0.3.1-win32-x64.exe - x64 release-notes/0.3.1.txt build/releases
+python3 tools/archive_mac.py --app 'build/mac/Script Call.app' --out build/release/Script-Call-VERSION.xcarchive --identity EXISTING_DEVELOPER_ID --team EXISTING_TEAM
+xcodebuild -exportArchive -archivePath build/release/Script-Call-VERSION.xcarchive -exportOptionsPlist /existing/nonsecret/developer-id-upload-options.plist -exportPath build/notarization/VERSION
+xcodebuild -exportNotarizedApp -archivePath build/release/Script-Call-VERSION.xcarchive -exportPath build/notarized/VERSION
 ```
 
-Output: `build/releases/VERSION/PLATFORM-ARCH/` with the versioned binary, `stable.json` signed envelope, release notes and `SHA512SUMS`. No unsigned artifact is silently promoted. Existing output directories are refused. The signature authenticates app ID, stable channel, version, dates, notes, architecture, minimum operating-system kernel version, exact artifact URL, byte size and SHA-512. The client exposes only derived verified metadata to the native updater on a random loopback URL. It never feeds an unverified remote YAML file to the native updater.
+Use existing Xcode authentication and manual developer-id options. Upload success alone is not notarization acceptance: confirm the archive's `Submissions/*/notarization-log.json` says Accepted, then verify the exported app with `codesign --verify --deep --strict`, `xcrun stapler validate` and `spctl --assess --type execute`. Stop for user action if new credentials, permissions, terms or costs are required. Do not add automatic provisioning grants to work around an account problem.
+
+## Prepare immutable artifacts
+
+Increase `package.json` and lockfile versions and write release notes. Preserve the app ID, origin, profile, SQLite/archive schema, recovery filename and stable demo/import IDs. Include The Last Light and legacy demo. Do not replace an already published versioned artifact.
+
+```sh
+npm run release:prepare -- build/Script-Call-VERSION-darwin-arm64.zip 'build/notarized/VERSION/Script Call.app' arm64 release-notes/VERSION.txt build/releases
+```
+
+The command checks the exact Developer ID signed, notarized bundle and architecture, makes its ZIP, hashes it and signs the release envelope with the Keychain helper. Output: `build/releases/VERSION/darwin-arm64/` containing the immutable versioned ZIP, `stable.json`, `stable-darwin-arm64.json`, release notes and `SHA512SUMS`. Metadata authenticates identity, version, stable channel, expiry, architecture, minimum kernel version, artifact URL, byte size and SHA-512. Artifact URLs include `/releases/download/vVERSION/`.
 
 ## Publish and verify
 
-Commit source, push it, and create/push the immutable version tag using existing GitHub authentication:
+Commit/push source, tag its exact revision, then publish the prepared artifacts with existing GitHub authentication:
 
 ```sh
 git push origin main
-git tag v0.3.1
-git push origin v0.3.1
-npm run release:publish -- build/releases/0.3.1/darwin-arm64
+git tag vVERSION
+git push origin vVERSION
+npm run release:publish -- build/releases/VERSION/darwin-arm64
 ```
 
-The publication command requires an already authenticated `gh` CLI (the prepared workspace also supports `.runtime/gh`, or set `SCRIPT_CALL_GH` to its path), verifies the exact private repository, refuses an existing release, requires the remote tag and uploads only the prepared binary, signed envelope and checksums. It creates a private GitHub Release, not a public distribution endpoint. For multiple architectures, combine reviewed assets under one release with distinct platform envelope names rather than overwrite `stable.json`; the supplied one-platform command deliberately refuses an existing release. Promote the signed platform envelope to the approved endpoint **after** its immutable binary is accessible there. No endpoint promotion runs automatically in this project. That final service-specific step depends on the approved distribution destination.
+The publisher verifies the exact approved public updates repository, the manifest signature and artifact hash, refuses existing releases, and uploads only reviewed release files. The updates repository's own tags refer to minimal release metadata; the source tag lives in the public source repository. No CI runner, new subscription or paid hosting is used. The website task must verify its HTTPS redirects to the stable signed metadata and download backend before production bootstrap distribution. Keep versioned files immutable; maintain the stable download alias as a byte-identical copy of the current versioned ZIP.
 
-For client acceptance, install a signed version N with the enabled config into a temporary test profile. Publish signed N+1 to the approved endpoint. Verify check → review notes → download → save/backup/restart → N+1, then reopen the same project and confirm template choice, source/demo IDs and issued PDF hashes. Also test offline, tampered metadata/binary, wrong signer/channel/architecture, declined installation and interrupted download. Keep the old app and backup for recovery. Until this native two-version exercise passes, describe updates as implemented and locally tested, not live end-to-end verified.
+Native acceptance uses signed notarized N and N+1, actual metadata/download/install/relaunch, an isolated persisted custom store, local edits, both templates, Production Desk import IDs, an issued PDF byte hash and a new separate Last Light demo after upgrade. Record signature/ticket/Gatekeeper checks and exact public URLs/hashes. Also test offline, invalid signatures/hashes, wrong OS/architecture/channel and failed save/backup handling.
 
-## Recovery
+## Data safety and recovery
 
-Updates replace application code only; project stores remain outside the bundle. `autoInstallOnAppQuit` is false. Closing the update dialog leaves your current app running. Installation calls the renderer's existing save flush before requesting a main-process consistent SQLite backup; failed saves or backups block restart. A running PDF issue blocks installation. If a release regresses, preserve the data folder and use the prior signed app manually; do not auto-downgrade or restore databases over current work. Data migrations must retain backwards compatibility or supply a separately reviewed recovery procedure.
+Native macOS restart need not retain launcher environment variables. An explicit `CALLSHEET_DATA_DIR` choice is therefore remembered in a user-private installation-local `.script-call-profile-USER.json` beside the app, outside its signed bundle. Native bundle replacement preserves it. If the setting cannot be persisted, installation is blocked; malformed/shared settings refuse silent fallback. No project data is moved. Ordinary installations retain the legacy Call Sheet Prototype profile and `local-projects/` path. The original project launcher retains `.local-data/`.
 
-## Proposed smallest activation approval (not yet granted)
-
-Approve one new per-app **Ed25519** key in this Mac's encrypted, non-synchronizing **login Keychain**, service `org.squidproductions.script-call.release-signing`, account `ed25519-v1`. The software key is read into the local signing process's memory only while the Keychain is unlocked; no plaintext key file, client secret, GitHub secret or uploaded key is proposed. Standard Keychain prompts remain in effect; no allow-all access grant. Only its PEM public key is committed and embedded in the Developer ID signed app. Losing the key requires a new manually installed trust bootstrap unless a separately approved recovery copy exists.
-
-Recommended distribution is a new **public** `OfficialSquidProductions/script-call-updates` repository, while `OfficialSquidProductions/script-call` remains private. The proposed repository was not found during authenticated read-only checks; it has not been created. Public assets would be a notarized `Script-Call-VERSION-darwin-arm64.zip`, `stable-darwin-arm64.json`, `SHA512SUMS`, release notes, and minimal README/license notices. Tags in the public repository would reference only that minimal metadata, never the private source history. No Windows binary is proposed until its signing and native tests pass. No archives, debug logs, production records, issued PDFs, private samples or credentials would be uploaded.
-
-The intended feed is `https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/stable-{platform}-{arch}.json`. Artifacts live at `https://github.com/OfficialSquidProductions/script-call-updates/releases/download/vVERSION/Script-Call-VERSION-darwin-arm64.zip`. Everyone on the internet could download, inspect and copy the Electron app, including its shipped JavaScript/resources and fictional demos. Keeping Git history private does not make distributed Electron contents secret.
-
-The first enabled release should be **0.3.1**, installed manually once to establish the public-key trust anchor; preserve the existing 0.3.0 source tag. A subsequent signed release must pass the actual two-version upgrade check before describing the updater as live verified. Existing Apple signing/notarization accounts are reused; Script Call code is uploaded to Apple for notarization, never private keys. Existing Xcode account metadata, Developer ID availability, prior accepted notarizations and matching developer-id upload/export options were verified without reading credential values. A current Apple server login has not been tested and no Script Call upload was attempted.
-
-No additional paid hosting, CI runner, subscription or new credential is proposed: builds/signing run locally and distribution uses GitHub Releases with the existing Apple membership. GitHub's [free plan](https://github.com/pricing) supports public repositories; [release asset limits](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) allow files under 2 GiB and no total release/bandwidth limit. Stop for approval if a new charge, agreement, credential, access grant or visibility change is required.
+Updating saves edits and creates a consistent SQLite backup before restart. Automatic install-on-quit is disabled. Failed saves/backups or an active PDF issue block installation. Preserve the previous signed app and backups for manual recovery; do not auto-downgrade or overwrite current databases.
