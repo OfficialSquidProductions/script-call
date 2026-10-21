@@ -1,16 +1,25 @@
 'use strict';
-const {app,BrowserWindow,ipcMain,dialog,protocol,net,Menu}=require('electron');
+const {app,BrowserWindow,ipcMain,dialog,protocol,net,Menu,clipboard,shell}=require('electron');
 const fs=require('node:fs'),path=require('node:path'),{pathToFileURL}=require('node:url');
 const {Store}=require('../core/store.cjs'),D=require('../core/domain.cjs'),A=require('../core/archive.cjs'),{renderSheet}=require('../core/sheet.cjs'),{headingFont}=require('./fonts.cjs');
 const P=require('../core/productiondesk.cjs');
 const {Updates}=require('./updates.cjs'),updateConfig=require('./update-config.json');
+const {Diagnostics}=require('./diagnostics.cjs'),{openDraft}=require('./report-delivery.cjs');
 const ROOT=path.resolve(__dirname,'..');let win,store,font,logo,updates,issueBusy=false,pendingImport=null;
 protocol.registerSchemesAsPrivileged([{scheme:'callsheet',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 app.setName('Script Call');
 // Keep the original default profile and origin: branding must never orphan projects.
 const profileLocation=require('./data-location.cjs').dataLocation({explicit:process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
 app.setPath('userData',profileLocation.userData);
-if(!app.requestSingleInstanceLock())app.quit();
+const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();
+const diagnostics=new Diagnostics({directory:path.join(profileLocation.userData,'diagnostics'),version:app.getVersion(),notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('diagnostic-status',state);}});
+if(primaryInstance){
+ diagnostics.safe(()=>diagnostics.begin());
+ // Monitoring does not suppress Node's fatal uncaught-exception behavior.
+ process.on('uncaughtExceptionMonitor',error=>diagnostics.capture('main-uncaught-exception',error));
+ process.on('unhandledRejection',error=>diagnostics.capture('main-unhandled-rejection',error));
+ app.on('child-process-gone',(_,details)=>{if(['crashed','oom','abnormal-exit','integrity-failure'].includes(details.reason))diagnostics.capture('utility-crash',undefined,details);});
+}
 app.on('second-instance',()=>{if(win){win.show();win.focus();}});
 const safeName=s=>String(s).replace(/[^a-zA-Z0-9_.-]+/g,'_').slice(0,120)||'CallSheet';
 async function pdf(snapshot){
@@ -25,7 +34,13 @@ async function pdf(snapshot){
 function frozen(projectId,dayId){const s=store.get(projectId),day=s.project.days.find(d=>d.id===dayId);if(!day)throw Error('Day not found.');return day.lockedRevisionId?store.revision(projectId,day.lockedRevisionId).snapshot:D.resolve(s.project,dayId);}
 async function saveFile(bytes,defaultPath,filter){const r=await dialog.showSaveDialog(win,{defaultPath,filters:[filter]});if(r.canceled)return {canceled:true};const target=r.filePath,tmp=target+'.'+D.id()+'.tmp';try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,target);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}return {path:target};}
 const actions={
- bootstrap(){if(!store.list().length)store.create(D.newProject());return {projects:store.list(),fontAvailable:!!font,version:app.getVersion(),dataDirectory:store.dir,updates:updates.status()};},
+ bootstrap(){if(!store.list().length)store.create(D.newProject());return {projects:store.list(),fontAvailable:!!font,version:app.getVersion(),dataDirectory:store.dir,updates:updates.status(),diagnostics:diagnostics.status()};},
+ diagnosticStatus:()=>diagnostics.status(),diagnosticDismiss:()=>diagnostics.dismiss(),
+ diagnosticCapture:a=>{if(['renderer-error','renderer-unhandled-rejection'].includes(a.kind))diagnostics.capture(a.kind,a.error);return {recorded:true};},
+ reportPreview:a=>diagnostics.preview(a),
+ reportCopy:a=>{clipboard.writeText(diagnostics.draft(a.id).text);return {copied:true};},
+ reportExport:a=>saveFile(Buffer.from(diagnostics.draft(a.id).text),'Script-Call-Bug-Report.txt',{name:'Reviewed bug report',extensions:['txt']}),
+ reportMail:a=>openDraft(diagnostics.draft(a.id),{app,shell}),
  updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>updates.download(),updateInstall:()=>{if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
  list:()=>store.list(),get:a=>store.get(a.id),save:a=>store.save(a.project,a.version),
  create:a=>store.create(D.newProject(String(a.title||'Untitled production').slice(0,200))),
@@ -70,6 +85,7 @@ const actions={
  }
 };
 app.whenReady().then(()=>{
+ if(!primaryInstance)return;
  const dir=profileLocation.storeDirectory;store=new Store(dir);store.backup();font=headingFont();logo='data:image/png;base64,'+fs.readFileSync(path.join(ROOT,'web/assets/SP_PURPLE.png')).toString('base64');
  updates=new Updates({app,config:updateConfig,backup:()=>store.backup(),busy:()=>issueBusy,notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('update-status',state);}});
  protocol.handle('callsheet',request=>{
@@ -80,12 +96,14 @@ app.whenReady().then(()=>{
  });
  win=new BrowserWindow({width:1500,height:980,minWidth:1050,minHeight:700,title:'Script Call',backgroundColor:'#faf8f9',icon:path.join(ROOT,'web/assets/SP_PURPLE.png'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,spellcheck:false}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());
+ win.webContents.on('render-process-gone',(_,details)=>{if(details.reason!=='clean-exit'){diagnostics.capture(['crashed','oom','abnormal-exit','integrity-failure'].includes(details.reason)?'renderer-crash':'renderer-interrupted',undefined,details);dialog.showMessageBox(win,{type:'error',title:'Script Call window stopped',message:'The editing window stopped unexpectedly.',detail:(diagnostics.available?'A minimal diagnostic summary was saved locally for review next time you open Script Call.':'Local diagnostic storage is unavailable; you can report this manually after reopening.')+' Unsaved edits may not have been saved. Nothing was sent.',buttons:['OK']}).catch(()=>{});}});
  // No renderer HTTP access: forecast traffic only originates from the explicit main-process action.
  win.webContents.session.webRequest.onBeforeRequest((details,callback)=>callback({cancel:details.webContentsId===win.webContents.id&&/^https?:/.test(details.url)}));
- ipcMain.handle('callsheet',async(event,action,args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!Object.hasOwn(actions,action))throw Error('Unsupported request.');if(!args||typeof args!=='object')throw Error('Invalid request.');return actions[action](args);});
- const template=[...(process.platform==='darwin'?[{label:'Script Call',submenu:[{role:'about'},{label:'Check for Updates…',click:()=>win.webContents.send('check-updates')},{type:'separator'},{role:'hide'},{role:'quit'}]}]:[]),{label:'File',submenu:[{label:'Save',accelerator:'CmdOrCtrl+S',click:()=>win.webContents.send('menu-save')},{role:'close'}]},{role:'editMenu'},{role:'viewMenu'},{role:'windowMenu'}];Menu.setApplicationMenu(Menu.buildFromTemplate(template));
- win.on('close',event=>{if(win&&!win.forceClose){event.preventDefault();win.webContents.send('before-close');}});
+ ipcMain.handle('callsheet',async(event,action,args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!Object.hasOwn(actions,action))throw Error('Unsupported request.');if(!args||typeof args!=='object')throw Error('Invalid request.');try{return await actions[action](args);}catch(error){if(!action.startsWith('report')&&!action.startsWith('diagnostic')&&(error?.code||error instanceof TypeError||error instanceof RangeError||error instanceof ReferenceError||error instanceof SyntaxError))diagnostics.capture('operation-failure',error);throw error;}});
+ const template=[...(process.platform==='darwin'?[{label:'Script Call',submenu:[{role:'about'},{label:'Check for Updates…',click:()=>win.webContents.send('check-updates')},{type:'separator'},{role:'hide'},{role:'quit'}]}]:[]),{label:'File',submenu:[{label:'Save',accelerator:'CmdOrCtrl+S',click:()=>win.webContents.send('menu-save')},{role:'close'}]},{role:'editMenu'},{role:'viewMenu'},{role:'windowMenu'}];
+ template.push({label:'Help',submenu:[{label:'Report a Bug…',click:()=>win.webContents.send('report-bug')}]});Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+ win.on('close',event=>{if(win&&!win.forceClose&&!win.webContents.isCrashed()){event.preventDefault();win.webContents.send('before-close');}});
  ipcMain.on('close-ready',event=>{if(event.sender===win.webContents){win.forceClose=true;win.close();}});
  win.loadURL('callsheet://app/index.html');updates.start();
-}).catch(error=>{dialog.showErrorBox('Script Call could not start',error.message);app.quit();});
-app.on('window-all-closed',()=>app.quit());app.on('will-quit',()=>{updates?.close();if(store)store.close();});
+}).catch(error=>{diagnostics.capture('startup-failure',error);dialog.showErrorBox('Script Call could not start',error.message);app.quit();});
+app.on('window-all-closed',()=>app.quit());app.on('will-quit',()=>{updates?.close();if(store)store.close();if(primaryInstance)diagnostics.clean();});

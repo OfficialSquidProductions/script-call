@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Create a local Apple Silicon Script Call bundle, never a published release."""
 from pathlib import Path
-import shutil,subprocess,plistlib,json,hashlib,datetime
+import shutil,subprocess,plistlib,json,hashlib,datetime,argparse
 root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
 source=root/'.runtime/electron/Electron.app'
 if not source.exists():raise SystemExit('Electron 44.9.1 runtime is missing. See PROTOTYPE.md.')
-out=root/'build/mac/Script Call.app';out.parent.mkdir(parents=True,exist_ok=True)
+parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,default=root/'build/mac/Script Call.app');args=parser.parse_args()
+out=args.out.resolve();out.parent.mkdir(parents=True,exist_ok=True)
 stamp=datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 staging=out.with_name('Script Call-staging-'+stamp+'.app')
 shutil.copytree(source,staging,symlinks=True)

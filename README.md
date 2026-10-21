@@ -1,8 +1,10 @@
 # Script Call
 
+**0.3.4 adds local bug/crash reporting** addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. Its notarized release candidate has passed the real signed 0.3.3 → 0.3.4 upgrade test; stable promotion follows final publication checks. See [REPORTING.md](REPORTING.md) for privacy and tests.
+
 A Squid Productions Software
 
-Script Call **0.3.3** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
+Script Call **0.3.4** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 
@@ -31,7 +33,7 @@ Production Desk imports are previewed before commitment, backed up before change
 
 The updater implementation uses `electron-updater`, an Ed25519-signed metadata envelope and SHA-512 artifact verification. It checks only compatible stable versions for the current platform and architecture, refuses downgrades, and requires native code-signature checks. Automatic checks run after startup and daily when enabled; download and restart require a choice. Installation flushes pending edits and makes a SQLite backup. Failed or offline checks keep the current app usable.
 
-**The source is public under MIT and the approved update endpoint is configured.** The stable bootstrap is notarized **0.3.3**, verified through a real native 0.3.1 → 0.3.3 download, bundle replacement and restart. That test preserved an unsaved edit, template choice, exact issued PDF bytes, import IDs and local edits; the included demo and images loaded after upgrade. Version 0.3.2 is superseded/prerelease. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
+**The source is public under MIT and the approved update endpoint is configured.** Notarized **0.3.4** has passed a real signed native 0.3.3 → 0.3.4 download, bundle replacement and restart. That test preserved an unsaved edit, template choice, exact issued PDF bytes, import IDs and local edits, demo and images, and verified the reporting review flow. Version 0.3.2 remains superseded/prerelease. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
 
 The fictional Last Light fixture is the shared released Squid Productions example: 8 scenes, 16 shots, 3 shooting days, scene 8 unscheduled. Quiet Hours remains a separately labeled legacy example. Third-party licenses and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
@@ -39,4 +41,4 @@ The fictional Last Light fixture is the shared released Squid Productions exampl
 
 Squid Productions’ original code and included fictional demos are MIT licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for unchanged third-party font/dependency licenses and branding notices. The Last Light demo remains included with its stable scene, shot and import IDs.
 
-Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.3 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.3). Older prototypes need one manual installation to establish update trust. In this workspace, save and close the old app, then use `Start Script Call.command`; its original `.local-data` store is preserved. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.
+Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.4 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.4). Older prototypes need one manual installation to establish update trust. The existing workspace launcher retains `.local-data`; a currently running 0.3.3 app can install this update through its existing updater. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.

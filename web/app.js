@@ -1,5 +1,8 @@
 'use strict';
 const api=window.CallSheet,$=id=>document.getElementById(id);
+function captureFailure(kind,error){api.request('diagnosticCapture',{kind,error:{name:error?.name,stack:error?.stack,code:error?.code}}).catch(()=>{});}
+window.addEventListener('error',event=>captureFailure('renderer-error',event.error));
+window.addEventListener('unhandledrejection',event=>captureFailure('renderer-unhandled-rejection',event.reason));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=x=>JSON.parse(JSON.stringify(x)),uid=()=>crypto.randomUUID();
 let project,version,revisions=[],projects=[],dayId,view='daily',section='overview',master='general',dirty=0,saved=0,saveTimer,savePromise,previewTimer,previewSerial=0,toastTimer,boot,modalAction,previewObserver,lockedDisplay={},transitionQueue=Promise.resolve();
@@ -176,6 +179,24 @@ function showProductionDeskPreview(r){
 $('import-productiondesk').onclick=()=>transition(async()=>{const r=await api.request('chooseProductionDesk',{currentProjectId:project.id});if(!r.canceled)showProductionDeskPreview(r);});
 $('backup').onclick=()=>transition(async()=>{const r=await api.request('backup');toast('Local database backup created: '+r.path);});
 $('modal-close').onclick=closeModal;
+function diagnosticNotice(state){
+ if(boot)boot.diagnostics=state;const notice=$('diagnostic-notice');notice.hidden=!state.pending&&state.available;
+ $('diagnostic-summary').textContent=state.pending?'A failure or interrupted session was recorded locally. An interruption may be a crash, force quit or power loss. Nothing has been sent.':'Local diagnostic recording is unavailable. You can still report a bug manually.';
+ $('dismiss-diagnostics').hidden=!state.pending;
+}
+function reportBug(form={description:'',steps:'',includeDiagnostics:true}){
+ modal('Report a Bug',`<p>To: <b>alexanderhosier@squidproductions.org</b></p><p>Describe what went wrong without adding private production details. App version and OS are included. Project/script/media contents, raw error messages, contacts, secrets and personal paths are excluded from automatic diagnostics. Common paths and credentials in your description are redacted; review the result before sharing.</p><label class="field">Description<textarea id="report-description" maxlength="3000" rows="4">${esc(form.description)}</textarea></label><label class="field">Steps to reproduce<textarea id="report-steps" maxlength="3000" rows="3">${esc(form.steps)}</textarea></label><label class="check"><input id="report-diagnostics" type="checkbox" ${form.includeDiagnostics?'checked':''}>Include sanitized diagnostic summary (up to 5 recent failures)</label><p class="tiny">Event log: at most 40 events / 32 KB, retained for 14 days. No memory dumps or automatic uploads. Copy/export remain available without a mail client.</p>`,[{label:'Review report',primary:true,run:async()=>{const values={description:$('report-description').value,steps:$('report-steps').value,includeDiagnostics:$('report-diagnostics').checked};const draft=await api.request('reportPreview',values);reportReview(values,draft);}}]);$('report-description').focus();
+}
+function reportReview(form,draft){
+ modal('Review bug report',`<p>Recipient: <b>${esc(draft.to)}</b></p><label class="field">Full report to share<textarea id="report-preview" readonly rows="12">${esc(draft.text)}</textarea></label><p>Only this reviewed text will be copied, exported or handed to your default mail client. Opening a draft does not confirm delivery. No email is sent automatically.</p><p id="report-result" role="status" aria-live="polite"></p>`,[
+  {label:'Edit details',run:()=>reportBug(form)},
+  {label:'Copy report',run:async()=>{await api.request('reportCopy',{id:draft.id});$('report-result').textContent='Reviewed report copied. Paste it in your email client and send when ready.';}},
+  {label:'Export report',run:async()=>{const r=await api.request('reportExport',{id:draft.id});$('report-result').textContent=r.canceled?'Export canceled.':'Reviewed report exported. Nothing was sent.';}},
+  {label:'Open mail draft',primary:true,run:async()=>{const r=await api.request('reportMail',{id:draft.id});$('report-result').textContent=r.reason;}}
+ ]);$('report-preview').focus();
+}
+$('report-bug').onclick=()=>reportBug();$('review-diagnostics').onclick=()=>reportBug();$('dismiss-diagnostics').onclick=async()=>{try{diagnosticNotice(await api.request('diagnosticDismiss'));}catch(e){error(e);}};
+window.ScriptCallReports.onOpen(()=>reportBug());window.ScriptCallReports.onStatus(diagnosticNotice);
 $('settings').onclick=()=>modal('Settings & help',`<p><b>Script Call ${esc(boot?.version||'')}</b></p><p>Production data stays on this computer. Export project includes preserved issued PDFs; Open project imports a separate copy. Production Desk imports are reviewed before applying changes.</p><p>Data: ${esc(boot?.dataDirectory)}</p><p>Font discovery: Reross ${boot?.fontAvailable?'available':'using fallback'}. G-Casper uses bundled Montserrat and Nunito.</p>`,[{label:'Toggle light / dark',run:async()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';localStorage.setItem('callsheet-theme',dark?'dark':'light');}}]);
 async function updateDialog(check=false){
  try{const state=await api.request(check?'updateCheck':'updateStatus');boot.updates=state;const actions=[];
@@ -191,4 +212,4 @@ api.onCheckUpdates(()=>updateDialog(true));api.onUpdates(state=>{if(boot)boot.up
 function saveFailure(e){error(e);modal('Unsaved changes remain','<p>The local save failed. Keep this window open to retry. You can save the current edits as a recovery JSON copy for repair; it does not include earlier issued PDF files.</p>',[{label:'Save recovery copy',primary:true,run:async()=>{const r=await api.request('recovery',{project});if(!r.canceled)toast('Recovery data saved: '+r.path);}}]);}
 api.onSave(()=>flush().catch(saveFailure));api.onBeforeClose(async()=>{try{await flush();api.closeReady();}catch(e){saveFailure(e);}});
 window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();flush().catch(error);}});
-(async()=>{try{document.documentElement.dataset.theme=localStorage.getItem('callsheet-theme')||'light';boot=await api.request('bootstrap');$('app-version').textContent='VERSION '+boot.version;projects=boot.projects;await useState(await api.request('get',{id:projects[0].id}));$('save-state').textContent='Saved on this device';}catch(e){$('save-state').textContent='Could not open local data';error(e);}})();
+(async()=>{try{document.documentElement.dataset.theme=localStorage.getItem('callsheet-theme')||'light';boot=await api.request('bootstrap');$('app-version').textContent='VERSION '+boot.version;diagnosticNotice(boot.diagnostics);projects=boot.projects;await useState(await api.request('get',{id:projects[0].id}));$('save-state').textContent='Saved on this device';}catch(e){$('save-state').textContent='Could not open local data';error(e);}})();

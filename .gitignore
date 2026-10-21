@@ -31,3 +31,6 @@ tools/fidelity.cjs
 tools/generate_demo.py
 tools/verify_*.py
 tools/verify_shared_demo.cjs
+
+# Isolated local reporter preview; never production release input.
+.reporter-preview-data/

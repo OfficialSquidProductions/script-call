@@ -1,0 +1,13 @@
+Script Call 0.3.4
+
+Adds Report a Bug in the sidebar and Help menu, addressed to alexanderhosier@squidproductions.org. Describe the problem and reproduction steps, review the full sanitized report, then explicitly copy, export or open a draft in your existing mail client. A missing/failed mail client or oversized mail link keeps the full copy/export fallback available. Opening a draft is not confirmed delivery; nothing is sent automatically.
+
+Records minimal local diagnostics for renderer crashes, unhandled failures and interrupted sessions. A nonblocking notice after reopening offers review or dismissal. Clean shutdowns are distinguished from confirmed renderer crashes; unexplained interruptions may also mean a force quit or power loss. The private event journal is limited to 40 events/32 KB with 14-day retention. No project/script/media contents, raw error messages, credentials, personal paths, contacts or memory dumps are collected automatically. Review your own description before sharing.
+
+The included Last Light demo, G-Casper front/back, Original Narrative templates, Production Desk import/reimport, stable IDs, storage compatibility and original issued PDF bytes remain preserved. Existing signed updates retain the same trust key and stable feed, with explicit download/restart, saving and recovery backup.
+
+Apple Silicon Mac, macOS 13+. Existing update-enabled installations can use Check for updates, Download update, then Save, back up & restart. Older prototypes need one manual bootstrap install. Windows/Intel releases remain unvalidated.
+
+Source: https://github.com/OfficialSquidProductions/script-call
+Website: https://scriptcall.squidproductions.org/
+Original code and fictional demo fixtures are MIT licensed; third-party and branding notices remain unchanged.
