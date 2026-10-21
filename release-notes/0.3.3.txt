@@ -1,0 +1,11 @@
+Script Call 0.3.3
+
+Fixes a native-update packaging issue found during actual 0.3.1 → 0.3.2 validation: a public logo file retained a private source-file mode, making it unreadable after installer ownership changes. All shipped resources now have normal public read permissions before signing. No production data or signing secrets are included or have their permissions changed. Version 0.3.2 is superseded and removed from the stable channel.
+
+Includes signed stable updates with Ed25519 metadata, SHA-512, native signature checks, operating-system/architecture requirements, explicit download/restart choices, saving and a local recovery backup. An explicit launcher data directory is remembered outside the app so native restart keeps using the same store.
+
+The Last Light demo remains included with eight scenes, sixteen shots, three shooting days and stable shared/import IDs. G-Casper front/back, Original Narrative, Production Desk import/reimport, saved templates and issued PDF bytes remain compatible. Original code and fictional demo fixtures are MIT licensed; original third-party and branding notices remain in effect.
+
+Install the latest notarized version manually once if using an older update-disabled prototype. Source: https://github.com/OfficialSquidProductions/script-call
+Website: https://scriptcall.squidproductions.org/
+The app uses the signed GitHub JSON feed; the website's /updates/ page is human-readable HTML.

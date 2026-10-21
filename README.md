@@ -2,7 +2,7 @@
 
 A Squid Productions Software
 
-Script Call **0.3.1** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
+Script Call **0.3.3** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 
@@ -31,7 +31,7 @@ Production Desk imports are previewed before commitment, backed up before change
 
 The updater implementation uses `electron-updater`, an Ed25519-signed metadata envelope and SHA-512 artifact verification. It checks only compatible stable versions for the current platform and architecture, refuses downgrades, and requires native code-signature checks. Automatic checks run after startup and daily when enabled; download and restart require a choice. Installation flushes pending edits and makes a SQLite backup. Failed or offline checks keep the current app usable.
 
-**The source is public under MIT and the approved update endpoint is configured.** Mac release notarization and the real two-version upgrade are being verified before marking live delivery complete. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
+**The source is public under MIT and the approved update endpoint is configured.** The stable bootstrap is notarized 0.3.1. Version 0.3.2 was superseded after a native-update resource-permission regression; 0.3.3 is the corrected notarized candidate, awaiting its native upgrade validation before stable promotion. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
 
 The fictional Last Light fixture is the shared released Squid Productions example: 8 scenes, 16 shots, 3 shooting days, scene 8 unscheduled. Quiet Hours remains a separately labeled legacy example. Third-party licenses and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

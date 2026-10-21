@@ -35,6 +35,13 @@ plist=staging/'Contents/Info.plist';info=plistlib.loads(plist.read_bytes())
 (staging/'Contents/MacOS/Electron').rename(staging/'Contents/MacOS/Script Call')
 info.update({'CFBundleExecutable':'Script Call','CFBundleName':'Script Call','CFBundleDisplayName':'Script Call','CFBundleIdentifier':'org.squidproductions.callsheet.prototype','CFBundleShortVersionString':version,'CFBundleVersion':version,'CFBundleIconFile':'CallSheet.icns','NSHumanReadableCopyright':'Squid Productions - local prototype; not a signed public release.'})
 plist.write_bytes(plistlib.dumps(info))
+# Every shipped asset is public. Native installation may change ownership, so
+# private source-file modes must never make a resource unreadable after update.
+for target in staging.rglob('*'):
+ if target.is_symlink():continue
+ if target.is_dir():target.chmod(0o755)
+ elif target.is_file():target.chmod(0o755 if target.stat().st_mode&0o111 else 0o644)
+staging.chmod(0o755)
 subprocess.run(['codesign','--force','--deep','--sign','-',str(staging)],check=True,capture_output=True)
 verify=subprocess.run(['codesign','--verify','--deep','--strict',str(staging)],capture_output=True,text=True)
 if verify.returncode:raise SystemExit(verify.stderr)

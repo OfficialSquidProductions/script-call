@@ -3,6 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
 const {artifactURL}=require('./release_key.cjs');
 const {signPayload}=require('./release_signer.cjs');
+const {checkPublicResources}=require('./release_permissions.cjs');
 const {APP_ID,configuration,verifyEnvelope,version,httpsURL}=require('../desktop/update-policy.cjs');
 function prepare({artifact,appBundle,platform,arch,notesFile,out,config=require('../desktop/update-config.json'),packageVersion=require('../package.json').version,keyFile=process.env.SCRIPT_CALL_UPDATE_KEY_FILE}){
  configuration(config);version(packageVersion);
@@ -12,6 +13,7 @@ function prepare({artifact,appBundle,platform,arch,notesFile,out,config=require(
  const notes=fs.readFileSync(notesFile,'utf8').trim();if(!notes||notes.length>20000)throw Error('Provide release notes under 20,000 characters.');
  if(platform==='darwin'){
   if(!appBundle)throw Error('Pass the exact signed .app used in the ZIP.');
+  checkPublicResources(appBundle);
   execFileSync('codesign',['--verify','--deep','--strict',appBundle]);
   // codesign writes identity to stderr; inspect with spawnSync below.
   const result=require('node:child_process').spawnSync('codesign',['-dvv',appBundle],{encoding:'utf8'});if(result.status!==0||!/Authority=Developer ID Application:/.test(result.stderr)||!/TeamIdentifier=[A-Z0-9]+/.test(result.stderr))throw Error('A Developer ID signed app is required; ad-hoc builds cannot ship updates.');

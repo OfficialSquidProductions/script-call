@@ -6,7 +6,11 @@ Binary assets and signed update metadata: https://github.com/OfficialSquidProduc
 
 ## Current status and website coordination
 
-0.3.1 is an update-enabled bootstrap candidate. Its storage-safe Mac archive was accepted by Apple and exported with a notarization ticket. Full source/desktop/demo/import checks pass. Public binary publication is held while the separate Squarespace task verifies `https://scriptcall.squidproductions.org/` routing. The unshipped candidate currently embeds the supported direct GitHub signed-metadata URL. Read [the website routing contract](docs/WEBSITE-ROUTING.md) before committing a production website feed URL. Do not claim a live end-to-end upgrade until the native two-version test passes.
+0.3.1 is the current public notarized bootstrap. The real 0.3.1 → 0.3.2 test downloaded the signed ZIP and replaced/relaunched the bundle, then found an unreadable root-owned logo: a private source mode of 0600 had been preserved into the public app. The failed test's SQLite store retained the pending edit, original issued PDF bytes, template, import IDs and performer edit. Version 0.3.2 is superseded/prerelease and 0.3.1 was explicitly restored as latest stable.
+
+0.3.3 normalizes public app resources to readable modes before signing; the source logo bytes/mode, user data and Keychain material are unchanged. Release preflight rejects private resource modes. Apple accepted/exported the signed 0.3.3 archive. Its real 0.3.1 → 0.3.3 native test remains pending; do not call the updater fully validated until that passes. The publisher now uploads into a draft and verifies every remote asset digest/size before promoting latest, so clients never see metadata before its ZIP is ready.
+
+The website is reported live at https://scriptcall.squidproductions.org/; the website task manages its downloads/help/release pages and gh-pages branch. Its `/updates/` is HTML, so the app intentionally retains the signed GitHub JSON feed. Read [the routing contract](docs/WEBSITE-ROUTING.md); never substitute an HTML landing page for machine metadata.
 
 Windows has no verified signing publisher or native runtime/installer test. Do not distribute a Windows update until those checks pass.
 
