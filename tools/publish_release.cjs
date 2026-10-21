@@ -5,9 +5,9 @@ const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('no
 const {verifyEnvelope}=require('../desktop/update-policy.cjs'),config=require('../desktop/update-config.json');
 const repo='OfficialSquidProductions/script-call-updates',gh=process.env.SCRIPT_CALL_GH||(fs.existsSync(path.join(__dirname,'../.runtime/gh'))?path.join(__dirname,'../.runtime/gh'):'gh');
 function publish(dir){
- const version=require('../package.json').version,tag='v'+version,envelope=JSON.parse(fs.readFileSync(path.join(dir,'stable.json'),'utf8'));
- const payload=JSON.parse(Buffer.from(envelope.payload,'base64').toString('utf8'));if(payload.version!==version)throw Error('Prepared release version mismatch.');
- const keys=Object.keys(payload.artifacts);if(keys.length!==1)throw Error('Expected one platform per prepared release.');const key=keys[0],platform=key.startsWith('darwin-')?'darwin':'win32',arch=key.slice(platform.length+1);const manifest=verifyEnvelope(envelope,config,'0.0.0',platform,arch);if(!manifest)throw Error('No verified release.');
+ const envelope=JSON.parse(fs.readFileSync(path.join(dir,'stable.json'),'utf8'));
+ const payload=JSON.parse(Buffer.from(envelope.payload,'base64').toString('utf8')),version=payload.version,tag='v'+version;
+ const keys=Object.keys(payload.artifacts);if(keys.length!==1)throw Error('Expected one platform per prepared release.');const key=keys[0],platform=key.startsWith('darwin-')?'darwin':'win32',arch=key.slice(platform.length+1);const manifest=verifyEnvelope(envelope,config,'0.0.0',platform,arch);if(!manifest)throw Error('No verified release.');if(fs.readFileSync(path.join(dir,'release-notes.txt'),'utf8').trim()!==manifest.notes.trim())throw Error('Release notes differ from the signed manifest.');
  const artifact=path.basename(new URL(manifest.artifact.url).pathname),bytes=fs.readFileSync(path.join(dir,artifact));if(bytes.length!==manifest.artifact.size||require('node:crypto').createHash('sha512').update(bytes).digest('base64')!==manifest.artifact.sha512)throw Error('Prepared artifact changed.');
  const alias=platform==='darwin'?path.join(dir,'Script-Call-Mac.zip'):null;if(alias&&!fs.readFileSync(alias).equals(bytes))throw Error('Download alias differs from the signed artifact.');
  const metadata=JSON.parse(execFileSync(gh,['repo','view',repo,'--json','nameWithOwner,isPrivate'],{encoding:'utf8'}));if(metadata.nameWithOwner!==repo||metadata.isPrivate)throw Error('Expected the approved public Script Call updates repository.');

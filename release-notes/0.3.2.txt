@@ -1,0 +1,12 @@
+Script Call 0.3.2
+
+Signed, notarized Mac release for the real 0.3.1 → 0.3.2 update validation. Check for Updates verifies signed metadata, native app signatures, SHA-512, operating-system requirements and CPU architecture. Download and restart require your choice, with saving and a local recovery backup before installation.
+
+An explicit launcher data directory is remembered outside the app bundle so native macOS restart keeps using the same project store. Existing app/storage identities, template choices, issued PDF bytes, recovery filename, and Production Desk import links remain compatible.
+
+The Last Light demo stays included: eight scenes, sixteen shots, three shooting days and stable shared/import IDs; scene eight remains unscheduled. Original Narrative and G-Casper front/back layouts and the separately labeled Quiet Hours example remain available.
+
+Original code and fictional demo fixtures are MIT licensed; original third-party and branding notices are retained.
+
+Public source: https://github.com/OfficialSquidProductions/script-call
+Website routing for scriptcall.squidproductions.org is handled separately; the app currently uses the supported signed GitHub release backend.
