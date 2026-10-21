@@ -1,10 +1,10 @@
 # Script Call bug and crash reporting — 0.3.4
 
-Recipient: **alexanderhosier@squidproductions.org**. The 0.3.4 notarized release candidate passed real signed 0.3.3 → 0.3.4 native acceptance. Stable promotion is pending final publication checks.
+Recipient: **alexanderhosier@squidproductions.org**. Stable 0.3.4 is signed/notarized and passed real signed 0.3.3 → 0.3.4 native acceptance. The anonymous stable ZIP/feed and unmodified old/new native clients were also verified after publication.
 
 ## Use the app or isolated local preview
 
-Installed 0.3.3 users can choose Check for updates, Download update, then Save, back up & restart after stable promotion. The current running app is left intact until the user chooses installation.
+Installed 0.3.3 users can choose Check for updates, Download update, then Save, back up & restart now. The current running app is left intact until the user chooses installation.
 
 For separate local testing, double-click `Start Script Call Preview.command`. It launches `build/reporter-preview/Script Call.app` with its own `.reporter-preview-data` store. The normal `Start Script Call.command`, running released app, original `.local-data`, projects, template choices and issued PDFs are preserved. The preview includes The Last Light and legacy demo; loading a demo creates a separate production. This is a local ad-hoc signed build, not a notarized release. Do not replace a normal installation with it for update validation.
 
@@ -40,6 +40,6 @@ Local evidence lives under `verification/reporter-desktop/`, `verification/repor
 
 The exact Developer ID signed/notarized 0.3.4 app passed the eight reporting checks with `CALLSHEET_REPORTER_EXECUTABLE` selecting its exported executable. The real signed 0.3.3 → 0.3.4 native update passed 14 checks: metadata, download, native replacement/relaunch, identical issued PDF bytes, saved pending edit, template/import model/IDs, backup, demo/images and reporting review. No test email was sent. Source/config matches the signed bundle; only publisher tooling, tests and documentation changed after its build.
 
-The candidate is uploaded as a prerelease, leaving stable clients untouched. Native acceptance selects its signed version-specific public metadata only inside the disposable old test process; Ed25519, SHA-512 and native code-signature checks remain unchanged. Stable promotion requires matching native-acceptance artifact evidence and re-verifies every remote asset digest/size. See RELEASING.md for tested commands. Existing updater trust/configuration/storage IDs remain unchanged. No new credentials, paid services, keys or security permissions are needed.
+The release workflow first uploads a prerelease, leaving stable clients untouched until acceptance passes. Native acceptance selects its signed version-specific public metadata only inside the disposable old test process; Ed25519, SHA-512 and native code-signature checks remain unchanged. Stable promotion requires matching native-acceptance artifact evidence and re-verifies every remote asset digest/size. See RELEASING.md for tested commands. Existing updater trust/configuration/storage IDs remain unchanged. No new credentials, paid services, keys or security permissions are needed.
 
 Native reporting was tested on Apple Silicon macOS. Windows mail-client integration and native crash behavior require testing on Windows; existing Windows signing/distribution limitations remain.

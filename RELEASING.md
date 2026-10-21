@@ -6,16 +6,18 @@ Binary assets and signed update metadata: https://github.com/OfficialSquidProduc
 
 ## Current status and website coordination
 
-**0.3.4 is notarized and its real signed 0.3.3 → 0.3.4 native upgrade passed.** It adds local bug/crash reporting to alexanderhosier@squidproductions.org with full review, explicit mail draft and copy/export fallback. The public candidate is awaiting stable promotion; no report is sent automatically.
+**0.3.4 is the public stable notarized release; its real signed 0.3.3 → 0.3.4 native upgrade passed.** It adds local bug/crash reporting to alexanderhosier@squidproductions.org with full review, explicit mail draft and copy/export fallback. The tested candidate has been promoted after remote asset verification; no report is sent automatically.
 
 Native acceptance passed all 14 checks, including real download/native replacement/relaunch, the same custom data store without launcher environment, pending edit, Narrative template, exact issued PDF bytes, import IDs/local edits, backup, demo/images and the reporting review flow. PDF SHA-256 before/after: `ff98e07218ccad06355bd2ce928871d54003dd27aabac6fb3e763cf267b12378`. The exact signed/notarized app also passed all eight isolated reporting/crash checks. Unit/update/release checks: 68; existing desktop: 19; G-Casper: 12; packaged importer: 11. Local evidence: `verification/live-update-0.3.3-to-0.3.4/result.json`, `verification/script-call-0.3.4-notarized-reporter.json` and release logs.
+
+Final public verification passed: an anonymous stable alias ZIP matched the signed immutable artifact (131,308,390 bytes; SHA-256 `88103ffeec717dd6d05ad12f7221e2857ada9de4f570fdbbc5d709ce3d02942b`). Fresh unmodified signed 0.3.3/0.3.4 clients checked the production feed with no test metadata override: 0.3.3 offered 0.3.4, and 0.3.4 reported current. Evidence: `verification/script-call-public-0.3.4.json`.
 
 - [Stable download](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip)
 - [Immutable 0.3.4 ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/download/v0.3.4/Script-Call-0.3.4-darwin-arm64.zip)
 - [Release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.4)
 - [Signed stable feed](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/stable-darwin-arm64.json)
 
-Apple Silicon, macOS 13+. Older update-disabled prototypes need one manual bootstrap. Currently running 0.3.3 users can install through Check for updates after stable promotion; the existing local app and original `.local-data` have not been replaced or opened by release tests. Automatic install-on-quit remains disabled. Version 0.3.2 remains superseded/prerelease after its historical asset-permission bug; never reactivate or overwrite its files.
+Apple Silicon, macOS 13+. Older update-disabled prototypes need one manual bootstrap. Currently running 0.3.3 users can install through Check for updates; the existing local app and original `.local-data` have not been replaced or opened by release tests. Automatic install-on-quit remains disabled. Version 0.3.2 remains superseded/prerelease after its historical asset-permission bug; never reactivate or overwrite its files.
 
 The website at https://scriptcall.squidproductions.org/ uses the stable download alias. Its release/help text needs the 0.3.4 reporting information; this task does not redesign or edit gh-pages. Its `/updates/` is HTML, so the app retains the signed GitHub JSON feed. Windows/Intel signing and native distribution remain unvalidated.
 

@@ -1,6 +1,6 @@
 # Script Call
 
-**0.3.4 adds local bug/crash reporting** addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. Its notarized release candidate has passed the real signed 0.3.3 → 0.3.4 upgrade test; stable promotion follows final publication checks. See [REPORTING.md](REPORTING.md) for privacy and tests.
+**0.3.4 adds local bug/crash reporting** addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. Stable 0.3.4 is signed/notarized and passed a real signed 0.3.3 → 0.3.4 native upgrade, plus unmodified old/new clients checking the production feed. See [REPORTING.md](REPORTING.md) for privacy and tests.
 
 A Squid Productions Software
 
