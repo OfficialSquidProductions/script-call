@@ -5,7 +5,8 @@ const root=path.resolve(__dirname,'..'),out=path.join(root,'verification/shootin
 let bundle=path.join(root,'build/shooting-days-preview/Script Call.app'),config;
 if(process.env.CALLSHEET_DAYS_APP){
  const source=path.resolve(process.env.CALLSHEET_DAYS_APP);assert(source.startsWith(path.join(root,'build')+path.sep),'Use only an isolated development build');
- const installation=fs.mkdtempSync(path.join(root,'tmp/days-signed-installation-'));bundle=path.join(installation,'Script Call.app');fs.cpSync(source,bundle,{recursive:true,preserveTimestamps:true,dereference:false});
+ const installation=fs.mkdtempSync(path.join(root,'tmp/days-signed-installation-'));bundle=path.join(installation,'Script Call.app');fs.cpSync(source,bundle,{recursive:true,preserveTimestamps:true,dereference:false,verbatimSymlinks:true});
+ require('node:child_process').execFileSync('codesign',['--verify','--deep','--strict',bundle]);
  config={directory:path.join(installation,'direct-profile'),allowedParent:root};
  const location=require('../desktop/data-location.cjs').dataLocation({explicit:config.directory,defaultProfile:path.join(installation,'unused-default'),executable:path.join(bundle,'Contents/MacOS/Script Call')});assert(!location.error);assert.equal(location.storeDirectory,config.directory);
 }else config=JSON.parse(fs.readFileSync(path.join(bundle,'Contents/Resources/app/desktop/preview-profile.json')));
