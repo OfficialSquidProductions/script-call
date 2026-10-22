@@ -6,13 +6,15 @@ root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
 source=root/'.runtime/electron/Electron.app'
 if not source.exists():raise SystemExit('Electron 44.9.1 runtime is missing. See PROTOTYPE.md.')
-parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,default=root/'build/mac/Script Call.app');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--preview',action='store_true',help='Embed a dedicated local profile for safe direct launch; disables update downloads/install');parser.add_argument('--out',type=Path,default=root/'build/mac/Script Call.app');args=parser.parse_args()
 out=args.out.resolve();out.parent.mkdir(parents=True,exist_ok=True)
 stamp=datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 staging=out.with_name('Script Call-staging-'+stamp+'.app')
 shutil.copytree(source,staging,symlinks=True)
 resources=staging/'Contents/Resources';app=resources/'app';app.mkdir()
 for name in ['desktop','core','web']:shutil.copytree(root/name,app/name)
+if args.preview:
+ (app/'desktop/preview-profile.json').write_text(json.dumps({'directory':str(out.parent/'profile'),'allowedParent':str(root)}))
 (app/'fixtures').mkdir()
 for name in ['last-light.json','scenic-quiet.json','The Last Light.fountain']:shutil.copy2(root/'fixtures'/name,app/'fixtures'/name)
 shutil.copy2(root/'package.json',app/'package.json')

@@ -19,7 +19,8 @@
     "release:publish": "node tools/publish_release.cjs",
     "build:release:mac": "electron-builder --mac zip dmg --publish never",
     "build:reporter-preview": "python3 tools/package_mac.py --out \"build/reporter-preview/Script Call.app\"",
-    "test:reporter": "node tests/reporter-desktop.cjs"
+    "test:reporter": "node tests/reporter-desktop.cjs",
+    "test:days": "node tests/shooting-days-desktop.cjs"
   },
   "dependencies": {
     "fflate": "0.8.2",

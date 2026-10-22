@@ -9,8 +9,12 @@ const ROOT=path.resolve(__dirname,'..');let win,store,font,logo,updates,issueBus
 protocol.registerSchemesAsPrivileged([{scheme:'callsheet',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 app.setName('Script Call');
 // Keep the original default profile and origin: branding must never orphan projects.
-const profileLocation=require('./data-location.cjs').dataLocation({explicit:process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
+const previewFile=path.join(__dirname,'preview-profile.json'),previewProfile=fs.existsSync(previewFile)?JSON.parse(fs.readFileSync(previewFile,'utf8')):null;
+// A packaged development preview always has its own profile, including direct launch.
+const previewDirectory=previewProfile?require('./preview-location.cjs').previewLocation(previewProfile,process.env.CALLSHEET_DATA_DIR):null;
+const profileLocation=require('./data-location.cjs').dataLocation({explicit:previewDirectory||process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
 app.setPath('userData',profileLocation.userData);
+if(previewProfile){app.setAppLogsPath(path.join(profileLocation.userData,'logs'));app.setPath('crashDumps',path.join(profileLocation.userData,'crash-dumps'));}
 const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();
 const diagnostics=new Diagnostics({directory:path.join(profileLocation.userData,'diagnostics'),version:app.getVersion(),notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('diagnostic-status',state);}});
 if(primaryInstance){
@@ -41,7 +45,7 @@ const actions={
  reportCopy:a=>{clipboard.writeText(diagnostics.draft(a.id).text);return {copied:true};},
  reportExport:a=>saveFile(Buffer.from(diagnostics.draft(a.id).text),'Script-Call-Bug-Report.txt',{name:'Reviewed bug report',extensions:['txt']}),
  reportMail:a=>openDraft(diagnostics.draft(a.id),{app,shell}),
- updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>updates.download(),updateInstall:()=>{if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
+ updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>{if(previewProfile)throw Error('Preview builds cannot download or install updates.');return updates.download();},updateInstall:()=>{if(previewProfile)throw Error('Preview builds cannot install updates.');if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
  list:()=>store.list(),get:a=>store.get(a.id),save:a=>store.save(a.project,a.version),
  create:a=>store.create(D.newProject(String(a.title||'Untitled production').slice(0,200))),
  demo(a){if(!['last-light','scenic-quiet'].includes(a.name))throw Error('Unknown demo.');const p=JSON.parse(fs.readFileSync(path.join(ROOT,'fixtures',a.name+'.json'),'utf8'));p.fixtureId=p.id;p.id=D.id();p.createdAt=new Date().toISOString();p.sheetDefaults=D.sheetDefaults();p.days.forEach(d=>{d.layout=D.defaultLayout();d.sheetOverrides={};d.background=[];});return store.create(p);},
@@ -57,7 +61,7 @@ const actions={
   }finally{issueBusy=false;}
  },
  revision:a=>{const r=store.revision(a.projectId,a.revisionId);return {id:r.id,number:r.number,issued:r.issued,hash:r.hash,html:renderSheet(r.snapshot,logo,font?fs.readFileSync(font).toString('base64'):'')};},
- async exportPDF(a){const s=store.get(a.projectId),day=s.project.days.find(d=>d.id===a.dayId);const rev=a.revisionId||day?.lockedRevisionId;const r=rev?store.revision(a.projectId,rev):null;const bytes=r?r.pdf:await pdf(D.resolve(s.project,a.dayId));return saveFile(bytes,safeName(s.project.title+'_'+day.label+'_'+(r?'R'+r.number:'DRAFT'))+'.pdf',{name:'PDF document',extensions:['pdf']});},
+ async exportPDF(a){const s=store.get(a.projectId),day=s.project.days.find(d=>d.id===a.dayId);const rev=a.revisionId||day?.lockedRevisionId;const r=rev?store.revision(a.projectId,rev):null;const bytes=r?r.pdf:await pdf(D.resolve(s.project,a.dayId));return saveFile(bytes,safeName(s.project.title+'_'+(r?.snapshot.day||day).label+'_'+(r?'R'+r.number:'DRAFT'))+'.pdf',{name:'PDF document',extensions:['pdf']});},
  exportProject:a=>saveFile(A.exportArchive(store,a.projectId),safeName(store.get(a.projectId).project.title)+'.callsheet',{name:'Call Sheet project',extensions:['callsheet']}),
  async importProject(){const r=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Call Sheet project',extensions:['callsheet']}]});if(r.canceled)return {canceled:true};const stat=fs.statSync(r.filePaths[0]);if(stat.size>25*1024*1024)throw Error('Choose an archive under 25 MB.');return A.importAsCopy(store,fs.readFileSync(r.filePaths[0]));},
  async chooseProductionDesk(a){
@@ -104,6 +108,6 @@ app.whenReady().then(()=>{
  template.push({label:'Help',submenu:[{label:'Report a Bug…',click:()=>win.webContents.send('report-bug')}]});Menu.setApplicationMenu(Menu.buildFromTemplate(template));
  win.on('close',event=>{if(win&&!win.forceClose&&!win.webContents.isCrashed()){event.preventDefault();win.webContents.send('before-close');}});
  ipcMain.on('close-ready',event=>{if(event.sender===win.webContents){win.forceClose=true;win.close();}});
- win.loadURL('callsheet://app/index.html');updates.start();
+ win.loadURL('callsheet://app/index.html');if(!previewProfile)updates.start();
 }).catch(error=>{diagnostics.capture('startup-failure',error);dialog.showErrorBox('Script Call could not start',error.message);app.quit();});
 app.on('window-all-closed',()=>app.quit());app.on('will-quit',()=>{updates?.close();if(store)store.close();if(primaryInstance)diagnostics.clean();});
