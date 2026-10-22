@@ -1,0 +1,13 @@
+Script Call 0.3.5 — shooting days and week overview
+
+Right-click a shooting day, use Shift+F10, or choose its ⋯ button to change its date or delete it. Date edits preserve stable day/import IDs, calls, schedules and layouts. Only that day's weather approval resets; issued snapshots and original PDFs remain unchanged.
+
+Deleted days move into a saved Deleted days list and can be restored after reopening. Undo day change / Redo are available during the current project session. Other days, production cast/crew/scenes/locations and issued PDFs are retained, including when the last active day is deleted. Portable archives include deleted days; archives containing them require the new reader so older apps refuse them safely.
+
+Deletion asks for confirmation by default. Don't show again is remembered only after a successful confirmed deletion. Settings & help → Reset Warnings restores the confirmation.
+
+The four-pane button beside Shooting Days opens every day in scrollable Monday–Sunday week strips. Date gaps and same-date units are retained, undated days have their own group, and the sidebar shows at most seven records with paging where needed. Choose a week or a specific day; the app remembers each production's week, page and selection.
+
+The Last Light and legacy demos, G-Casper and Original Narrative templates, Production Desk import/reimport, project export, local reviewed bug/crash reporting and signed native updates remain included. Bug and crash reports: alexanderhosier@squidproductions.org. No report is sent automatically.
+
+Apple Silicon Macs, macOS 13 or later. Developer ID signed and Apple notarized. Windows and Intel Mac distribution remain unvalidated. Update through Check for updates → Download update → Save, back up & restart. Updating saves edits and creates a local recovery backup; keep independent production backups.

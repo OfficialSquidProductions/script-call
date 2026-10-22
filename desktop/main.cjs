@@ -14,7 +14,8 @@ const previewFile=path.join(__dirname,'preview-profile.json'),previewProfile=fs.
 const previewDirectory=previewProfile?require('./preview-location.cjs').previewLocation(previewProfile,process.env.CALLSHEET_DATA_DIR):null;
 const profileLocation=require('./data-location.cjs').dataLocation({explicit:previewDirectory||process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
 app.setPath('userData',profileLocation.userData);
-if(previewProfile){app.setAppLogsPath(path.join(profileLocation.userData,'logs'));app.setPath('crashDumps',path.join(profileLocation.userData,'crash-dumps'));}
+// Keep all application-owned diagnostics with the selected profile, including release QA copies.
+app.setAppLogsPath(path.join(profileLocation.userData,'logs'));app.setPath('crashDumps',path.join(profileLocation.userData,'crash-dumps'));
 const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();
 const diagnostics=new Diagnostics({directory:path.join(profileLocation.userData,'diagnostics'),version:app.getVersion(),notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('diagnostic-status',state);}});
 if(primaryInstance){

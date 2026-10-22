@@ -1,10 +1,10 @@
 # Script Call
 
-**0.3.4 adds local bug/crash reporting** addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. Stable 0.3.4 is signed/notarized and passed a real signed 0.3.3 → 0.3.4 native upgrade, plus unmodified old/new clients checking the production feed. See [REPORTING.md](REPORTING.md) for privacy and tests.
+**0.3.5 adds recoverable shooting-day management and a calendar-week overview.** It retains local bug/crash reporting addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. The release follows the established signing, notarization and disposable-data native upgrade gates. See [REPORTING.md](REPORTING.md) for privacy and tests.
 
 A Squid Productions Software
 
-Script Call **0.3.4** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
+Script Call **0.3.5** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 
@@ -41,9 +41,9 @@ The fictional Last Light fixture is the shared released Squid Productions exampl
 
 Squid Productions’ original code and included fictional demos are MIT licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for unchanged third-party font/dependency licenses and branding notices. The Last Light demo remains included with its stable scene, shot and import IDs.
 
-Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.4 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.4). Older prototypes need one manual installation to establish update trust. The existing workspace launcher retains `.local-data`; a currently running 0.3.3 app can install this update through its existing updater. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.
+Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.5 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.5). Older prototypes need one manual installation to establish update trust. The existing workspace launcher retains `.local-data`; a currently running 0.3.3 app can install this update through its existing updater. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.
 
-## Shooting day management (development)
+## Shooting day management
 
 Use a shooting day's right-click menu, Shift+F10, or its **⋯** button to **Change Date** or **Delete**. Date edits retain the stable day/source IDs and all contents; only that day's weather approval resets. Issued snapshots and original PDF bytes stay frozen. The sidebar/overview sort by date, keeping production order for equal dates; the underlying source schedule order is retained.
 
