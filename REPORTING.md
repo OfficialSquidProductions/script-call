@@ -1,10 +1,10 @@
-# Script Call bug and crash reporting — 0.3.4
+# Script Call bug and crash reporting
 
-Recipient: **alexanderhosier@squidproductions.org**. Stable 0.3.4 is signed/notarized and passed real signed 0.3.3 → 0.3.4 native acceptance. The anonymous stable ZIP/feed and unmodified old/new native clients were also verified after publication.
+Recipient: **alexanderhosier@squidproductions.org**. Reporting was introduced in 0.3.4 and is retained in stable 0.3.5, which is signed/notarized and passed all 15 real signed 0.3.4 → 0.3.5 native acceptance checks. The anonymous stable ZIP/feed and unmodified old/new native clients were also verified after publication.
 
 ## Use the app or isolated local preview
 
-Installed 0.3.3 users can choose Check for updates, Download update, then Save, back up & restart now. The current running app is left intact until the user chooses installation.
+Update-enabled installations can choose Check for updates, Download update, then Save, back up & restart now. The current running app is left intact until the user chooses installation.
 
 For separate local testing, double-click `Start Script Call Preview.command`. It launches `build/reporter-preview/Script Call.app` with its own `.reporter-preview-data` store. The normal `Start Script Call.command`, running released app, original `.local-data`, projects, template choices and issued PDFs are preserved. The preview includes The Last Light and legacy demo; loading a demo creates a separate production. This is a local ad-hoc signed build, not a notarized release. Do not replace a normal installation with it for update validation.
 
@@ -28,7 +28,7 @@ Clean shutdown is recorded only after normal shutdown/close-save handling. A nat
 
 ## Validation
 
-- `npm test`: 68 unit/regression tests, including privacy redaction, retention, private modes, corrupt logs, clean/interrupted sessions, immutable preview expiry, mail-client failure and full copy/export fallback.
+- `npm test`: 73 unit/regression tests, including privacy redaction, retention, private modes, corrupt logs, clean/interrupted sessions, immutable preview expiry, mail-client failure and full copy/export fallback.
 - `npm run test:reporter`: packaged native acceptance in a new disposable `tmp/reporter-native-*` profile. Generates real renderer errors and promise failures, crashes only that test renderer with Chromium's `Page.crash`, reopens, verifies the complete saved demo model/template and reviews the report. Abruptly terminates only the exact isolated main PID to verify unknown interruption classification. Mail and clipboard operations are stubbed; no test email is sent and the user's clipboard is not changed.
 - Existing desktop: 19 checks, including exact original issued-PDF preservation and restart data.
 - Existing G-Casper: 12 checks, including front/back and Letter/A4 PDFs and restart templates.
@@ -38,7 +38,7 @@ Local evidence lives under `verification/reporter-desktop/`, `verification/repor
 
 ## Release validation and future releases
 
-The exact Developer ID signed/notarized 0.3.4 app passed the eight reporting checks with `CALLSHEET_REPORTER_EXECUTABLE` selecting its exported executable. The real signed 0.3.3 → 0.3.4 native update passed 14 checks: metadata, download, native replacement/relaunch, identical issued PDF bytes, saved pending edit, template/import model/IDs, backup, demo/images and reporting review. No test email was sent. Source/config matches the signed bundle; only publisher tooling, tests and documentation changed after its build.
+The exact Developer ID signed/notarized 0.3.5 app passed the eight reporting checks with `CALLSHEET_REPORTER_EXECUTABLE` selecting its exported executable. The real signed 0.3.4 → 0.3.5 native update passed 15 checks, including shooting-day warning preferences and actual recovery backup contents: metadata, download, native replacement/relaunch, identical issued PDF bytes, saved pending edit, template/import model/IDs, backup, demo/images and reporting review. No test email was sent. Source/config matches the signed bundle; only publisher tooling, tests and documentation changed after its build.
 
 The release workflow first uploads a prerelease, leaving stable clients untouched until acceptance passes. Native acceptance selects its signed version-specific public metadata only inside the disposable old test process; Ed25519, SHA-512 and native code-signature checks remain unchanged. Stable promotion requires matching native-acceptance artifact evidence and re-verifies every remote asset digest/size. See RELEASING.md for tested commands. Existing updater trust/configuration/storage IDs remain unchanged. No new credentials, paid services, keys or security permissions are needed.
 

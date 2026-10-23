@@ -1,6 +1,6 @@
 # Script Call
 
-**0.3.5 adds recoverable shooting-day management and a calendar-week overview.** It retains local bug/crash reporting addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. The release follows the established signing, notarization and disposable-data native upgrade gates. See [REPORTING.md](REPORTING.md) for privacy and tests.
+**0.3.5 adds recoverable shooting-day management and a calendar-week overview.** It retains local bug/crash reporting addressed to alexanderhosier@squidproductions.org, with review before sharing and mail-draft/copy/export choices. Stable 0.3.5 is signed/notarized and passed the real 0.3.4 → 0.3.5 native upgrade and unmodified old/new production-feed checks. See [REPORTING.md](REPORTING.md) for privacy and tests.
 
 A Squid Productions Software
 
@@ -33,7 +33,7 @@ Production Desk imports are previewed before commitment, backed up before change
 
 The updater implementation uses `electron-updater`, an Ed25519-signed metadata envelope and SHA-512 artifact verification. It checks only compatible stable versions for the current platform and architecture, refuses downgrades, and requires native code-signature checks. Automatic checks run after startup and daily when enabled; download and restart require a choice. Installation flushes pending edits and makes a SQLite backup. Failed or offline checks keep the current app usable.
 
-**The source is public under MIT and the approved update endpoint is configured.** Notarized **0.3.4** has passed a real signed native 0.3.3 → 0.3.4 download, bundle replacement and restart. That test preserved an unsaved edit, template choice, exact issued PDF bytes, import IDs and local edits, demo and images, and verified the reporting review flow. Version 0.3.2 remains superseded/prerelease. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
+**The source is public under MIT and the approved update endpoint is configured.** Notarized **0.3.5** passed all 15 real signed 0.3.4 → 0.3.5 native upgrade checks. They preserved an unsaved edit, template choice, exact issued PDF bytes, import IDs and local edits, demo/images, actual recovery backup contents and update preferences, and verified reporting plus shooting-day warning suppression/reset across restart. Version 0.3.2 remains superseded/prerelease. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
 
 The fictional Last Light fixture is the shared released Squid Productions example: 8 scenes, 16 shots, 3 shooting days, scene 8 unscheduled. Quiet Hours remains a separately labeled legacy example. Third-party licenses and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

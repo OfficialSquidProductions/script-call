@@ -6,7 +6,22 @@ Binary assets and signed update metadata: https://github.com/OfficialSquidProduc
 
 ## Current status and website coordination
 
-**0.3.4 is the public stable notarized release; its real signed 0.3.3 → 0.3.4 native upgrade passed.** It adds local bug/crash reporting to alexanderhosier@squidproductions.org with full review, explicit mail draft and copy/export fallback. The tested candidate has been promoted after remote asset verification; no report is sent automatically.
+**0.3.5 is the public stable Developer ID signed and Apple-notarized release.** It adds stable-ID shooting-date editing, recoverable deletion, confirmation suppression and Reset Warnings, and the seven-record sidebar with a scrollable calendar-week overview. G-Casper, Original Narrative, both demos, Production Desk import/reimport, local reviewed reporting and the existing update trust key remain included.
+
+The exact notarized app passed 73 unit/update/release checks, 19 general desktop checks, 12 G-Casper checks, 12 packaged import/reimport checks, 8 reporter/crash checks, 11 shooting-day checks and packaged smoke QA. The real signed **0.3.4 → 0.3.5 native upgrade passed all 15 checks**, including actual bundle replacement/relaunch, the same profile without launcher environment, pending save, original issued PDF bytes, import IDs/model/local edits, the contents of the recovery backup, update preferences, and warning suppression/reset across restart. PDF SHA-256 before/after: `05e57b7926443c7f98a088902ff260bc686e75f693bfaa7bd0ca9ca26729c946`.
+
+Anonymous public verification passed: the stable alias ZIP matches the immutable artifact at **131,315,002 bytes**, SHA-256 `3e4c8b888174ba051032a36fa6e52163b0027b8eed37318b227787352e82a04f`; its SHA-512 matches the Ed25519-signed feed. Unmodified signed 0.3.4 offers 0.3.5 through the production feed; unmodified 0.3.5 reports current. Local evidence: `verification/live-update-0.3.4-to-0.3.5/result.json`, `verification/0.3.5-notarization.json`, `verification/script-call-public-0.3.5.json` and the exact-build regression logs. Apple accepted job `29e15617-40d9-43e2-8685-667779cd21a2`. Signed metadata expires 2026-11-21T23:39:49.696Z.
+
+- [Stable download](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip)
+- [Immutable 0.3.5 ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/download/v0.3.5/Script-Call-0.3.5-darwin-arm64.zip)
+- [0.3.5 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.5)
+- [Signed stable feed](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/stable-darwin-arm64.json)
+
+The existing website uses the stable download alias; its `/updates/` stays HTML and is not the native feed. Bug/crash reports remain addressed to **alexanderhosier@squidproductions.org**, reviewed before sharing. Release tests used disposable profiles and installations; the installed user app and real projects were not replaced or opened. Apple Silicon/macOS 13+ is validated. Windows/Intel native distribution remains unvalidated. No new credentials, signing keys, domain or DNS settings are needed.
+
+## Previous 0.3.4 release verification
+
+**0.3.4 was the previous public stable notarized release; its real signed 0.3.3 → 0.3.4 native upgrade passed.** It adds local bug/crash reporting to alexanderhosier@squidproductions.org with full review, explicit mail draft and copy/export fallback. The tested candidate has been promoted after remote asset verification; no report is sent automatically.
 
 Native acceptance passed all 14 checks, including real download/native replacement/relaunch, the same custom data store without launcher environment, pending edit, Narrative template, exact issued PDF bytes, import IDs/local edits, backup, demo/images and the reporting review flow. PDF SHA-256 before/after: `ff98e07218ccad06355bd2ce928871d54003dd27aabac6fb3e763cf267b12378`. The exact signed/notarized app also passed all eight isolated reporting/crash checks. Unit/update/release checks: 68; existing desktop: 19; G-Casper: 12; packaged importer: 11. Local evidence: `verification/live-update-0.3.3-to-0.3.4/result.json`, `verification/script-call-0.3.4-notarized-reporter.json` and release logs.
 
@@ -19,7 +34,7 @@ Final public verification passed: an anonymous stable alias ZIP matched the sign
 
 Apple Silicon, macOS 13+. Older update-disabled prototypes need one manual bootstrap. Currently running 0.3.3 users can install through Check for updates; the existing local app and original `.local-data` have not been replaced or opened by release tests. Automatic install-on-quit remains disabled. Version 0.3.2 remains superseded/prerelease after its historical asset-permission bug; never reactivate or overwrite its files.
 
-The website at https://scriptcall.squidproductions.org/ uses the stable download alias. Its release/help text needs the 0.3.4 reporting information; this task does not redesign or edit gh-pages. Its `/updates/` is HTML, so the app retains the signed GitHub JSON feed. Windows/Intel signing and native distribution remain unvalidated.
+The website at https://scriptcall.squidproductions.org/ uses the stable download alias. The website now retains its 0.3.4 reporting guidance and visible support address; release/download text updates use the existing gh-pages workflow. Its `/updates/` is HTML, so the app retains the signed GitHub JSON feed. Windows/Intel signing and native distribution remain unvalidated.
 
 ## Local signing key and trust
 
