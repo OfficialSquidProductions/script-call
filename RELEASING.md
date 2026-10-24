@@ -4,13 +4,19 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
-## 0.3.6 candidate preparation
+## 0.3.6 release validation
 
-The next release combines cast/crew availability with removal of bundled Last Light and legacy Quiet Hours demo loaders/resources. Fresh profiles and new productions are blank. Existing saved/imported projects, stable source/person/day IDs, availability, templates, issued PDFs and portable archives remain supported. Synthetic regression fixtures live under `tests/fixtures/` only. Stable remains 0.3.5 until the signed 0.3.6 candidate passes exact-build tests and real native-upgrade acceptance. No Windows or Intel release is validated.
+0.3.6 combines cast/crew availability with removal of bundled Last Light and legacy Quiet Hours demo loaders/resources. Fresh profiles and new productions are blank. Existing saved/imported projects, stable source/person/day IDs, availability, templates, issued PDFs and portable archives remain supported. Synthetic fixtures live under `tests/fixtures/` only.
+
+The exact signed/notarized app passed 89 unit/update/release checks (two optional private-provenance checks skipped), 19 general desktop, 12 G-Casper, 12 importer, 8 reporting/crash, 11 shooting-day and 11 availability checks, plus packaged smoke. The real **0.3.5 → 0.3.6 native upgrade passed all 16 checks**, including actual public download/native replacement/relaunch, the same custom profile without launcher environment, pending save, exact issued PDF bytes, import IDs/model/local edits, manually recorded availability, recovery backup contents, update preferences, warning suppression/reset across restart and blank new productions. No renderer errors occurred. Original/after PDF SHA-256: `a1c1580998c7bfd02d06bc924c06fd5ba24904da69245d888697a0481c196f26`.
+
+Apple accepted job `4a5bce70-3ce7-4a65-94fb-2c7cd9ed79db`. Signature, staple and Gatekeeper checks passed. The ZIP is 131,307,874 bytes, SHA-256 `d708080ac132707cd161ab480a732f50223a5293b8dfd1d695309fcaaf6230d8`; its SHA-512 is authenticated by the existing Ed25519 update key. Metadata expires 2026-11-23T22:21:38.131Z. Evidence: `verification/0.3.6-release-checkpoint.json`, exact-build regression logs and `verification/live-update-0.3.5-to-0.3.6/result.json`. Promotion still requires matching native acceptance evidence and public asset verification.
+
+Apple Silicon/macOS 13+ is validated. Windows, Intel Mac and Linux distributions remain unvalidated. The installed user app, real projects, domain/DNS settings and old releases remain unchanged. No new credentials were created.
 
 ## Previous 0.3.5 status and website coordination
 
-**0.3.5 is the public stable Developer ID signed and Apple-notarized release.** It adds stable-ID shooting-date editing, recoverable deletion, confirmation suppression and Reset Warnings, and the seven-record sidebar with a scrollable calendar-week overview. G-Casper, Original Narrative, both demos, Production Desk import/reimport, local reviewed reporting and the existing update trust key remain included.
+**0.3.5 was the previous public stable Developer ID signed and Apple-notarized release.** It adds stable-ID shooting-date editing, recoverable deletion, confirmation suppression and Reset Warnings, and the seven-record sidebar with a scrollable calendar-week overview. G-Casper, Original Narrative, both demos, Production Desk import/reimport, local reviewed reporting and the existing update trust key remain included.
 
 The exact notarized app passed 73 unit/update/release checks, 19 general desktop checks, 12 G-Casper checks, 12 packaged import/reimport checks, 8 reporter/crash checks, 11 shooting-day checks and packaged smoke QA. The real signed **0.3.4 → 0.3.5 native upgrade passed all 15 checks**, including actual bundle replacement/relaunch, the same profile without launcher environment, pending save, original issued PDF bytes, import IDs/model/local edits, the contents of the recovery backup, update preferences, and warning suppression/reset across restart. PDF SHA-256 before/after: `05e57b7926443c7f98a088902ff260bc686e75f693bfaa7bd0ca9ca26729c946`.
 
