@@ -1,7 +1,7 @@
 {
   "name": "callsheet-local-prototype",
   "productName": "Script Call",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "private": true,
   "description": "Script Call \u2014 local-first call sheets by Squid Productions",
   "author": "Squid Productions",

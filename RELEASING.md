@@ -4,7 +4,11 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
-## Current status and website coordination
+## 0.3.6 candidate preparation
+
+The next release combines cast/crew availability with removal of bundled Last Light and legacy Quiet Hours demo loaders/resources. Fresh profiles and new productions are blank. Existing saved/imported projects, stable source/person/day IDs, availability, templates, issued PDFs and portable archives remain supported. Synthetic regression fixtures live under `tests/fixtures/` only. Stable remains 0.3.5 until the signed 0.3.6 candidate passes exact-build tests and real native-upgrade acceptance. No Windows or Intel release is validated.
+
+## Previous 0.3.5 status and website coordination
 
 **0.3.5 is the public stable Developer ID signed and Apple-notarized release.** It adds stable-ID shooting-date editing, recoverable deletion, confirmation suppression and Reset Warnings, and the seven-record sidebar with a scrollable calendar-week overview. G-Casper, Original Narrative, both demos, Production Desk import/reimport, local reviewed reporting and the existing update trust key remain included.
 
@@ -62,7 +66,7 @@ Use existing Xcode authentication and manual developer-id options. Upload succes
 
 ## Prepare immutable artifacts
 
-Increase `package.json` and lockfile versions and write release notes. Preserve the app ID, origin, profile, SQLite/archive schema, recovery filename and stable demo/import IDs. Include The Last Light and legacy demo. Do not replace an already published versioned artifact.
+Increase `package.json` and lockfile versions and write release notes. Preserve the app ID, origin, profile, SQLite/archive schema, recovery filename and stable demo/import IDs. Exclude test-only fixtures and demo scripts from shipping resources; preserve previously saved/imported project records. Do not replace an already published versioned artifact.
 
 ```sh
 npm run release:prepare -- build/Script-Call-VERSION-darwin-arm64.zip 'build/notarized/VERSION/Script Call.app' arm64 release-notes/VERSION.txt build/releases
@@ -89,7 +93,7 @@ Replace PREVIOUS/VERSION with exact versions. The pre-promotion native test rout
 
 Verify the final public path anonymously: Ed25519 metadata signature, alias byte count/SHA-512 equal to the immutable ZIP, Developer ID/staple/Gatekeeper, and an unmodified previous client discovering the new version through the stable feed. The updates repository's tags refer to minimal release metadata; the corresponding source tag lives in the public MIT source repository. No new CI, subscription or paid hosting is used. Keep `/updates/` HTML out of the native feed. The website should use the stable download alias and update release text only after promotion.
 
-Native acceptance uses signed notarized N and N+1, actual metadata/download/install/relaunch, an isolated persisted custom store, local edits, both templates, Production Desk import IDs, an issued PDF byte hash and a new separate Last Light demo after upgrade. Record signature/ticket/Gatekeeper checks and exact public URLs/hashes. Also test offline, invalid signatures/hashes, wrong OS/architecture/channel and failed save/backup handling.
+Native acceptance uses signed notarized N and N+1, actual metadata/download/install/relaunch, an isolated persisted custom store, local edits, both templates, Production Desk import IDs, an issued PDF byte hash, stable saved fixture records, availability, and blank new production after upgrade. Record signature/ticket/Gatekeeper checks and exact public URLs/hashes. Also test offline, invalid signatures/hashes, wrong OS/architecture/channel and failed save/backup handling.
 
 ## Data safety and recovery
 

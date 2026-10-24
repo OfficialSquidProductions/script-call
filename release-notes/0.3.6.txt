@@ -1,0 +1,11 @@
+Script Call 0.3.6 — cast/crew availability and blank production startup
+
+Production Data now includes Cast availability and Crew availability spreadsheets beside Add. Record unknown availability, all-day availability, unavailable dates, or multiple time windows, including overnight windows, across the production date span. Date navigation, search and undo/redo support longer productions.
+
+Call-sheet cast/crew assignments show red text/icon advisories when recorded availability conflicts with their full scheduled interval. Unknown information remains distinct from a confirmed conflict. Warnings explain the person, production-local date/time and allowed window; they do not change times or block saving. Availability follows stable person IDs through renaming, save/reopen, portable project export/import and Production Desk reimport.
+
+Bundled Last Light and legacy Quiet Hours demo scripts, load buttons and loader actions have been removed. Fresh installations and new productions start blank. Existing saved or imported projects derived from those examples remain intact and loadable. Original Narrative and the other call-sheet templates remain available; older project formats remain supported.
+
+Retains recoverable shooting-day deletion/date editing, week overview, G-Casper layouts, reviewed Production Desk import, immutable issued PDFs, backups, local bug/crash reporting and signed updates. Bug reports remain addressed to alexanderhosier@squidproductions.org, with review before sharing.
+
+Apple Silicon Mac, macOS 13 or later. Windows, Intel Mac and Linux distributions are not validated for this release. Availability-containing portable archives require reader version 4; keep an original backup when handing projects to older apps.
