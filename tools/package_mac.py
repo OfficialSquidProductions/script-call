@@ -15,8 +15,6 @@ resources=staging/'Contents/Resources';app=resources/'app';app.mkdir()
 for name in ['desktop','core','web']:shutil.copytree(root/name,app/name)
 if args.preview:
  (app/'desktop/preview-profile.json').write_text(json.dumps({'directory':str(out.parent/'profile'),'allowedParent':str(root)}))
-(app/'fixtures').mkdir()
-for name in ['last-light.json','scenic-quiet.json','The Last Light.fountain']:shutil.copy2(root/'fixtures'/name,app/'fixtures'/name)
 shutil.copy2(root/'package.json',app/'package.json')
 lock=json.loads((root/'package-lock.json').read_text())
 production=set()
@@ -51,6 +49,6 @@ if verify.returncode:raise SystemExit(verify.stderr)
 # The launch target only changes after the new bundle has been signed and verified.
 if out.exists():out.rename(out.with_name('Script Call-previous-'+stamp+'.app'))
 staging.rename(out)
-manifest={'app':str(out),'architecture':'darwin-arm64','electron':'44.9.1','version':version,'signing':'Local ad-hoc signature only. No Developer ID identity, notarization, credentials or release feed.','codesignVerification':'passed','sourceHashes':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for folder in ['desktop','core','web','fixtures'] for p in (root/folder).rglob('*') if p.is_file()}}
+manifest={'app':str(out),'architecture':'darwin-arm64','electron':'44.9.1','version':version,'signing':'Local ad-hoc signature only. No Developer ID identity, notarization, credentials or release feed.','codesignVerification':'passed','sourceHashes':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for folder in ['desktop','core','web'] for p in (root/folder).rglob('*') if p.is_file()}}
 (root/'verification/mac-build.json').write_text(json.dumps(manifest,indent=2))
 print(out)

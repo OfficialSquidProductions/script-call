@@ -43,11 +43,8 @@
       "desktop/**",
       "core/**",
       "web/**",
-      "fixtures/*.json",
-      "fixtures/*.fountain",
       "package.json",
       "THIRD_PARTY_NOTICES.md",
-      "!fixtures/provenance.json",
       "licenses/**",
       "LICENSE"
     ],

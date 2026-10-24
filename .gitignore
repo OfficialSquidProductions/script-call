@@ -6,7 +6,7 @@ planning/
 verification/
 PROTOTYPE.md
 RESUME.md
-fixtures/provenance.json
+tests/fixtures/provenance.json
 .runtime/
 node_modules/
 build/
@@ -16,7 +16,7 @@ tmp/
 *.sqlite-*
 *.callsheet
 *.productiondesk
-!fixtures/last-light.productiondesk
+!tests/fixtures/last-light.productiondesk
 .env
 .env.*
 *.pem

@@ -1,6 +1,6 @@
 # Script Call releases
 
-Source: https://github.com/OfficialSquidProductions/script-call — public. Original code and fictional demo fixtures are MIT licensed; third-party licenses and branding notices remain in THIRD_PARTY_NOTICES.md.
+Source: https://github.com/OfficialSquidProductions/script-call — public. Original code and test-only fictional fixtures are MIT licensed; third-party licenses and branding notices remain in THIRD_PARTY_NOTICES.md.
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 

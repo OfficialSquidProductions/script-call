@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const P=require('../core/productiondesk.cjs'),D=require('../core/domain.cjs'),{Store}=require('../core/store.cjs'),A=require('../core/archive.cjs');
-const file=path.resolve(__dirname,'../fixtures/last-light.productiondesk'),raw=fs.readFileSync(file),envelope=()=>JSON.parse(raw),parse=v=>P.read(Buffer.from(JSON.stringify(v)));
+const file=path.resolve(__dirname,'./fixtures/last-light.productiondesk'),raw=fs.readFileSync(file),envelope=()=>JSON.parse(raw),parse=v=>P.read(Buffer.from(JSON.stringify(v)));
 const temp=()=>new Store(fs.mkdtempSync(path.join(os.tmpdir(),'pd-import-test-')));
 test('released v1 complete source maps exact IDs, script, all shots, notes, calendar, scenarios and blank operational data',()=>{
  const r=P.map(P.read(raw)),p=r.project,src=envelope().workspace.projects[0];

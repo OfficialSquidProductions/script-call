@@ -4,7 +4,7 @@
 
 A Squid Productions Software
 
-Script Call **0.3.5** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing demo scene/shot IDs, project formats and template choices are preserved.
+Script Call **0.3.5** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 
@@ -35,11 +35,11 @@ The updater implementation uses `electron-updater`, an Ed25519-signed metadata e
 
 **The source is public under MIT and the approved update endpoint is configured.** Notarized **0.3.5** passed all 15 real signed 0.3.4 → 0.3.5 native upgrade checks. They preserved an unsaved edit, template choice, exact issued PDF bytes, import IDs and local edits, demo/images, actual recovery backup contents and update preferences, and verified reporting plus shooting-day warning suppression/reset across restart. Version 0.3.2 remains superseded/prerelease. Windows signing/runtime remain unverified. The approved per-app Ed25519 key remains in the local login Keychain; only its public key ships. Clients contain no GitHub token. Source commits do not ship an update. [Release instructions and blockers](RELEASING.md) describe the complete preparation and publication commands.
 
-The fictional Last Light fixture is the shared released Squid Productions example: 8 scenes, 16 shots, 3 shooting days, scene 8 unscheduled. Quiet Hours remains a separately labeled legacy example. Third-party licenses and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Fresh profiles start with one blank production and an empty shooting day. Bundled Last Light and legacy Quiet Hours demos and their load buttons have been removed. Existing saved/imported example-derived productions remain intact and loadable. Regression fixtures live under `tests/fixtures/` and are excluded from app resources. Third-party licenses and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License
 
-Squid Productions’ original code and included fictional demos are MIT licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for unchanged third-party font/dependency licenses and branding notices. The Last Light demo remains included with its stable scene, shot and import IDs.
+Squid Productions’ original code and test-only fictional fixtures are MIT licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for unchanged third-party font/dependency licenses and branding notices. The test-only Last Light fixture retains its stable scene, shot and import IDs for compatibility checks.
 
 Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.5 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.5). Older prototypes need one manual installation to establish update trust. The existing workspace launcher retains `.local-data`; a currently running 0.3.3 app can install this update through its existing updater. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.
 
