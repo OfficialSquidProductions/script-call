@@ -63,7 +63,7 @@
   for(let count=0;date<=last&&count<8;date=addDate(date,1),count++){
    const a=allowed(p,person.id,date,zone);if(a.begin===null||a.finish===null){unknown.push(date+': ambiguous local midnight.');continue;}
    const start=Math.max(range.start,a.begin),end=Math.min(range.point?range.start+1:range.end,a.finish);if(covered(start,end,a.intervals))continue;
-   if(a.r.state==='unknown'||a.uncertain)unknown.push(date+': availability unknown/not entered or a daylight-saving time needs review.');else conflicts.push({date,start,end,allowed:a.label});
+   if(a.r.state==='unknown'||a.uncertain)unknown.push(date+(a.uncertain?': an availability boundary is skipped or repeated by daylight saving; review the time.':': availability not entered.'));else conflicts.push({date,start,end,allowed:a.label});
   }
   const assigned=`${stamp(range.start,zone)}${range.point?'':' → '+stamp(range.end,zone)} (${zone})`,status=conflicts.length?'conflict':unknown.length?'unknown':'available';
   const message=conflicts.length?`${name}: outside recorded availability. Assigned ${assigned}. ${conflicts.map(c=>c.allowed==='Unavailable'?`${c.date}: Unavailable all day.`:`${c.date}: allowed ${c.allowed}.`).join(' ')}${unknown.length?' Some remaining times are unknown.':''}`:status==='unknown'?`${name}: availability unknown. Assigned ${assigned}. ${[...new Set(unknown)].join(' ')}`:`${name}: available for ${assigned}.`;
