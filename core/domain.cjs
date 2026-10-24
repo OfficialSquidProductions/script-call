@@ -1,6 +1,7 @@
 'use strict';
 const crypto=require('node:crypto');
 const SunCalc=require('suncalc');
+const Availability=require('../web/availability.js');
 const id=()=>crypto.randomUUID();
 const clone=x=>JSON.parse(JSON.stringify(x));
 const hash=x=>crypto.createHash('sha256').update(typeof x==='string'||Buffer.isBuffer(x)?x:JSON.stringify(x)).digest('hex');
@@ -25,7 +26,7 @@ function records(list,label){
  const ids=new Set();for(const r of list){if(!r||!ID.test(r.id)||ids.has(r.id))throw Error('Invalid or duplicate '+label+' ID.');ids.add(r.id);}return ids;
 }
 function validateProject(p){
- guard(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
+ guard(p);Availability.validate(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
  if(p.schema!==1||!ID.test(p.id)||typeof p.title!=='string'||p.title.length>200||typeof p.company!=='string')throw Error('Unsupported or invalid project.');
  if(!p.defaults||['generalCall','zone','meal','wrap','primaryLocationId','notes'].some(k=>typeof p.defaults[k]!=='string'))throw Error('Missing production defaults.');
  const people=records(p.people,'person'),locations=records(p.locations,'location'),scenes=records(p.scenes,'scene');records(p.days,'day');if(p.deletedDays!==undefined)records(p.deletedDays,'deleted day');const allDays=[...p.days,...(p.deletedDays||[])];records(allDays,'day');
@@ -97,6 +98,7 @@ function review(p,dayId){
   if(!time||!okDate(d.date)||!okZone(v.zone))continue;const options=candidates(addDate(d.date,offset),time,v.zone);if(!options.length)errors.push(label+': local time is skipped by daylight saving.');else if(options.length>1)errors.push(label+': local time repeats; change the time or timezone to disambiguate in this prototype.');
  }
  for(const c of d.calls){if(c.ready&&c.ready<(c.call||v.generalCall))warnings.push('Ready time precedes personal call: '+p.people.find(p=>p.id===c.personId)?.name);}
+ warnings.push(...Availability.assessDay(p,d).filter(a=>a.status!=='available').map(a=>a.message));
  errors.push(...printErrors(r));
  if(p.demo)warnings.push('Fictional demo data. Not for use as an operational call sheet.');
  return {errors:[...new Set(errors)],warnings:[...new Set(warnings)]};

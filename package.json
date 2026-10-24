@@ -20,7 +20,8 @@
     "build:release:mac": "electron-builder --mac zip dmg --publish never",
     "build:reporter-preview": "python3 tools/package_mac.py --out \"build/reporter-preview/Script Call.app\"",
     "test:reporter": "node tests/reporter-desktop.cjs",
-    "test:days": "node tests/shooting-days-desktop.cjs"
+    "test:days": "node tests/shooting-days-desktop.cjs",
+    "test:availability": "node tests/availability-desktop.cjs"
   },
   "dependencies": {
     "fflate": "0.8.2",
