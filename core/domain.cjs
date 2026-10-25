@@ -2,6 +2,7 @@
 const crypto=require('node:crypto');
 const SunCalc=require('suncalc');
 const Availability=require('../web/availability.js');
+const Days=require('../web/day-management.js');
 const id=()=>crypto.randomUUID();
 const clone=x=>JSON.parse(JSON.stringify(x));
 const hash=x=>crypto.createHash('sha256').update(typeof x==='string'||Buffer.isBuffer(x)?x:JSON.stringify(x)).digest('hex');
@@ -53,7 +54,7 @@ function validateProject(p){
  return p;
 }
 function defaultLayout(){return {preset:'gcasper',sceneColors:true,paper:'A4',clock:'24',temperature:'C',mono:false,includeContacts:false,order:ORDER.slice(),hidden:[],custom:[]};}
-function newDay(p,date=new Date().toISOString().slice(0,10)){
+function newDay(p,date=Days.nextDayDate(p.days)){
  return {id:id(),label:'Day '+String(p.days.length+1).padStart(2,'0'),date,unit:'A',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:p.days.length?clone(p.days.at(-1).layout):defaultLayout(),baseRevisionId:null};
 }
 function newProject(title='Untitled production'){

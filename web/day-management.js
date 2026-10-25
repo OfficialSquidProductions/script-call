@@ -5,6 +5,12 @@
  const copy=x=>JSON.parse(JSON.stringify(x));
  const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&s>='1900-01-01'&&s<='2100-12-31'&&Number.isFinite(Date.parse(s+'T12:00Z'))&&new Date(s+'T12:00Z').toISOString().slice(0,10)===s;
  const ordered=days=>days.map((day,index)=>({day,index})).sort((a,b)=>(validDate(a.day.date)?a.day.date:'9999').localeCompare(validDate(b.day.date)?b.day.date:'9999')||a.index-b.index).map(x=>x.day);
+ // Appending follows production sequence, not sidebar calendar sorting or selection.
+ function nextDayDate(days,today=new Date().toISOString().slice(0,10)){
+  const previous=days.at(-1)?.date;if(!validDate(previous))return today;
+  const date=new Date(previous+'T12:00Z');date.setUTCDate(date.getUTCDate()+1);const next=date.toISOString().slice(0,10);
+  return validDate(next)?next:today;
+ }
  function weeks(days){const groups=[];for(const d of ordered(days)){let key='undated',end='';if(validDate(d.date)){const ms=Date.parse(d.date+'T12:00Z'),offset=(new Date(ms).getUTCDay()+6)%7;key=new Date(ms-offset*86400000).toISOString().slice(0,10);end=new Date(ms+(6-offset)*86400000).toISOString().slice(0,10);}let g=groups.at(-1);if(g?.key!==key){g={key,end,days:[]};groups.push(g);}g.days.push(d);}return groups;}
  function apply(p,command){
   const {kind,id}=command;const index=p.days.findIndex(d=>d.id===id);p.deletedDays||=[];
@@ -22,5 +28,5 @@
   }
   throw Error('Unknown shooting day change.');
  }
- return {validDate,ordered,weeks,apply};
+ return {validDate,nextDayDate,ordered,weeks,apply};
 });
