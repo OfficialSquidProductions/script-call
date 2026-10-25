@@ -83,6 +83,6 @@ Add Day defaults to the calendar date after the final active day in production s
 
 The isolated preview is `build/next-day-preview/Script Call.app`, with dedicated direct-launch profile storage. Distribution follows the gated release workflow; preview builds do not update or replace installed apps.
 
-## Crew department suggestions (local development)
+## Crew department suggestions
 
-Production Data → Crew keeps Department editable and adds a native dropdown with the 17 supplied department presets. Type to filter, choose with the keyboard or mouse, or enter any custom name. Escape dismisses suggestions without accepting the highlighted option; typed text follows the existing autosave behavior. Tab follows normal form order. Existing department strings and crew grouping are not normalized, and cast fields remain unchanged. This addition is local only; 0.3.8 source/artifacts and the installed app remain unchanged.
+Production Data → Crew keeps Department editable and adds a native dropdown with the 17 supplied department presets. Type to filter, choose with the keyboard or mouse, or enter any custom name. Escape dismisses suggestions without accepting the highlighted option; typed text follows the existing autosave behavior. Tab follows normal form order. Existing department strings and crew grouping are not normalized, and cast fields remain unchanged. Distribution follows the gated release workflow; development previews keep dedicated storage and do not replace installed apps.

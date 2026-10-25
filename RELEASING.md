@@ -4,6 +4,12 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## 0.3.9 release validation
+
+0.3.9 adds native editable crew Department suggestions with the exact 17 requested presets. Existing/custom department strings, IDs and crew grouping are not normalized. Keyboard filtering/selection, mouse selection, Escape and normal focus remain native behavior. Cast fields stay unchanged.
+
+Release gates use disposable profiles/copies of the exact signed app: all unit and desktop regressions including department inputs, PDF/portable preservation, plus a real 0.3.8 → 0.3.9 native upgrade that preserves legacy custom department values and exercises the new combo box. Keep the candidate prerelease until acceptance passes. Windows, Intel Mac and Linux distributions remain unvalidated.
+
 ## 0.3.8 release validation
 
 0.3.8 makes Add Day propose the date after the final active production-order record, independent of sidebar sorting and selection. Manual date entry and Duplicate Day remain supported. Calendar arithmetic is UTC date based; first-day/unusable-date fallback retains today. Existing records are not changed.

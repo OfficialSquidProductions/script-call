@@ -1,0 +1,11 @@
+Script Call 0.3.9 — crew department suggestions
+
+In Production Data → Crew, Department is now an editable dropdown with typing/filtering and these 17 presets: DIRECTOR, PRODUCERS, CASTING, PRODUCTION, LOCATIONS, ART, CAMERA, ELECTRIC, GRIP, LOCATION SOUND, COSTUME DESIGN, HAIR & MAKEUP, STUNTS, DRIVERS, CATERING, EDITORIAL / POST, VFX.
+
+Choose with the keyboard or mouse, or type any custom department name. Escape dismisses suggestions without accepting the highlighted option; typed text follows the existing autosave behavior. Tab keeps normal form navigation. Existing mixed-case/custom names and crew grouping are preserved; cast fields are unchanged.
+
+Department values and stable person IDs survive save/reopen and portable export/import. Reviewed Production Desk reimport preserves manual crew records and custom departments. Existing issued PDFs remain unchanged.
+
+Retains next-day date defaults, recoverable production/day deletion, week overview, cast/crew availability, both templates, Production Desk import/reimport, portable projects, reviewed local reporting and signed updates. Support: alexanderhosier@squidproductions.org.
+
+Developer ID signed and Apple notarized for Apple Silicon Mac, macOS 13+. Windows, Intel Mac and Linux distributions remain unvalidated. No Apple App Store submission.
