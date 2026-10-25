@@ -90,7 +90,7 @@ function merge(current,incoming){
    const bm=new Map(before.map(x=>[x.id,x])),nm=new Map(next.map(x=>[x.id,x])),lm=new Map(local.map(x=>[x.id,x]));
    const orderUnchanged=same(local.map(x=>x.id),before.map(x=>x.id));
    let order=orderUnchanged?[...next.map(x=>x.id),...local.filter(x=>!nm.has(x.id)).map(x=>x.id)]:[...local.map(x=>x.id),...next.filter(x=>!bm.has(x.id)&&!lm.has(x.id)).map(x=>x.id)];
-   return order.filter(id=>lm.has(id)||!bm.has(id)).map(id=>{const l=lm.get(id),b=bm.get(id),n=nm.get(id);if(l?.lockedRevisionId){if(!same(b,n))conflicts.push(path+' '+id+': issued day preserved');return l;}if(!n){conflicts.push(path+' '+id+': removed at source; local record retained');return l;}if(!b)return l||D.clone(n);return walk(l,b,n,path+'.'+id);});
+   return order.filter(id=>lm.has(id)||!bm.has(id)).map(id=>{const l=lm.get(id),b=bm.get(id),n=nm.get(id);const entity=path==='production.people'?'people':path==='production.locations'?'locations':null;if(l&&entity&&require('../web/record-recovery.js').deleted(current,entity,id)){if(!same(b,n))conflicts.push(path+' '+id+': deleted record retained for recovery');return l;}if(l?.lockedRevisionId){if(!same(b,n))conflicts.push(path+' '+id+': issued day preserved');return l;}if(!n){conflicts.push(path+' '+id+': removed at source; local record retained');return l;}if(!b)return l||D.clone(n);return walk(l,b,n,path+'.'+id);});
   }
   if(same(local,before))return D.clone(next);
   if(same(local,next)||same(before,next))return local;

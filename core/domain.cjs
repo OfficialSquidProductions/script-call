@@ -3,6 +3,7 @@ const crypto=require('node:crypto');
 const SunCalc=require('suncalc');
 const Availability=require('../web/availability.js');
 const Days=require('../web/day-management.js');
+const Records=require('../web/record-recovery.js');
 const id=()=>crypto.randomUUID();
 const clone=x=>JSON.parse(JSON.stringify(x));
 const hash=x=>crypto.createHash('sha256').update(typeof x==='string'||Buffer.isBuffer(x)?x:JSON.stringify(x)).digest('hex');
@@ -27,7 +28,7 @@ function records(list,label){
  const ids=new Set();for(const r of list){if(!r||!ID.test(r.id)||ids.has(r.id))throw Error('Invalid or duplicate '+label+' ID.');ids.add(r.id);}return ids;
 }
 function validateProject(p){
- guard(p);Availability.validate(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
+ guard(p);Availability.validate(p);Records.validate(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
  if(p.schema!==1||!ID.test(p.id)||typeof p.title!=='string'||p.title.length>200||typeof p.company!=='string')throw Error('Unsupported or invalid project.');
  if(!p.defaults||['generalCall','zone','meal','wrap','primaryLocationId','notes'].some(k=>typeof p.defaults[k]!=='string'))throw Error('Missing production defaults.');
  const people=records(p.people,'person'),locations=records(p.locations,'location'),scenes=records(p.scenes,'scene');records(p.days,'day');if(p.deletedDays!==undefined)records(p.deletedDays,'deleted day');const allDays=[...p.days,...(p.deletedDays||[])];records(allDays,'day');
@@ -77,24 +78,27 @@ function solar(date,loc,zone){
 }
 function resolve(p,dayId){
  const d=p.days.find(d=>d.id===dayId);if(!d)throw Error('Shooting day not found.');const values={...p.defaults,...d.overrides};
- const loc=p.locations.find(l=>l.id===values.primaryLocationId)||null;const zone=Object.hasOwn(d.overrides,'zone')?values.zone:loc?.zone||values.zone;
+ const selected=p.locations.find(l=>l.id===values.primaryLocationId)||null,loc=selected&&!Records.deleted(p,'locations',selected.id)?selected:null;const zone=Object.hasOwn(d.overrides,'zone')?values.zone:selected?.zone||values.zone;
  const people=new Map(p.people.map(x=>[x.id,x])),scenes=new Map(p.scenes.map(x=>[x.id,x]));
  const weather=clone(d.weather);weather.stale=!!weather.key&&weather.key!==weatherKey(d,loc,zone)||weather.mode==='nws'&&Date.now()-Date.parse(weather.fetchedAt)>3600000;
  if(weather.stale)weather.approved=false;
- const calls=d.calls.map(c=>({...clone(c),person:clone(people.get(c.personId)),call:c.call||values.generalCall,inherited:!c.call}));
+ const activePeople=new Set(Records.active(p,'people').map(p=>p.id)),activeCalls=d.calls.filter(c=>activePeople.has(c.personId));
+ const sceneCopy=s=>s?{...clone(s),castIds:s.castIds.filter(id=>activePeople.has(id))}:null;
+ const calls=activeCalls.map(c=>({...clone(c),person:clone(people.get(c.personId)),call:c.call||values.generalCall,inherited:!c.call}));
  if(!d.layout.includeContacts)for(const c of calls){c.person.email='';c.person.phone='';}
- return {schema:1,importedFromProductionDesk:!!p.productionDesk,productionId:p.id,title:p.title,company:p.company,demo:!!p.demo,day:clone(d),values:{...values,zone},location:clone(loc),schedule:d.schedule.map(s=>({...clone(s),scene:s.type==='scene'?clone(scenes.get(s.sceneId)):null})),calls,weather,solar:solar(d.date,loc,zone),sheet:{...sheetDefaults(),...p.sheetDefaults,...d.sheetOverrides},dayNumber:p.days.indexOf(d)+1,totalDays:p.days.length,locations:clone(p.locations),advanceSchedule:p.days[p.days.indexOf(d)+1]?.schedule.filter(s=>s.type==='scene').map(s=>({...clone(s),scene:clone(scenes.get(s.sceneId))}))||[],advanceDay:p.days[p.days.indexOf(d)+1]?{label:p.days[p.days.indexOf(d)+1].label,date:p.days[p.days.indexOf(d)+1].date}:null,castNumbers:Object.fromEntries(p.people.filter(p=>p.type==='cast').map((p,i)=>[p.id,p.castNumber||String(i+1)])),resolvedAt:new Date().toISOString()};
+ return {schema:1,importedFromProductionDesk:!!p.productionDesk,productionId:p.id,title:p.title,company:p.company,demo:!!p.demo,day:{...clone(d),calls:clone(activeCalls)},values:{...values,zone},location:clone(loc),schedule:d.schedule.map(s=>({...clone(s),scene:s.type==='scene'?sceneCopy(scenes.get(s.sceneId)):null})),calls,weather,solar:solar(d.date,loc,zone),sheet:{...sheetDefaults(),...p.sheetDefaults,...d.sheetOverrides},dayNumber:p.days.indexOf(d)+1,totalDays:p.days.length,locations:clone(Records.active(p,'locations')),advanceSchedule:p.days[p.days.indexOf(d)+1]?.schedule.filter(s=>s.type==='scene').map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))}))||[],advanceDay:p.days[p.days.indexOf(d)+1]?{label:p.days[p.days.indexOf(d)+1].label,date:p.days[p.days.indexOf(d)+1].date}:null,castNumbers:Object.fromEntries(p.people.filter(p=>p.type==='cast').map((p,i)=>[p.id,p.castNumber||String(i+1)])),resolvedAt:new Date().toISOString()};
 }
 function review(p,dayId){
  const r=resolve(p,dayId),errors=[],warnings=[];const {day:d,values:v,location:loc}=r;
  if(!p.title.trim())errors.push('Enter a production title.');if(!okDate(d.date))errors.push('Choose a valid shooting date.');if(!okZone(v.zone))errors.push('Choose a valid IANA timezone.');if(!TIME.test(v.generalCall))errors.push('Enter a general call in HH:MM.');
- if(!loc)errors.push('Choose a primary location.');else {if(!loc.address.trim())errors.push('Enter the primary location address.');if(!loc.hospital.trim()||!loc.emergencyPhone.trim()||!loc.verified)errors.push('Review emergency facility details and mark them verified.');}
+ if(!loc)errors.push(Records.deleted(p,'locations',v.primaryLocationId)?'The primary location is deleted. Restore it or explicitly choose another location. Stored timezone remains unchanged.':'Choose a primary location.');else {if(!loc.address.trim())errors.push('Enter the primary location address.');if(!loc.hospital.trim()||!loc.emergencyPhone.trim()||!loc.verified)errors.push('Review emergency facility details and mark them verified.');}
  const called=new Set(d.calls.map(c=>c.personId));for(const c of d.calls){const person=p.people.find(p=>p.id===c.personId);if(person?.type==='cast'&&!d.schedule.some(s=>p.scenes.find(sc=>sc.id===s.sceneId)?.castIds.includes(c.personId)))warnings.push('Cast called without a scheduled scene: '+person.name);const hour=Number((c.call||v.generalCall).slice(0,2));if(hour<4||hour>=23)warnings.push('Extreme personal call: '+person?.name);}
+ for(const s of r.schedule)if(s.scene&&Records.deleted(p,'locations',s.scene.locationId))errors.push('Scheduled scene '+s.scene.number+' refers to a deleted location. Restore it or explicitly choose another location for the scene.');
  if(p.productionDesk){for(const c of r.calls.filter(c=>c.person.type==='cast'&&!c.person.name.trim()))warnings.push('Enter performer name for character: '+c.person.character);if(!r.calls.some(c=>c.person.type==='crew'))warnings.push('Crew details were not supplied by Production Desk. Enter and review called crew.');}
  if(!d.schedule.length)warnings.push('The daily schedule is empty.');if(!d.calls.length)warnings.push('No cast or crew have calls.');
  if(!r.weather.summary||!r.weather.approved||r.weather.stale)warnings.push('Weather is unavailable, stale, or not approved.');
  if(r.solar.status!=='Calculated offline')warnings.push(r.solar.status);
- const cast=new Set(d.schedule.flatMap(s=>p.scenes.find(a=>a.id===s.sceneId)?.castIds||[]));for(const personId of cast)if(!d.calls.some(c=>c.personId===personId))warnings.push('Missing cast call: '+p.people.find(a=>a.id===personId)?.name);
+ const cast=new Set(r.schedule.flatMap(s=>s.scene?.castIds||[]));for(const personId of cast)if(!d.calls.some(c=>c.personId===personId))warnings.push('Missing cast call: '+p.people.find(a=>a.id===personId)?.name);
  for(const [label,time,offset=0] of [['General call',v.generalCall,0],...d.calls.flatMap(c=>[[p.people.find(p=>p.id===c.personId)?.name,c.call||v.generalCall,c.offset],...['pickup','makeup','ready'].map(k=>[p.people.find(p=>p.id===c.personId)?.name+' '+k,c[k],c.offset])]),...d.schedule.map(s=>['Schedule',s.start,s.offset])]){
   if(!time||!okDate(d.date)||!okZone(v.zone))continue;const options=candidates(addDate(d.date,offset),time,v.zone);if(!options.length)errors.push(label+': local time is skipped by daylight saving.');else if(options.length>1)errors.push(label+': local time repeats; change the time or timezone to disambiguate in this prototype.');
  }
