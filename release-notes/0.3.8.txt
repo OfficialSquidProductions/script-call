@@ -1,0 +1,9 @@
+Script Call 0.3.8 — next shooting-day date
+
+Add Day now defaults to the next calendar date after the final active day in production sequence. For example, October 22 proposes October 23. Choosing an older day or viewing another week does not reset the appended date. Month/year boundaries, leap days and daylight-saving changes are handled using calendar dates.
+
+You can still edit the proposed date. Duplicate Day keeps its selected source date. The first day or an unusable preceding date retains the existing today fallback. Existing days, stable IDs, call times, availability, import links and issued PDFs are not changed.
+
+Retains confirmed recoverable whole-production deletion/restore, cast/crew availability, shooting-day management/week overview, both templates, Production Desk import/reimport, portable projects, local reviewed reporting and signed native updates. Support: alexanderhosier@squidproductions.org.
+
+Developer ID signed and Apple notarized for Apple Silicon Mac, macOS 13+. Windows, Intel Mac and Linux distributions remain unvalidated. No Apple App Store submission.

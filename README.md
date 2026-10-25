@@ -77,8 +77,8 @@ Deleting the last active production opens a new blank production. Restoring the 
 
 Build a separate preview with `python3 tools/package_mac.py --preview --out "build/production-delete-preview/Script Call.app"`. Its embedded direct-launch profile isolates projects, settings, logs, diagnostics and backups. `node --test tests/*.test.cjs` covers store/recovery regressions. The disposable Mac UI suite is `node tests/production-deletion-desktop.cjs`; it requires the session's explicit authorization for Playwright when a CUA-only restriction is active. Release QA also runs this suite against a disposable copy of the exact signed build via `CALLSHEET_PRODUCTION_DELETE_APP`. Never point a test at a real profile or installed user app.
 
-## Next shooting-day date (local development)
+## Next shooting-day date
 
 Add Day defaults to the calendar date after the final active day in production sequence, independent of the selected day or the sidebar's date sorting. Manually edit the proposed date as needed. Duplicate Day keeps its selected source date. A first day or unusable preceding date retains the existing today fallback. Date arithmetic uses calendar dates in UTC so host timezone and daylight-saving transitions cannot skip or repeat a day. Existing day dates and IDs are untouched.
 
-The isolated preview is `build/next-day-preview/Script Call.app`, with dedicated direct-launch profile storage. This improvement is local only; the public release and installed app are unchanged.
+The isolated preview is `build/next-day-preview/Script Call.app`, with dedicated direct-launch profile storage. Distribution follows the gated release workflow; preview builds do not update or replace installed apps.

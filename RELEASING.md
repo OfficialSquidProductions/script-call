@@ -4,6 +4,12 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## 0.3.8 release validation
+
+0.3.8 makes Add Day propose the date after the final active production-order record, independent of sidebar sorting and selection. Manual date entry and Duplicate Day remain supported. Calendar arithmetic is UTC date based; first-day/unusable-date fallback retains today. Existing records are not changed.
+
+Required gates: full unit and exact supported Mac UI regressions, notarization/security checks and a real 0.3.7 → 0.3.8 native upgrade in a disposable installation. The upgrade also rechecks production deletion/recovery, stable imported identities, availability, PDFs, preferences and new default/cancel/repeated-add/reopen behavior. Keep the candidate prerelease until acceptance passes. Windows, Intel Mac and Linux distributions remain unvalidated.
+
 ## 0.3.7 release validation
 
 0.3.7 adds Settings & Help → Delete Production with a named, scoped confirmation and a recoverable Deleted productions → Restore workflow. SQLite tombstones retain the complete original production and issued revision/PDF bytes; unrelated productions, app settings and external files remain unchanged. Backup precedes delete/restore; deleting the last active production creates one blank. Stale versions, repeated clicks and an active PDF issue fail safely. This additive change keeps older project files and availability/import identities compatible.
