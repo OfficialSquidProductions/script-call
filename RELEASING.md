@@ -8,6 +8,8 @@ Binary assets and signed update metadata: https://github.com/OfficialSquidProduc
 
 0.3.9 adds native editable crew Department suggestions with the exact 17 requested presets. Existing/custom department strings, IDs and crew grouping are not normalized. Keyboard filtering/selection, mouse selection, Escape and normal focus remain native behavior. Cast fields stay unchanged.
 
+The Mac department test uses `tests/support/native-popup-keyboard.cjs` for popup navigation. In the recorded 0.3.9 probe, CDP fill/typing delivered trusted ArrowDown/Enter DOM events to a focused, visible field but left `cam`; Electron `webContents.sendInputEvent` key-down/up selected `CAMERA`, matching native CUA input. This corrects test input routing for the native popup. It never assigns a DOM input value, and the original CAMERA/focus/save/PDF assertions remain required. Native popup QA needs a visible, focused isolated window. No shipping code changed for this correction. Evidence: `verification/0.3.9-input-probe.json` and the corrected department suite log.
+
 Release gates use disposable profiles/copies of the exact signed app: all unit and desktop regressions including department inputs, PDF/portable preservation, plus a real 0.3.8 → 0.3.9 native upgrade that preserves legacy custom department values and exercises the new combo box. Keep the candidate prerelease until acceptance passes. Windows, Intel Mac and Linux distributions remain unvalidated.
 
 ## 0.3.8 release validation
