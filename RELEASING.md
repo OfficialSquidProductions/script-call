@@ -4,6 +4,14 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## 0.3.7 release validation
+
+0.3.7 adds Settings & Help → Delete Production with a named, scoped confirmation and a recoverable Deleted productions → Restore workflow. SQLite tombstones retain the complete original production and issued revision/PDF bytes; unrelated productions, app settings and external files remain unchanged. Backup precedes delete/restore; deleting the last active production creates one blank. Stale versions, repeated clicks and an active PDF issue fail safely. This additive change keeps older project files and availability/import identities compatible.
+
+Release gates use disposable profiles and separate bundle copies only. The feature unit suite covers atomic rollback, legacy databases, exact issued PDFs/portable archives, import matching and retained recovery records; the Mac UI suite covers cancel, confirmation scope, repeated clicks, stale selection/version, backup failure, active PDF issue, restart and last-production restore. The native 0.3.6 → 0.3.7 acceptance test additionally checks deletion/recovery of an upgraded production with exact project/PDF contents and an unrelated imported production intact. Publish only after all exact-build and native-upgrade gates pass.
+
+Apple Silicon/macOS 13+ is the supported validated target; Windows, Intel Mac and Linux distributions remain unvalidated. Preserve the installed user app and real projects, old releases, support email, domains and credentials. No App Store submission is part of this release.
+
 ## 0.3.6 release validation
 
 0.3.6 combines cast/crew availability with removal of bundled Last Light and legacy Quiet Hours demo loaders/resources. Fresh profiles and new productions are blank. Existing saved/imported projects, stable source/person/day IDs, availability, templates, issued PDFs and portable archives remain supported. Synthetic fixtures live under `tests/fixtures/` only.

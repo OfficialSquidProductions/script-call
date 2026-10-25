@@ -1,0 +1,9 @@
+Script Call 0.3.7 — recoverable production deletion
+
+Settings & Help now includes Delete Production. A confirmation always names the selected production and explains that all its shooting days, people, availability, schedules, layouts, import links and issued revisions/PDFs move together to Deleted productions. Cancel leaves it unchanged.
+
+Recover a removed production through Settings & Help → Deleted productions → Restore, including after reopening. Original project/person/day IDs, contents and issued PDF bytes are retained. A local backup is made before deletion or restoration. Removing the last active production creates a separate blank production; unrelated productions, app preferences and external imported/exported files remain unchanged. Stale confirmations, repeated clicks, failed backups and an active PDF issue are handled safely.
+
+Retains cast/crew availability, recoverable shooting-day management and week overview, G-Casper and Original Narrative templates, Production Desk import/reimport, portable projects, immutable issued PDFs, reviewed local bug/crash reporting and signed native updates. New productions remain blank; bundled demos remain removed. Support: alexanderhosier@squidproductions.org.
+
+Developer ID signed and Apple notarized for Apple Silicon Mac, macOS 13+. Windows, Intel Mac and Linux distributions remain unvalidated. No Apple App Store submission.
