@@ -4,6 +4,16 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## 0.3.10 release validation
+
+0.3.10 adds Maps-first independent shooting/parking records, manual address overrides and collapsed Advanced coordinates, plus distinct crew O/C — On Call availability. Explicit link text is a reviewed suggestion; short/opaque/place-path/coordinate-only links need manual address entry. No online geocoder or new credential is used. Existing template-specific basecamp overrides remain independent. O/C marks the whole entered production-local date as available, not on set; attendance/call times are unchanged. O/C archives declare minimum reader5; old projects/archives remain readable.
+
+The exact notarized build passed **113 unit checks** (two optional private-provenance checks skipped), **105 Mac UI checks** and packaged smoke. The actual **0.3.9 → 0.3.10 native upgrade passed all22 checks**, including public signed ZIP download, real replacement/relaunch, existing project/import/person/location identities, pending edits, exact issued PDFs, backup and warning/update preferences, recoverable deletion, next-day defaults and department suggestions. Upgraded Maps/manual parking/O-C edits survived actual portable export and restart; call assignment/times were unchanged. No renderer errors occurred. Original/restored PDF SHA-256: `ff07150a81d5260d4ae01d6738a9b8bb3e500a56a4ce50b11241ba558b3a0351`.
+
+Apple accepted job `2174947e-3c7d-4716-922f-9753b02363e7`. Signature, staple and Gatekeeper passed. Immutable ZIP: 131,314,299 bytes; SHA-256 `c1ed93f8b8f3060b01e21c7f7b54032b6e4df1ddfb987abda8aea233492e1281`. Ed25519 metadata authenticates SHA-512 and expires 2026-11-24T16:51:48.462Z. Exact source matches shipped runtime. Evidence: `verification/0.3.10-release-checkpoint.json`, exact-build suite logs and `verification/live-update-0.3.9-to-0.3.10/result.json`. Tests use authenticated ordinary-copy disposable fixtures, outside the command sandbox with Mac unlocked for normal native authorization. No security bypass or manual helper/service changes. Installed user app and real productions remain untouched. Apple Silicon/macOS13+ target validated; Intel Mac, Windows/Linux and formal touch/screen-reader audits remain unvalidated. No new credentials, DNS changes, historical-release deletion or App Store submission.
+
+The native-input test helper now waits up to five seconds for actual macOS activation after authorization/relaunch before checking its unchanged focus guard and sending key pairs. The first0.3.10native attempt stopped at that guard after18checks; its actual replacement had succeeded. The corrected helper passed the exact-build department suite and the complete22-check rerun. No application/runtime code or published candidate assets changed for this test correction. Original failure logs remain retained.
+
 ## 0.3.9 release validation
 
 0.3.9 adds native editable crew Department suggestions with the exact 17 requested presets. Existing/custom department strings, IDs and crew grouping are not normalized. Keyboard filtering/selection, mouse selection, Escape and normal focus remain native behavior. Cast fields stay unchanged.
