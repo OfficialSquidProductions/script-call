@@ -1,7 +1,8 @@
-# Local scene editor enhancement
+# Scene editor enhancement
 
-Local work on top of released 0.3.11 (`778cc21`). Package version remains 0.3.11;
-this feature has not been pushed, published or installed over the user app.
+Introduced in Script Call 0.3.12, based on released 0.3.11 (`778cc21`) and local
+feature commit `cb5009a`. Release QA uses disposable profiles and installations;
+the installed user app and real productions are untouched.
 
 ## Scene cards and recovery
 
@@ -84,13 +85,15 @@ Original Narrative continue to render their existing exact eighth-based values.
   store and restored. Scene/person/location IDs and original PDFs remained exact;
   revision IDs were remapped normally for a project copy. Reader requirement went
   from7 to2 after all scene flags were restored in that synthetic fixture.
-- Final preview is locally ad-hoc signed. Direct launch embeds dedicated projects,
+- The separate local preview is ad-hoc signed. Direct launch embeds dedicated projects,
   preferences, logs, diagnostics, crash and backup storage; update installation is
-  disabled. Current installed app matches the already published0.3.11 exactly;
+  disabled. The installed app remains the already published0.3.11;
   none of these local scene changes were installed and no real production was edited.
 
 Evidence: `verification/scene-feature-unit.txt`, `scene-feature-isolation.json`,
 `scene-feature-native-proof.json`, `scene-feature-integrity.json` and the final
-feature report. No feature-specific Playwright/release-upgrade suite was run under
-this local-only request. Windows, Intel Mac, physical touch and formal screen-reader
-QA remain untested. No notarization upload, publication, feed/site change or install.
+feature report. The subsequent explicitly authorized 0.3.12 release passed129 exact-build Mac UI
+checks, packaged smoke and28 real 0.3.11→0.3.12 native-upgrade checks, in addition
+to130 unit tests. The public release is Developer ID signed and Apple notarized.
+See RELEASING.md for exact evidence. Windows, Intel Mac, physical touch and formal
+screen-reader QA remain untested. The user app was not replaced by release QA.

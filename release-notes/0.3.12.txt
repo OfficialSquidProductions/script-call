@@ -1,0 +1,10 @@
+Script Call 0.3.12
+
+• Scene cards collapse to their scene number and title, with Collapse all/Expand all and remembered local open state. New scenes open for editing.
+• Delete Scene confirms the selected scene and linked schedule scope, makes a backup and retains the full record for Restore. Recover from Deleted scenes beside Add scene or in Settings & help. Original IDs, scripts, shots, cast, locations, page lengths and schedule links/times stay stored. Independent personal calls remain unchanged and should be reviewed explicitly. Nothing is permanently erased.
+• Length (pages) accepts mixed fractions such as 2 3/8, fraction-only values such as 3/8, whole pages and exact decimals. Values stay at exact eighth-page precision; unsupported/incomplete input is kept visible for correction without rounding or overwriting the saved length. Tab/Enter commits; Escape cancels the edit. Labels clarify page units instead of raw eighth counts.
+• Deleted scenes leave draft/advance schedules, page totals and availability checks. Schedule movement skips retained hidden links. Restore reactivates retained current relationships without overwriting other edits. Original issued snapshots and PDF bytes remain unchanged.
+
+Projects with scene-recovery metadata require this release or newer when sharing a portable project (reader7). Existing saved projects, Production Desk import, templates, Maps/manual-address fallback, O/C availability, member/location/production recovery, reporting and signed updates remain supported. Short or opaque Maps links still require manual address entry.
+
+Apple Silicon macOS13+. Windows, Intel Mac and Linux distribution remain unvalidated. No App Store submission.
