@@ -2,6 +2,8 @@
 
 Implemented on top of Script Call 0.3.12 for the authorized 0.3.13 patch release. Release and native upgrade acceptance use disposable profiles. The installed user app and real productions remain untouched.
 
+The later local start-only availability follow-up supersedes the interval warning behavior described below; see [CREW_START_AVAILABILITY.md](CREW_START_AVAILABILITY.md). Historical 0.3.13 verification remains recorded here.
+
 ## Behavior
 
 - Daily scene schedule rows edit notes instead of start, offset and duration. Notes initially follow the scene's reusable production notes; a daily override can be blank or multiline. “Use production scene notes” removes that override. Scene page lengths, order and historical timing fields remain stored. Break/move/meal timing still works. Newly generated daily and advance output uses the notes-first scene layout.

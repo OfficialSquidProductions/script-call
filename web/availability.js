@@ -60,20 +60,20 @@
   return {r,label,restricted,intervals,uncertain,begin,finish};
  }
  function stamp(ms,zone,clock='24'){const p=parts(ms,zone);return p.date+' '+TimeDisplay.format(p.time,clock)+(p.second!=='00'?':'+p.second:'');}
- function assess(p,d,person){const zone=p.defaults.zone,range=duty(p,d,person),name=person.name||person.character||('Unnamed '+person.type),conflicts=[],onCallDates=[],restrictedDates=[],unknown=[...range.reasons];
+ // Availability advice is intentionally a Personal Call/start check. Retained
+ // preparation, schedule and release data still exist, but never extend it.
+ function personalStart(p,d,person){const zone=dayZone(p,d),call=d.calls.find(c=>c.personId===person.id),reasons=[];let start=null;if(!dateOK(d.date)||!zoneOK(zone))reasons.push('Set a valid shooting date and shooting-day timezone.');else if(!call)reasons.push('Personal call not entered.');else{const time=CallDefaults.resolve(p,d,person,call);if(!TIME.test(time))reasons.push('Personal call time not entered.');else{start=epoch(addDate(d.date,call.offset||0),time,zone);if(start===null)reasons.push('Personal call is skipped or repeated by daylight saving; review it.');}}return {start,end:start,reasons,zone,point:true};}
+ function assess(p,d,person){const zone=p.defaults.zone,range=personalStart(p,d,person),name=person.name||person.character||('Unnamed '+person.type),conflicts=[],onCallDates=[],restrictedDates=[],unknown=[...range.reasons];
   if(!zoneOK(zone))unknown.push('Set the production default timezone before checking availability.');
-  if(range.start===null||!zoneOK(zone))return {personId:person.id,name,status:'unknown',conflicts,unknown,message:`${name}: availability unknown. ${[...new Set(unknown)].join(' ')}`,range};
-  let pointWithin=false;let date=parts(range.start,zone).date;const last=parts(range.end===range.start?range.end:range.end-1,zone).date;
-  for(let count=0;date<=last&&count<8;date=addDate(date,1),count++){
-   const a=allowed(p,person.id,date,zone,TimeDisplay.mode(p,d));if(a.begin===null||a.finish===null){unknown.push(date+': ambiguous local midnight.');continue;}
-   if(a.r.state==='on-call')onCallDates.push(date);if(a.restricted)restrictedDates.push(date);
-   const start=Math.max(range.start,a.begin),end=Math.min(range.point?range.start+1:range.end,a.finish);if(covered(start,end,a.intervals)){if(range.point)pointWithin=true;continue;}
-   if(a.r.state==='unknown'||a.uncertain)unknown.push(date+(a.uncertain?': an availability boundary is skipped or repeated by daylight saving; review the time.':': availability not entered.'));else conflicts.push({date,start,end,allowed:a.label});
-  }
-  const assigned=`${stamp(range.start,zone,TimeDisplay.mode(p,d))}${range.point?'':' → '+stamp(range.end,zone,TimeDisplay.mode(p,d))} (${zone})`,status=conflicts.length?'conflict':unknown.length?'unknown':'available';
-  const message=conflicts.length?`${name}: outside recorded availability. Assigned ${assigned}. ${conflicts.map(c=>c.allowed==='Unavailable'?`${c.date}: Unavailable all day.`:`${c.date}: allowed ${c.allowed}.`).join(' ')}${unknown.length?' Some remaining times are unknown.':''}`:status==='unknown'?`${name}: ${pointWithin?'personal call time is within recorded availability; the full duty period is not confirmed.':'availability unknown.'} Assigned ${assigned}. ${[...new Set(unknown)].join(' ')}`:`${name}: available for ${assigned}.`;
-  return {personId:person.id,name,status,conflicts,onCallDates,restrictedDates,pointWithin,unknown:[...new Set(unknown)],message:message+(restrictedDates.length?' Restricted time windows on '+restrictedDates.join(', ')+'.':'')+(onCallDates.length?' O/C — On Call (available, not on set) on '+onCallDates.join(', ')+'. Attendance and call times are unchanged.':''),range};
+  if(range.start===null||!zoneOK(zone))return {scope:'personal-call-start',personId:person.id,name,status:'unknown',conflicts,unknown,pointWithin:false,message:`${name}: availability unknown. ${[...new Set(unknown)].join(' ')}`,range};
+  const date=parts(range.start,zone).date,a=allowed(p,person.id,date,zone,TimeDisplay.mode(p,d));let pointWithin=false;
+  if(a.begin===null||a.finish===null)unknown.push(date+': ambiguous local midnight.');
+  else{if(a.r.state==='on-call')onCallDates.push(date);if(a.restricted)restrictedDates.push(date);pointWithin=covered(range.start,range.start+1,a.intervals);if(!pointWithin){if(a.r.state==='unknown'||a.uncertain)unknown.push(date+(a.uncertain?': an availability boundary is skipped or repeated by daylight saving; review it.':': availability not entered.'));else conflicts.push({date,start:range.start,end:range.start,allowed:a.label});}}
+  const assigned=`${stamp(range.start,zone,TimeDisplay.mode(p,d))} (${zone})`,status=conflicts.length?'conflict':unknown.length?'unknown':'available';
+  const message=conflicts.length?`${name}: personal call is outside recorded availability. Personal call ${assigned}. ${conflicts.map(c=>c.allowed==='Unavailable'?`${c.date}: Unavailable all day.`:`${c.date}: allowed ${c.allowed}.`).join(' ')}`:status==='unknown'?`${name}: availability unknown for personal call ${assigned}. ${[...new Set(unknown)].join(' ')}`:`${name}: personal call is within recorded availability at ${assigned}.`;
+  return {scope:'personal-call-start',personId:person.id,name,status,conflicts,onCallDates,restrictedDates,pointWithin,unknown:[...new Set(unknown)],message:message+(restrictedDates.length?' Restricted time windows on '+restrictedDates.join(', ')+'.':'')+(onCallDates.length?' O/C — On Call (available, not on set) on '+onCallDates.join(', ')+'. Attendance and call times are unchanged.':''),range};
  }
+
  function assessDay(p,d){if(!d)return [];const ids=new Set(d.calls.map(c=>c.personId));for(const s of d.schedule)if(s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId))p.scenes.find(sc=>sc.id===s.sceneId)?.castIds.forEach(id=>ids.add(id));return p.people.filter(person=>ids.has(person.id)&&!Records.deleted(p,'people',person.id)).map(person=>assess(p,d,person));}
  function span(p){const dates=p.days.map(d=>d.date).filter(dateOK),zone=p.defaults.zone;
   if(zoneOK(zone))for(const d of p.days){if(!dateOK(d.date))continue;const localZone=dayZone(p,d);if(!zoneOK(localZone))continue;const values={...p.defaults,...d.overrides};
@@ -85,5 +85,5 @@
  }
 
  const hasOnCall=p=>Object.values(p.availability?.byPerson||{}).some(d=>Object.values(d).some(r=>r.state==='on-call'));
- return {hasOnCall,dateOK,addDate,zoneOK,epoch,parts,validate,validateRecord,record,set,summary,hasData,dayZone,duty,assess,assessDay,span};
+ return {hasOnCall,dateOK,addDate,zoneOK,epoch,parts,validate,validateRecord,record,set,summary,hasData,dayZone,duty,personalStart,assess,assessDay,span};
 });
