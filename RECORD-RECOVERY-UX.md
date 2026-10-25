@@ -1,7 +1,7 @@
 # Production records and location cards
 
-Local feature based on released Script Call 0.3.10 (`2813495`). No version bump,
-public release, source push, installed-app replacement or user-project edit.
+Introduced in Script Call 0.3.11, based on released 0.3.10 (`2813495`).
+Release QA uses disposable profiles; installed user apps and projects are untouched.
 
 ## Behavior
 
@@ -72,6 +72,7 @@ Evidence is in `verification/record-delete-cards-unit.txt`,
 ## Limits
 
 Native QA covered this Mac only. Windows, Intel Mac, touch and formal screen-reader
-QA were not run. No new feature-specific Playwright or native-upgrade release
-suite was run; this task used permitted native mouse/keyboard QA and headless
-unit/data tests. The preview is ad-hoc signed, not a notarized distributable.
+QA were not run. The subsequent explicitly authorized release suite passed 117 exact-build Mac UI
+checks, packaged smoke and 25 real 0.3.10 → 0.3.11 native-upgrade checks. The release
+is Developer ID signed and Apple notarized. The separate local preview remains
+ad-hoc signed. See RELEASING.md for exact release evidence.

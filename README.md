@@ -1,10 +1,10 @@
 # Script Call
 
-**0.3.10 adds independent shooting/parking Google Maps links and crew O/C — On Call availability.** Addresses stay manually editable; reviewed link text never silently replaces them. Coordinates move to collapsed Advanced. Short/opaque Maps links need manual address entry; no online geocoder or paid API is used. O/C means available on the marked date, but not on set; calls and attendance remain unchanged. Existing templates, IDs, availability windows, recovery, reporting and immutable PDFs remain supported. The exact signed/notarized build passed 113 unit checks, 105 Mac UI checks, packaged smoke and all 22 real 0.3.9 → 0.3.10 native-upgrade checks. See [RELEASING.md](RELEASING.md).
+**0.3.11 adds recoverable Delete Cast/Crew/Location controls, collapsible location cards and yellow restricted availability.** Named confirmations explain the scope; Restore retains original IDs, linked calls/scenes and availability. Backups precede changes and issued PDFs stay exact. Location timezone controls are hidden while saved zones retain their meaning. Existing Maps links/manual address fallback and crew O/C remain supported. The exact notarized build passed 121 unit checks (two optional checks skipped), 117 Mac UI checks, packaged smoke and all 25 real 0.3.10 → 0.3.11 native-upgrade checks. See [RECORD-RECOVERY-UX.md](RECORD-RECOVERY-UX.md) and [RELEASING.md](RELEASING.md).
 
 A Squid Productions Software
 
-Script Call **0.3.10** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
+Script Call **0.3.11** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 
@@ -33,7 +33,7 @@ Production Desk imports are previewed before commitment, backed up before change
 
 The updater implementation uses `electron-updater`, an Ed25519-signed metadata envelope and SHA-512 artifact verification. It checks only compatible stable versions for the current platform and architecture, refuses downgrades, and requires native code-signature checks. Automatic checks run after startup and daily when enabled; download and restart require a choice. Installation flushes pending edits and makes a SQLite backup. Failed or offline checks keep the current app usable.
 
-**The source is public under MIT and the approved update endpoint is configured.** Notarized **0.3.10** passed all 22 real signed 0.3.9 → 0.3.10 native-upgrade checks, preserving pending edits, stable IDs, exact PDFs, backups and preferences. Upgraded Maps and O/C values survived portable export and restart without attendance/time changes. Windows, Intel Mac and Linux distribution remain unvalidated. Only the public Ed25519 key ships; clients contain no GitHub token. [Release instructions](RELEASING.md) describe preparation/publication.
+**The source is public under MIT and the approved update endpoint is configured.** Notarized **0.3.11** passed all 25 real signed 0.3.10 → 0.3.11 native-upgrade checks, preserving pending edits, stable IDs, exact PDFs, backups and preferences. Upgraded record deletion/restoration, collapsed cards and restricted availability passed after native replacement and restart; Maps/O/C and call times remain supported. Windows, Intel Mac and Linux distribution remain unvalidated. Only the public Ed25519 key ships; clients contain no GitHub token. [Release instructions](RELEASING.md) describe preparation/publication.
 
 Fresh profiles start with one blank production and an empty shooting day. Bundled Last Light and legacy Quiet Hours demos and their load buttons have been removed. Existing saved/imported example-derived productions remain intact and loadable. Regression fixtures live under `tests/fixtures/` and are excluded from app resources. Third-party licenses and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
@@ -41,7 +41,7 @@ Fresh profiles start with one blank production and an empty shooting day. Bundle
 
 Squid Productions’ original code and test-only fictional fixtures are MIT licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for unchanged third-party font/dependency licenses and branding notices. The test-only Last Light fixture retains its stable scene, shot and import IDs for compatibility checks.
 
-Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.10 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.10). Older prototypes need one manual installation to establish update trust. The existing workspace launcher retains `.local-data`; a currently running 0.3.3 app can install this update through its existing updater. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.
+Download the [Apple Silicon Mac app](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip) (macOS 13+) or read the [0.3.11 release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.11). Older prototypes need one manual installation to establish update trust. The existing workspace launcher retains `.local-data`; a currently running 0.3.3 app can install this update through its existing updater. Existing update-enabled installations can use **Check for updates → Download update → Save, back up & restart**.
 
 ## Shooting day management
 

@@ -1,0 +1,10 @@
+Script Call 0.3.11
+
+• Delete individual cast, crew and locations with named confirmation and recovery from Deleted records or Settings & help. Original IDs, calls, scene links and availability remain stored; a backup is made first. Restore reactivates retained links without overwriting other edits. Nothing is permanently erased.
+• Location cards collapse to their title, with Collapse all/Expand all and remembered local expansion. Delete Location is at the bottom of the expanded card.
+• Restricted cast/crew availability windows are yellow and explicitly labeled, including overnight carry-in. Full day stays green; O/C stays distinct and means available, not on set. Conflict warnings remain explicit.
+• Location timezone controls are hidden while saved zones and daily time semantics are preserved. A deleted linked location must be restored or explicitly replaced before another sheet is issued; another location is never selected automatically.
+
+Original issued PDFs remain unchanged. Portable projects with deleted member/location records need this release or newer. Old saved projects and Production Desk import remain supported. Previous Maps-link/manual address and O/C features remain intact; short or opaque Maps links still require manual address entry.
+
+Apple Silicon macOS 13 or newer. Windows, Intel Mac and Linux distribution are not validated. Existing projects and historical releases are preserved.

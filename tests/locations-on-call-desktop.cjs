@@ -12,7 +12,7 @@ async function save(){await page.click('#save');await page.waitForFunction(()=>d
 async function crew(){await app.evaluate(({app,BrowserWindow})=>{app.focus({steal:true});BrowserWindow.getAllWindows()[0].focus();});await page.click('[data-view="production"]');await page.click('[data-master="crew"]');}
 async function file(button,file){await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});},file);await page.click('#'+button);await page.waitForFunction(file=>document.querySelector('#toast').textContent.includes(file),file);return fs.readFileSync(file);}
 const input=(i,k)=>page.locator(`[data-bind="locations.${i}.${k}"]`);
-async function locations(){await page.click('[data-view="production"]');await page.click('[data-master="locations"]');}
+async function locations(){await page.click('[data-view="production"]');await page.click('[data-master="locations"]');await require('./support/location-cards.cjs').expandLocations(page);}
 async function originalPDF(id,file){await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});},file);await page.click('[data-view="revisions"]');await page.locator(`[data-revision-export="${id}"]`).click();await page.waitForFunction(file=>document.querySelector('#toast').textContent.includes(file),file);return fs.readFileSync(file);}
 (async()=>{try{
  await launch(true);await close();await launch();check('direct and explicit release launches isolate projects, settings, logs, crash reports and backups');
