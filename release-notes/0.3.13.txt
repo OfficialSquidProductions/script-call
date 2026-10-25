@@ -1,0 +1,11 @@
+Script Call 0.3.13 — Scene notes, call advice, time display and Maps weather
+
+Scene schedule rows now use editable notes instead of start/duration controls. Daily notes can inherit production scene notes or hold an independent blank/multiline override. New output omits scene timing filler while retaining page lengths/order and historical timing data. Issued snapshots and original PDFs remain preserved.
+
+Cast Personal Call stays visible; other time fields are under Advanced. New cast calls use Shooting Call and new crew calls use General crew call. Existing manual calls stay unchanged; missing base times stay unset. Availability no longer assumes production wrap is a cast release. Valid call/unknown-end advice is neutral, separate from real red interval conflicts. Genuine conflicts show allowed hours and remain nonblocking.
+
+Settings & help adds 24-hour (military) and 12-hour (AM/PM) display. The preference is saved with the production and becomes the default for new productions on this device. Times/zones remain canonical; issued PDFs keep their original format.
+
+Shooting-location Maps links can supply explicit place/pin coordinates for solar and online NWS weather. Bounded HTTPS Google Maps short-link resolution protects manual coordinates and rejects stale results. Viewport-only/opaque links may still need manual entry; real short-link resolution has not been live validated. Coordinates are suggestions to confirm, not verified venue geocoding. Addresses and independent parking are preserved. NWS covers supported US locations for about seven days; local-date selection, offline/provider failure and stale forecasts stay explicit. No paid API or new credentials.
+
+Existing recovery, Production Desk import, stable IDs, portable projects, templates, bug reporting and signed updates are preserved. New fields/notes-first snapshots require portable reader 8. Apple Silicon macOS 13+ is the supported distribution; Intel Mac, Windows and Linux distributions remain unvalidated.

@@ -1,6 +1,6 @@
 # Schedule notes, personal calls, time display and Maps coordinates
 
-Local candidate on top of Script Call 0.3.12. No version bump, release, installation or website/feed change is part of this work.
+Implemented on top of Script Call 0.3.12 for the authorized 0.3.13 patch release. Release and native upgrade acceptance use disposable profiles. The installed user app and real productions remain untouched.
 
 ## Behavior
 
@@ -23,6 +23,6 @@ Packaged Apple Silicon Mac QA used a dedicated embedded preview profile, includi
 
 All nine real saved production JSON hashes and all 650 installed app file hashes matched their read-only pre-test baselines. No real records were changed. No renderer diagnostic events were recorded in the preview profile.
 
-The historical Playwright availability and G-Casper harnesses were adapted to seed retained scene timing through disposable fixtures, since that editor is intentionally removed, and to open Advanced before editing hidden fields. They were syntax-checked, not executed: the previous release-specific automation grant does not cover this local candidate. Native CUA and unit/data checks above were executed. Windows/Linux UI, release signing/notarization, updater acceptance and public distribution were not run for this local feature. Live short-link resolution was not tested against a real short-link fixture; redirect behavior is covered by deterministic mocks. Opaque IDs, viewport-only links, unsupported redirects and regional/network failures may still require manual coordinates/address. Resolved coordinates are suggestions to confirm, not verified venue geocoding.
+The explicitly authorized 0.3.13 release run passed all fourteen exact-notarized packaged regression/smoke suites (141 explicit Mac UI checks plus packaged smoke). A Maps blur/async refresh race found by these checks was corrected: coordinate status refresh keeps the address/open-map action buttons mounted through clicks. Historical timing fixtures now use the retained-data path because scene timing inputs are intentionally removed; Advanced fields and reader8 assertions remain covered. Windows/Linux UI, Updater acceptance and public publication are tracked separately by the release checkpoint. Apple notarization, signature, stapling and Gatekeeper passed for the corrected build. Live short-link resolution was not tested against a real short-link fixture; redirect behavior is covered by deterministic mocks. Opaque IDs, viewport-only links, unsupported redirects and regional/network failures may still require manual coordinates/address. Resolved coordinates are suggestions to confirm, not verified venue geocoding.
 
 References: [Google Maps URLs](https://developers.google.com/maps/documentation/urls/get-started), [NWS web API](https://www.weather.gov/documentation/services-web-api).
