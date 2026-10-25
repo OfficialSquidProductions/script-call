@@ -1,6 +1,6 @@
 # Crew list position and Personal Call availability
 
-Local fix on top of released 0.3.13. This work does not change the version, publish a release or replace the installed app.
+Implemented on top of released 0.3.13 and prepared for the explicitly authorized 0.3.14 patch release. User productions and the installed app remain untouched.
 
 ## Behavior and causes
 
@@ -21,3 +21,9 @@ The reported screenshot and read-only saved example were inspected. The 19:30 pe
 Updated existing Playwright regression expectations for the explicitly changed start-only rule; syntax checks passed. Those desktop harnesses were not executed for this local task because the prior release-specific automation grant does not carry over. Native CUA provided the current UI verification. No native upgrade, signing/notarization or release test was needed or performed. Windows/Linux UI, physical touch and formal assistive-technology auditing remain untested.
 
 Local preview: `build/crew-start-scroll-preview/Script Call.app`. Evidence is in ignored `verification/crew-start-*`; synthetic profile stays under the preview build directory. The preview was closed normally after testing.
+
+## Authorized0.3.14 release gates
+
+The subsequent feature-specific user grant covered Playwright release/upgrade tests and publication. All fifteen exact-notarized packaged regression/smoke suites passed:150 explicit Mac UI checks plus packaged smoke. The new nine-check harness verifies mid/last-row anchors, repeated keyboard/mouse actions, mounted preview retention, stable Advanced preferences, start boundaries, live correction, offset dates, AM/PM and save/reopen. The earlier missing-field failure was a synthetic fixture setup issue; required preparation strings were added and the complete harness passed on the exact signed/notarized build.
+
+Apple accepted job `4f5b8dd9-049f-4768-a23b-f9503aff04e6`; Developer ID signature, stapling, Gatekeeper and runtime-source hashes passed. The signed updater ZIP SHA-256 is `cac4c3708182dea3f05e14d070e1c1262682be0b79ebd2be8ad09e062a9ffbe5`. Genuine public0.3.13→candidate0.3.14 native acceptance passed33 checks with all required assertions, including native replacement/relaunch, saved pending edit, direct reopen, actual database/PDF recovery backup, stable Production Desk IDs, portable preferences/recovery and exact issued PDF bytes. The pre-upgrade explicit03:00-release conflict clears under the new personal-start rule without rewriting the saved call/release. Source, stable/feed, website and fresh-download verification are recorded separately in the release completion checkpoint.
