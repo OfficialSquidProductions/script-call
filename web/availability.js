@@ -15,7 +15,7 @@
   const matches=[...offsets].map(o=>target-o).filter(ms=>parts(ms,zone).serial===target),value=matches.length===1?matches[0]:null;if(epochCache.size>4096)epochCache.clear();epochCache.set(key,value);return value;
  }
  function validateRecord(record){
-  if(!record||typeof record!=='object'||Array.isArray(record)||!['unknown','all-day','unavailable','windows'].includes(record.state)||!Array.isArray(record.windows)||record.windows.length>12||Object.keys(record).some(k=>!['state','windows'].includes(k)))throw Error('Invalid availability entry.');
+  if(!record||typeof record!=='object'||Array.isArray(record)||!['unknown','all-day','on-call','unavailable','windows'].includes(record.state)||!Array.isArray(record.windows)||record.windows.length>12||Object.keys(record).some(k=>!['state','windows'].includes(k)))throw Error('Invalid availability entry.');
   if(record.state==='windows'&&!record.windows.length||record.state!=='windows'&&record.windows.length)throw Error('Enter at least one time window, or choose another availability state.');
   for(const w of record.windows){if(!w||Object.keys(w).some(k=>!['start','end','nextDay'].includes(k))||!TIME.test(w.start)||!TIME.test(w.end)||typeof w.nextDay!=='boolean'||!w.nextDay&&w.end<=w.start||w.nextDay&&w.end>w.start)throw Error('Availability windows must be positive and no longer than 24 hours. Use next day for an overnight end.');}
   return record;
@@ -27,7 +27,7 @@
  const record=(project,id,date)=>project.availability?.byPerson?.[id]?.[date]||{state:'unknown',windows:[]};
  const hasData=p=>Object.values(p.availability?.byPerson||{}).some(d=>Object.keys(d).length);
  function set(project,id,date,value){if(typeof id!=='string'||!ID.test(id)||['__proto__','prototype','constructor'].includes(id)||!dateOK(date))throw Error('Choose a valid person and date.');if(value!==null)validateRecord(value);const before=project.availability?.byPerson?.[id]?.[date];project.availability||={schema:1,byPerson:{}};project.availability.byPerson[id]||={};if(!value||value.state==='unknown')delete project.availability.byPerson[id][date];else project.availability.byPerson[id][date]=copy(value);return before?copy(before):null;}
- function summary(r){return r.state==='all-day'?'All day':r.state==='unavailable'?'Unavailable':r.state==='unknown'?'Unknown / not entered':r.windows.map(w=>`${w.start}–${w.end}${w.nextDay?' (+1 day)':''}`).join(', ');}
+ function summary(r){return r.state==='on-call'?'O/C — On Call (available, not on set)':r.state==='all-day'?'All day':r.state==='unavailable'?'Unavailable':r.state==='unknown'?'Unknown / not entered':r.windows.map(w=>`${w.start}–${w.end}${w.nextDay?' (+1 day)':''}`).join(', ');}
  function dayZone(p,d){const v={...p.defaults,...d.overrides},loc=p.locations.find(l=>l.id===v.primaryLocationId);return Object.hasOwn(d.overrides,'zone')?v.zone:loc?.zone||v.zone;}
  function duty(p,d,person){
   const zone=dayZone(p,d),call=d.calls.find(c=>c.personId===person.id),reasons=[],starts=[],ends=[],sceneMap=new Map(p.scenes.map(s=>[s.id,s]));let scheduled=false;
@@ -51,23 +51,24 @@
   const carry=previous.state==='windows'?previous.windows.filter(w=>w.nextDay):[],label=summary(r)+(r.state!=='unavailable'&&carry.length?'; carry-in from '+addDate(date,-1)+': '+summary({state:'windows',windows:carry}):'');
   const begin=epoch(date,'00:00',zone),finish=epoch(addDate(date,1),'00:00',zone);if(begin===null||finish===null)return {r,label,intervals,uncertain:true,begin,finish};
   if(r.state==='unavailable')return {r,label,intervals,uncertain:false,begin,finish};
-  if(r.state==='all-day')intervals.push([begin,finish]);
+  if(r.state==='all-day'||r.state==='on-call')intervals.push([begin,finish]);
   for(const [entry,on] of [[previous,addDate(date,-1)],[r,date]])if(entry.state==='windows')for(const w of entry.windows){if(on!==date&&!w.nextDay)continue;const a=epoch(on,w.start,zone),b=epoch(w.nextDay?addDate(on,1):on,w.end,zone);if(a===null||b===null){uncertain=true;continue;}if(b>begin&&a<finish)intervals.push([Math.max(a,begin),Math.min(b,finish)]);}
   return {r,label,intervals,uncertain,begin,finish};
  }
  function stamp(ms,zone){const p=parts(ms,zone);return p.date+' '+p.time+(p.second!=='00'?':'+p.second:'');}
- function assess(p,d,person){const zone=p.defaults.zone,range=duty(p,d,person),name=person.name||person.character||('Unnamed '+person.type),conflicts=[],unknown=[...range.reasons];
+ function assess(p,d,person){const zone=p.defaults.zone,range=duty(p,d,person),name=person.name||person.character||('Unnamed '+person.type),conflicts=[],onCallDates=[],unknown=[...range.reasons];
   if(!zoneOK(zone))unknown.push('Set the production default timezone before checking availability.');
   if(range.start===null||!zoneOK(zone))return {personId:person.id,name,status:'unknown',conflicts,unknown,message:`${name}: availability unknown. ${[...new Set(unknown)].join(' ')}`,range};
   let date=parts(range.start,zone).date;const last=parts(range.end===range.start?range.end:range.end-1,zone).date;
   for(let count=0;date<=last&&count<8;date=addDate(date,1),count++){
    const a=allowed(p,person.id,date,zone);if(a.begin===null||a.finish===null){unknown.push(date+': ambiguous local midnight.');continue;}
+   if(a.r.state==='on-call')onCallDates.push(date);
    const start=Math.max(range.start,a.begin),end=Math.min(range.point?range.start+1:range.end,a.finish);if(covered(start,end,a.intervals))continue;
    if(a.r.state==='unknown'||a.uncertain)unknown.push(date+(a.uncertain?': an availability boundary is skipped or repeated by daylight saving; review the time.':': availability not entered.'));else conflicts.push({date,start,end,allowed:a.label});
   }
   const assigned=`${stamp(range.start,zone)}${range.point?'':' → '+stamp(range.end,zone)} (${zone})`,status=conflicts.length?'conflict':unknown.length?'unknown':'available';
   const message=conflicts.length?`${name}: outside recorded availability. Assigned ${assigned}. ${conflicts.map(c=>c.allowed==='Unavailable'?`${c.date}: Unavailable all day.`:`${c.date}: allowed ${c.allowed}.`).join(' ')}${unknown.length?' Some remaining times are unknown.':''}`:status==='unknown'?`${name}: availability unknown. Assigned ${assigned}. ${[...new Set(unknown)].join(' ')}`:`${name}: available for ${assigned}.`;
-  return {personId:person.id,name,status,conflicts,unknown:[...new Set(unknown)],message,range};
+  return {personId:person.id,name,status,conflicts,onCallDates,unknown:[...new Set(unknown)],message:message+(onCallDates.length?' O/C — On Call (available, not on set) on '+onCallDates.join(', ')+'. Attendance and call times are unchanged.':''),range};
  }
  function assessDay(p,d){if(!d)return [];const ids=new Set(d.calls.map(c=>c.personId));for(const s of d.schedule)if(s.type==='scene')p.scenes.find(sc=>sc.id===s.sceneId)?.castIds.forEach(id=>ids.add(id));return p.people.filter(person=>ids.has(person.id)).map(person=>assess(p,d,person));}
  function span(p){const dates=p.days.map(d=>d.date).filter(dateOK),zone=p.defaults.zone;
@@ -79,5 +80,6 @@
   if(!dates.length)for(const days of Object.values(p.availability?.byPerson||{}))dates.push(...Object.keys(days).filter(dateOK));dates.sort();const today=zoneOK(zone)?parts(Date.now(),zone).date:new Date().toISOString().slice(0,10);return {start:dates[0]||today,end:dates.at(-1)||today};
  }
 
- return {dateOK,addDate,zoneOK,epoch,parts,validate,validateRecord,record,set,summary,hasData,dayZone,duty,assess,assessDay,span};
+ const hasOnCall=p=>Object.values(p.availability?.byPerson||{}).some(d=>Object.values(d).some(r=>r.state==='on-call'));
+ return {hasOnCall,dateOK,addDate,zoneOK,epoch,parts,validate,validateRecord,record,set,summary,hasData,dayZone,duty,assess,assessDay,span};
 });

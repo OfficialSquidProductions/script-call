@@ -48,6 +48,7 @@ const actions={
  reportMail:a=>openDraft(diagnostics.draft(a.id),{app,shell}),
  updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>{if(previewProfile)throw Error('Preview builds cannot download or install updates.');return updates.download();},updateInstall:()=>{if(previewProfile)throw Error('Preview builds cannot install updates.');if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
  list:()=>store.list(),get:a=>store.get(a.id),save:a=>store.save(a.project,a.version),
+ async openLocationMap(a){if(!['shoot','parking'].includes(a.kind))throw Error('Choose a location map.');const loc=store.get(a.projectId).project.locations.find(l=>l.id===a.locationId);if(!loc)throw Error('Location no longer exists.');const url=require('../web/location-maps.js').openURL(a.kind==='parking'?loc.parkingMapsUrl:loc.mapsUrl,a.kind==='parking'?loc.parking:loc.address);await shell.openExternal(url);return {opened:true};},
  create:a=>store.create(D.newProject(String(a.title||'Untitled production').slice(0,200))),
  deletedProductions:()=>store.deletedProductions(),
  deleteProduction:a=>{if(issueBusy)throw Error('Finish issuing before deleting a production.');const result=store.deleteProduction(a.id,a.version);pendingImport=null;return result;},

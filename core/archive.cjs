@@ -6,7 +6,7 @@ function exportArchive(store,projectId){
  const {project}=store.get(projectId),files={'project.json':strToU8(JSON.stringify(project))},revisions=[];
  for(const m of store.revisions(projectId)){const r=store.revision(projectId,m.id);const {pdf,...metadata}=r;files['pdfs/'+r.id+'.pdf']=pdf;revisions.push(metadata);}
  files['revisions.json']=strToU8(JSON.stringify(revisions));
- const manifest={format:'squid-callsheet',schema:1,minReaderVersion:require('../web/availability.js').hasData(project)?4:project.deletedDays?.length||!project.days.length?3:[...project.days,...(project.deletedDays||[])].some(d=>d.layout.preset==='gcasper')||revisions.some(r=>r.snapshot.day.layout.preset==='gcasper')?2:1,projectId,createdAt:new Date().toISOString(),files:Object.fromEntries(Object.entries(files).map(([n,b])=>[n,{bytes:b.length,sha256:D.hash(Buffer.from(b))}]))};
+ const manifest={format:'squid-callsheet',schema:1,minReaderVersion:require('../web/availability.js').hasOnCall(project)?5:require('../web/availability.js').hasData(project)?4:project.deletedDays?.length||!project.days.length?3:[...project.days,...(project.deletedDays||[])].some(d=>d.layout.preset==='gcasper')||revisions.some(r=>r.snapshot.day.layout.preset==='gcasper')?2:1,projectId,createdAt:new Date().toISOString(),files:Object.fromEntries(Object.entries(files).map(([n,b])=>[n,{bytes:b.length,sha256:D.hash(Buffer.from(b))}]))};
  const total=Object.values(files).reduce((n,b)=>n+b.length,0);if(total>MAX)throw Error('Prototype archives support up to 25 MB expanded.');files['manifest.json']=strToU8(JSON.stringify(manifest));return Buffer.from(zipSync(files,{level:6}));
 }
 function readArchive(bytes){
@@ -18,7 +18,7 @@ function readArchive(bytes){
  }});
  if(Object.keys(files).length!==count)throw Error('Duplicate archive paths.');
  const m=JSON.parse(strFromU8(files['manifest.json']||new Uint8Array()));
- if(m.format!=='squid-callsheet'||m.schema!==1||m.minReaderVersion>4)throw Error('Unsupported project archive version.');
+ if(m.format!=='squid-callsheet'||m.schema!==1||m.minReaderVersion>5)throw Error('Unsupported project archive version.');
  if(!m.files||Object.keys(m.files).length!==count-1)throw Error('Archive manifest is incomplete.');
  for(const [name,meta] of Object.entries(m.files)){if(!files[name]||meta.bytes!==files[name].length||meta.sha256!==D.hash(Buffer.from(files[name])))throw Error('Archive checksum mismatch.');}
  const project=D.validateProject(JSON.parse(strFromU8(files['project.json']))),revisions=JSON.parse(strFromU8(files['revisions.json']));
