@@ -24,3 +24,4 @@
 .availability-cell.windows,.availability-advice.restricted{background:#fff2c9;color:#704b00;border-color:#d4a535}.availability-advice.on-call{background:#e8edff;color:#243b75}.location-card{padding:0}.location-card>summary{cursor:pointer;padding:18px 20px;font-weight:700;overflow-wrap:anywhere}.location-card>.location-card-body{padding:0 20px 20px}.record-actions{margin-top:20px;display:flex;justify-content:flex-end}.location-card[open]>summary{border-bottom:1px solid var(--line,#ddd);margin-bottom:16px}
 
 .availability-cell.windows.has-conflict{border-color:#c52338}
+.page-length-error{color:#a41d2b}.page-length-error:empty{display:none}input[data-page-length][aria-invalid="true"]{border:2px solid #a41d2b;background:#fff0f1;color:#57111a}
