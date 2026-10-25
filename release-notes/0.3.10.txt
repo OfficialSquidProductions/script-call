@@ -1,0 +1,11 @@
+Script Call 0.3.10 — location Maps links and crew On Call availability
+
+Production Data → Locations now puts a Google Maps link first for both Shooting location and the independent Parking / base camp area. Addresses remain manually editable. Explicit text embedded in supported links is suggested for review and applied only when you choose Use/Replace; changing a link never silently replaces your address. Open a map for additional information. Existing coordinates are retained at the bottom in collapsed Advanced, with separate optional parking coordinates.
+
+Address limitation: there is no online geocoding service or paid API. Short links, opaque place IDs, place-path slugs and map-camera coordinates do not establish a street address; open the map and enter/copy the address manually. Explicit search/destination text can be read locally while offline. Browser maps may need internet. Opening a map sends the link or search address to Google; no production roster is sent.
+
+Crew availability adds O/C — On Call (available, not on set), distinct from All Day. It covers each marked production-local date and remains explicit in the grid/editor/call advice. Calls, attendance and call/release times are unchanged. Overnight work still checks every date; unentered dates remain unknown. Undo/redo, rename, save/reopen, reimport and portable archives preserve O/C. Archives containing O/C require this updated reader (format reader version 5); older archives remain supported.
+
+Retains department suggestions/custom names, next-day date defaults, recoverable production/day deletion, week overview, availability windows, both templates, Production Desk import/reimport, stable identities, immutable issued PDFs, backups/preferences, reviewed reporting and signed updates. Existing template-specific basecamp overrides remain independent. No real user projects or installed app are replaced by release tests.
+
+Support: alexanderhosier@squidproductions.org. Developer ID signed and Apple notarized for Apple Silicon Mac, macOS 13+. Intel Mac, Windows and Linux distributions remain unvalidated. No Apple App Store submission.
