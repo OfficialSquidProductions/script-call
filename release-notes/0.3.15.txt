@@ -1,0 +1,12 @@
+Script Call 0.3.15 — contacts, logistics and temperature display
+
+• Compact key positions: empty positions disappear and the primary shooting location stays in its own address line. Optional position phone numbers print beneath names, off by default, with stable crew links and safe unique-name matching.
+• Updated G-Casper crew back: reference department columns, proper ART / LOCATION SOUND / HAIR & MAKEUP aliases, continuous ruled layout and readable continuation pages. Existing Narrative templates and issued PDFs remain supported.
+• Cast and crew call cards collapse to names, with search and Collapse all / Expand all. Editing retains call-list position, focus and Advanced state, including when the final expanded card shrinks.
+• Independent shooting, parking, basecamp and hospital Maps links/addresses, with optional coordinates under Advanced. Daily logistics notes print beneath the addresses.
+• NWS requests fill date-matched high/low values while preserving manual entries. Stale, offline, missing and out-of-horizon data remains explicitly unavailable.
+• Settings now offers Fahrenheit or Celsius, saved with each production and used for new productions on this device. Existing day units are honored until selected; the fallback stays Celsius. Stored values remain Celsius without repeated conversion drift; newly generated output follows the chosen units.
+
+Projects and stable import IDs, availability/O-C, scene notes/fractions, recovery, reporting, backups, signed updates and exact issued PDF bytes are retained. Portable archives containing new fields/snapshots require reader9.
+
+Developer ID signed and Apple notarized for Apple Silicon, macOS13+. Intel Mac, Windows and Linux are unvalidated. NWS supports US coordinates within its forecast horizon and needs connectivity. Live Maps short-link resolution remains unverified; opaque/viewport-only links may need manual coordinates/address. No new paid API or credentials.
