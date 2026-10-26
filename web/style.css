@@ -27,3 +27,5 @@
 .page-length-error{color:#a41d2b}.page-length-error:empty{display:none}input[data-page-length][aria-invalid="true"]{border:2px solid #a41d2b;background:#fff0f1;color:#57111a}
 
 .call-advanced{border:1px solid var(--line,#ddd);border-radius:8px;padding:0 14px}.call-advanced>summary{cursor:pointer;padding:14px 0;font-weight:600;min-height:44px}.call-advanced>.form-grid{padding:0 0 14px}
+
+.call-list-tools{position:sticky;top:0;background:var(--panel,#fff);z-index:2;padding:8px 0;border-bottom:1px solid #ddd}.call-list-tools label{display:block;font-size:13px}.call-list-tools input{width:100%;margin:5px 0}.call-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}.call-card>summary::-webkit-details-marker{display:none}.call-card>summary:before{content:'▸'}.call-card[open]>summary:before{content:'▾'}.call-card>summary>strong{flex:1}.call-card:not([open])>summary small{display:none}.call-card-body{margin-top:12px}.call-card[hidden]{display:none}.phone-links{margin:12px 0}.phone-links summary{cursor:pointer;font-weight:bold}.location-place .pre{white-space:pre-wrap;overflow-wrap:anywhere}
