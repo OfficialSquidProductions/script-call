@@ -1,0 +1,93 @@
+{
+  "retrieved": "2026-10-26",
+  "publicSource": "US Naval Observatory API4.0.1",
+  "cases": [
+    {
+      "date": "2026-10-26",
+      "latitude": 38.8895,
+      "longitude": -77.0353,
+      "zone": "America/New_York",
+      "source": "https://aa.usno.navy.mil/api/rstt/oneday?date=2026-10-26&coords=38.8895,-77.0353&tz=-4",
+      "events": [
+        {
+          "phen": "Begin Civil Twilight",
+          "time": "07:02"
+        },
+        {
+          "phen": "Rise",
+          "time": "07:29"
+        },
+        {
+          "phen": "Upper Transit",
+          "time": "12:52"
+        },
+        {
+          "phen": "Set",
+          "time": "18:15"
+        },
+        {
+          "phen": "End Civil Twilight",
+          "time": "18:42"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "latitude": 38.8895,
+      "longitude": -77.0353,
+      "zone": "America/New_York",
+      "source": "https://aa.usno.navy.mil/api/rstt/oneday?date=2026-11-01&coords=38.8895,-77.0353&tz=-5",
+      "events": [
+        {
+          "phen": "Begin Civil Twilight",
+          "time": "06:08"
+        },
+        {
+          "phen": "Rise",
+          "time": "06:35"
+        },
+        {
+          "phen": "Upper Transit",
+          "time": "11:52"
+        },
+        {
+          "phen": "Set",
+          "time": "17:08"
+        },
+        {
+          "phen": "End Civil Twilight",
+          "time": "17:35"
+        }
+      ]
+    },
+    {
+      "date": "2026-12-31",
+      "latitude": -33.87,
+      "longitude": 151.21,
+      "zone": "Australia/Sydney",
+      "source": "https://aa.usno.navy.mil/api/rstt/oneday?date=2026-12-31&coords=-33.87,151.21&tz=11",
+      "events": [
+        {
+          "phen": "Begin Civil Twilight",
+          "time": "05:18"
+        },
+        {
+          "phen": "Rise",
+          "time": "05:47"
+        },
+        {
+          "phen": "Upper Transit",
+          "time": "12:58"
+        },
+        {
+          "phen": "Set",
+          "time": "20:09"
+        },
+        {
+          "phen": "End Civil Twilight",
+          "time": "20:38"
+        }
+      ]
+    }
+  ]
+}

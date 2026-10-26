@@ -1,6 +1,6 @@
 'use strict';
 const crypto=require('node:crypto');
-const SunCalc=require('suncalc');
+const Solar=require('./solar.cjs'),CompanyImage=require('./company-image.cjs'),Lunch=require('../web/lunch-timing.js');
 const Availability=require('../web/availability.js');
 const Days=require('../web/day-management.js');
 const Records=require('../web/record-recovery.js');
@@ -31,7 +31,7 @@ function records(list,label){
  const ids=new Set();for(const r of list){if(!r||!ID.test(r.id)||ids.has(r.id))throw Error('Invalid or duplicate '+label+' ID.');ids.add(r.id);}return ids;
 }
 function validateProject(p){
- guard(p);Availability.validate(p);Records.validate(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
+ guard(p);if(p.companyImage!==undefined)CompanyImage.validate(p.companyImage);Availability.validate(p);Records.validate(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
  if(p.temperatureUnit!==undefined&&!['C','F'].includes(p.temperatureUnit))throw Error('Invalid temperature unit.');
  if(p.timeDisplayClock!==undefined&&!['12','24'].includes(p.timeDisplayClock))throw Error('Invalid time display preference.');
  if(p.schema!==1||!ID.test(p.id)||typeof p.title!=='string'||p.title.length>200||typeof p.company!=='string')throw Error('Unsupported or invalid project.');
@@ -43,6 +43,7 @@ function validateProject(p){
  for(const s of p.scenes){for(const k of ['scriptDay','dayNight','notes'])if(s[k]!==undefined&&typeof s[k]!=='string')throw Error('Invalid scene detail.');if(typeof s.number!=='string'||typeof s.slug!=='string'||typeof s.synopsis!=='string'||!Number.isInteger(s.eighths)||s.eighths<0||s.eighths>8000||!Array.isArray(s.castIds)||s.castIds.some(v=>!people.has(v)))throw Error('Invalid scene data.');if(s.locationId&&!locations.has(s.locationId))throw Error('Scene refers to an unknown location.');}
  for(const d of allDays){
   if(typeof d.label!=='string'||typeof d.date!=='string'||typeof d.unit!=='string'||!d.overrides||!d.weather||!d.layout)throw Error('Invalid day.');
+  Solar.validate(d.solarOverrides);if(d.lunchMode!==undefined&&!['auto','manual'].includes(d.lunchMode))throw Error('Invalid lunch mode.');if(d.mealOffset!==undefined&&(!Number.isInteger(d.mealOffset)||d.mealOffset<0||d.mealOffset>1))throw Error('Invalid lunch day offset.');if(d.advanceSecond!==undefined&&typeof d.advanceSecond!=='string')throw Error('Invalid second advance schedule.');
   for(const k of ['highC','lowC'])if(d.weather[k]!==undefined&&d.weather[k]!==null&&(!Number.isFinite(d.weather[k])||Math.abs(d.weather[k])>100))throw Error('Invalid forecast temperature.');
   if(!['manual','nws'].includes(d.weather.mode)||typeof d.weather.summary!=='string'||typeof d.weather.approved!=='boolean')throw Error('Invalid weather fields.');
   for(const k of Object.keys(d.overrides))if(!['generalCall','meal','wrap','primaryLocationId','zone','notes'].includes(k)||typeof d.overrides[k]!=='string')throw Error('Invalid day override.');
@@ -63,7 +64,7 @@ function validateProject(p){
 }
 function defaultLayout(){return {preset:'gcasper',sceneColors:true,paper:'A4',clock:'24',temperature:'C',mono:false,includeContacts:false,order:ORDER.slice(),hidden:[],custom:[]};}
 function newDay(p,date=Days.nextDayDate(p.days)){
- return {id:id(),label:'Day '+String(p.days.length+1).padStart(2,'0'),date,unit:'A',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:p.days.length?clone(p.days.at(-1).layout):defaultLayout(),baseRevisionId:null};
+ return {id:id(),label:'Day '+String(p.days.length+1).padStart(2,'0'),date,unit:'A',lunchMode:'auto',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:p.days.length?clone(p.days.at(-1).layout):defaultLayout(),baseRevisionId:null};
 }
 function newProject(title='Untitled production'){
  const p={schema:1,id:id(),title,company:'',defaults:{generalCall:'07:00',meal:'12:30',wrap:'18:00',zone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Etc/UTC',primaryLocationId:'',notes:''},sheetDefaults:sheetDefaults(),people:[],locations:[],scenes:[],days:[]};p.days.push(newDay(p));return p;
@@ -77,14 +78,10 @@ function candidates(date,time,zone){
  return [...offsets].map(o=>target-o).filter(ms=>{const p=localParts(ms,zone);return Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second)===target;}).sort((a,b)=>a-b);
 }
 function weatherKey(d,loc,zone){return JSON.stringify([d.date,loc?.id,loc?.latitude,loc?.longitude,zone]);}
-function solar(date,loc,zone){
- if(!okDate(date)||!okZone(zone)||!loc||loc.latitude===null||loc.longitude===null)return {status:'Enter coordinates and a valid date / timezone.'};
- const times=[];for(const off of [-1,0,1]){const x=addDate(date,off);for(const k of ['sunrise','sunset','dawn','dusk']){const v=SunCalc.getTimes(new Date(x+'T12:00Z'),loc.latitude,loc.longitude)[k];if(Number.isFinite(+v)){const p=localParts(+v,zone);if(`${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`===date)times.push([k,v.toISOString()]);}}}
- const out={algorithm:'SunCalc 1.9.0',status:'Calculated offline',sunrise:null,sunset:null,dawn:null,dusk:null};for(const [k,v] of times)out[k]=v;
- if(!out.sunrise&&!out.sunset)out.status='No sunrise / sunset on this local date (polar conditions).';return out;
-}
+function solar(date,loc,zone,overrides){return Solar.calculate(date,loc,zone,overrides);}
+
 function resolve(p,dayId){
- const d=p.days.find(d=>d.id===dayId);if(!d)throw Error('Shooting day not found.');const values={...p.defaults,...d.overrides};
+ const d=p.days.find(d=>d.id===dayId);if(!d)throw Error('Shooting day not found.');const values={...p.defaults,...d.overrides};const lunch=Lunch.resolve(p,d);values.meal=lunch.time;values.mealOffset=lunch.offset;
  const selected=p.locations.find(l=>l.id===values.primaryLocationId)||null,loc=selected&&!Records.deleted(p,'locations',selected.id)?selected:null;const zone=Object.hasOwn(d.overrides,'zone')?values.zone:selected?.zone||values.zone;
  const people=new Map(p.people.map(x=>[x.id,x])),scenes=new Map(p.scenes.map(x=>[x.id,x]));
  const weather=clone(d.weather);weather.stale=!!weather.key&&weather.key!==weatherKey(d,loc,zone)||weather.mode==='nws'&&(!Number.isFinite(Date.parse(weather.fetchedAt))||Date.now()-Date.parse(weather.fetchedAt)<0||Date.now()-Date.parse(weather.fetchedAt)>3600000);
@@ -93,9 +90,9 @@ function resolve(p,dayId){
  const activeSchedule=d.schedule.filter(s=>s.type!=='scene'||!Records.deleted(p,'scenes',s.sceneId));
  const sceneCopy=s=>s?{...clone(s),castIds:s.castIds.filter(id=>activePeople.has(id))}:null;
  const sheet={...sheetDefaults(),...p.sheetDefaults,...d.sheetOverrides};for(const k of ['high','low'])sheet[k]=Details.temperature(p,d,loc,zone,k);
- const calls=activeCalls.map(c=>({...clone(c),person:clone(people.get(c.personId)),call:CallDefaults.resolve(p,d,people.get(c.personId),c),inherited:!c.call}));
+ const calls=activeCalls.map(c=>({...clone(c),person:clone(people.get(c.personId)),call:CallDefaults.resolve(p,d,people.get(c.personId),c),onCall:Availability.record(p,c.personId,d.date).state==='on-call',inherited:!c.call}));
  if(!d.layout.includeContacts)for(const c of calls){c.person.email='';c.person.phone='';}
- return {schema:1,productionDetails:1,keyPositions:Details.keyPositions(p,d),schedulePresentation:'scene-notes',importedFromProductionDesk:!!p.productionDesk,productionId:p.id,title:p.title,company:p.company,demo:!!p.demo,day:{...clone(d),layout:{...clone(d.layout),clock:p.timeDisplayClock||d.layout.clock,temperature:Temperature.mode(p,d)},calls:clone(activeCalls),schedule:clone(activeSchedule)},values:{...values,zone},location:clone(loc),schedule:activeSchedule.map(s=>({...clone(s),scene:s.type==='scene'?sceneCopy(scenes.get(s.sceneId)):null})),calls,weather,solar:solar(d.date,loc,zone),sheet,dayNumber:p.days.indexOf(d)+1,totalDays:p.days.length,locations:clone(Records.active(p,'locations')),advanceSchedule:p.days[p.days.indexOf(d)+1]?.schedule.filter(s=>s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId)).map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))}))||[],advanceDay:p.days[p.days.indexOf(d)+1]?{label:p.days[p.days.indexOf(d)+1].label,date:p.days[p.days.indexOf(d)+1].date}:null,castNumbers:Object.fromEntries(p.people.filter(p=>p.type==='cast').map((p,i)=>[p.id,p.castNumber||String(i+1)])),resolvedAt:new Date().toISOString()};
+ return {schema:1,...(p.companyImage!==undefined?{companyImage:clone(p.companyImage)}:{}),callPresentation:'availability-on-call',productionDetails:1,keyPositions:Details.keyPositions(p,d),schedulePresentation:'scene-notes',importedFromProductionDesk:!!p.productionDesk,productionId:p.id,title:p.title,company:p.company,demo:!!p.demo,day:{...clone(d),layout:{...clone(d.layout),clock:p.timeDisplayClock||d.layout.clock,temperature:Temperature.mode(p,d)},calls:clone(activeCalls),schedule:clone(activeSchedule)},values:{...values,zone},location:clone(loc),schedule:activeSchedule.map(s=>({...clone(s),scene:s.type==='scene'?sceneCopy(scenes.get(s.sceneId)):null})),calls,weather,solar:solar(d.date,loc,zone,d.solarOverrides),lunch,sheet,dayNumber:p.days.indexOf(d)+1,totalDays:p.days.length,locations:clone(Records.active(p,'locations')),advanceSchedule:p.days[p.days.indexOf(d)+1]?.schedule.filter(s=>s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId)).map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))}))||[],advanceDay:p.days[p.days.indexOf(d)+1]?{label:p.days[p.days.indexOf(d)+1].label,date:p.days[p.days.indexOf(d)+1].date}:null,advanceDays:[1,2].map((offset,index)=>{const next=p.days[p.days.indexOf(d)+offset];return {day:next?{id:next.id,label:next.label,date:next.date,unit:next.unit}:null,notes:index?d.advanceSecond||'':d.advance||'',schedule:next?next.schedule.filter(s=>s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId)).map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))})):[]};}),castNumbers:Object.fromEntries(p.people.filter(p=>p.type==='cast').map((p,i)=>[p.id,p.castNumber||String(i+1)])),resolvedAt:new Date().toISOString()};
 }
 function review(p,dayId){
  const r=resolve(p,dayId),errors=[],warnings=[];const {day:d,values:v,location:loc}=r;

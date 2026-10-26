@@ -1,0 +1,7 @@
+'use strict';
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.DepartmentGroups=factory();})(globalThis,()=>{
+ const columns=[['Production','Assistant Directors','Continuity','Camera','Sound','Video','Electric','Grip'],['Make-up','Wardrobe','Art Department','Construction','Set Decoration','Property','Special Effects','Medic / Fire Safety','Visual Effects','Additional Labor'],['Production Office','Accounting','Casting','Post Production','Legal','Locations','Catering','Craft Service','Transportation','Vehicles']];
+ const aliases={director:'production',directors:'production',producers:'production',producer:'production',assistantdirector:'assistantdirectors',ad:'assistantdirectors',assistantdirection:'assistantdirectors',scriptsupervisor:'continuity',scriptsupervision:'continuity',art:'artdepartment',locationsound:'sound',costumedesign:'wardrobe',costume:'wardrobe',hairmakeup:'makeup',hairandmakeup:'makeup',drivers:'transportation',editorialpost:'postproduction',vfx:'visualeffects',specialeffect:'specialeffects',medic:'medicfiresafety',firesafety:'medicfiresafety',craftservices:'craftservice',transport:'transportation',vehicle:'vehicles'};
+ const normalize=s=>{const key=String(s||'').normalize('NFKC').toLowerCase().replace(/[^a-z]/g,'');return aliases[key]||key;};
+ columns.forEach(Object.freeze);Object.freeze(columns);return {columns,normalize};
+});

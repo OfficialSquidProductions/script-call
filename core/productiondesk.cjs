@@ -99,7 +99,9 @@ function merge(current,incoming){
   }
   conflicts.push(path+': local edit preserved');return local;
  }
- const target={...incoming.productionDesk.baseline};
+ const target=D.clone(incoming.productionDesk.baseline);
+ // A new importer default must not switch an existing legacy day's lunch mode.
+ for(const next of target.days){const local=current.days.find(d=>d.id===next.id);if(local&&local.lunchMode===undefined)delete next.lunchMode;}
  const output=walk(D.clone(current),old,target,'production');
  output.id=current.id;output.productionDesk=D.clone(incoming.productionDesk);D.validateProject(output);return {project:output,conflicts:[...new Set(conflicts)]};
 }
