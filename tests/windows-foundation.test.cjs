@@ -28,3 +28,16 @@ test('Windows preflight reports actual native blockers without claiming verifica
  const good=preflight({platform:'win32',arch:'x64',node:'24.0.0',release:'10.0.26100',root});assert.equal(good.status,'ready-for-dependency-setup');assert.equal(good.windowsVerified,false);
  const bad=preflight({platform:'darwin',arch:'ia32',node:'20.19.0',release:'24.0.0',root});assert.equal(bad.blockers.length,3);assert.equal(preflight({platform:'win32',arch:'x64',node:'22.12.0',release:'6.3.0',root}).blockers.length,2);
 });
+
+test('portable Windows preview resolves dedicated storage after relocation and rejects external profiles',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'script-call-portable-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const config={kind:'portable-windows-preview',schema:1},executable=path.join(root,'Script Call Windows Preview.exe');
+ assert.equal(previewLocation(config,undefined,{platform:'win32',executable}),path.join(root,'Script Call Preview Data'));
+ assert.throws(()=>previewLocation(config,os.homedir(),{platform:'win32',executable}),/inside/);
+ assert.throws(()=>previewLocation(config,undefined,{platform:'darwin',executable}),/unsupported/);
+ assert.throws(()=>previewLocation({...config,schema:2},undefined,{platform:'win32',executable}),/unsupported/);
+ const other=fs.mkdtempSync(path.join(os.tmpdir(),'script-call-portable-relocated-'));t.after(()=>fs.rmSync(other,{recursive:true,force:true}));
+ assert.equal(previewLocation(config,undefined,{platform:'win32',executable:path.join(other,'Script Call Windows Preview.exe')}),path.join(other,'Script Call Preview Data'));
+ const plan=previewPlan(root,'build/portable'),options=previewConfig(plan,{portable:true});
+ assert.equal(options.appId,'org.squidproductions.scriptcall.windows-preview');assert.equal(options.productName,'Script Call Windows Preview');assert.equal(options.extraMetadata.version,'0.3.16-windows.preview.1');assert.equal(options.publish,null);assert.equal(options.win.verifyUpdateCodeSignature,true);
+});

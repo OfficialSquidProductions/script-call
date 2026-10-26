@@ -12,7 +12,7 @@ app.setName('Script Call');
 const previewFile=path.join(__dirname,'preview-profile.json'),previewProfile=fs.existsSync(previewFile)?JSON.parse(fs.readFileSync(previewFile,'utf8')):null;
 // A packaged development preview always has its own profile, including direct launch.
 const previewDirectory=previewProfile?require('./preview-location.cjs').previewLocation(previewProfile,process.env.CALLSHEET_DATA_DIR):null;
-const profileLocation=require('./data-location.cjs').dataLocation({explicit:previewDirectory||process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
+const profileLocation=previewProfile?.kind==='portable-windows-preview'?{userData:previewDirectory,storeDirectory:previewDirectory}:require('./data-location.cjs').dataLocation({explicit:previewDirectory||process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
 app.setPath('userData',profileLocation.userData);
 // Keep all application-owned diagnostics with the selected profile, including release QA copies.
 app.setAppLogsPath(path.join(profileLocation.userData,'logs'));app.setPath('crashDumps',path.join(profileLocation.userData,'crash-dumps'));

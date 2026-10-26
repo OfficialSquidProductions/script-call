@@ -3,14 +3,14 @@
 const {_electron}=require('./runtime.cjs').playwright,assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'verification/shooting-days'),profile=path.join(root,'tmp/days-native-'+Date.now());fs.mkdirSync(out,{recursive:true});
 let bundle=process.env.CALLSHEET_TEST_APP||path.join(root,'build/shooting-days-preview/Script Call.app'),config;
-if(process.env.CALLSHEET_DAYS_APP){
+if(process.platform==='win32'){({bundle,config}=require('./support/windows-app.cjs').prepare());}else if(process.env.CALLSHEET_DAYS_APP){
  const source=path.resolve(process.env.CALLSHEET_DAYS_APP);assert(source.startsWith(path.join(root,'build')+path.sep),'Use only an isolated development build');
  const installation=fs.mkdtempSync(path.join(root,'tmp/days-signed-installation-'));bundle=path.join(installation,'Script Call.app');fs.cpSync(source,bundle,{recursive:true,preserveTimestamps:true,dereference:false,verbatimSymlinks:true});
  require('node:child_process').execFileSync('codesign',['--verify','--deep','--strict',bundle]);
  config={directory:path.join(installation,'direct-profile'),allowedParent:root};
- const location=require('../desktop/data-location.cjs').dataLocation({explicit:config.directory,defaultProfile:path.join(installation,'unused-default'),executable:path.join(bundle,'Contents/MacOS/Script Call')});assert(!location.error);assert.equal(location.storeDirectory,config.directory);
+ const location=require('../desktop/data-location.cjs').dataLocation({explicit:config.directory,defaultProfile:path.join(installation,'unused-default'),executable:(process.platform==='win32'?require('./support/windows-app.cjs').executable(bundle):path.join(bundle,'Contents/MacOS/Script Call'))});assert(!location.error);assert.equal(location.storeDirectory,config.directory);
 }else config=JSON.parse(fs.readFileSync(path.join(bundle,'Contents/Resources/app/desktop/preview-profile.json')));
-const executable=path.join(bundle,'Contents/MacOS/Script Call');assert(config.directory.startsWith(root+path.sep));assert(!config.directory.includes('.local-data'));assert.equal(config.allowedParent,root);
+const executable=(process.platform==='win32'?require('./support/windows-app.cjs').executable(bundle):path.join(bundle,'Contents/MacOS/Script Call'));assert(config.directory.startsWith(root+path.sep));assert(!config.directory.includes('.local-data'));assert.equal(config.allowedParent,root);
 let app,page;const checks=[],errors=[];const check=s=>{checks.push(s);console.log('PASS',s);};
 const state=()=>page.evaluate(()=>CallSheet.request('get',{id:document.querySelector('#production').value}));
 async function launch(direct=false){const env={...process.env};delete env.CALLSHEET_DATA_DIR;if(!direct)env.CALLSHEET_DATA_DIR=profile;app=await _electron.launch({executablePath:executable,args:[],env});page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));await page.waitForFunction(()=>document.querySelector('#save-state')?.textContent==='Saved on this device');const settings=await page.evaluate(()=>CallSheet.request('bootstrap'));assert.equal(settings.dataDirectory,direct?config.directory:profile);const paths=await app.evaluate(({app})=>({userData:app.getPath('userData'),logs:app.getPath('logs')}));assert.equal(paths.userData,settings.dataDirectory);assert(paths.logs.startsWith(settings.dataDirectory));assert(fs.existsSync(path.join(settings.dataDirectory,'diagnostics')));assert(fs.existsSync(path.join(settings.dataDirectory,'backups')));return settings;}

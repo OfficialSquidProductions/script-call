@@ -141,3 +141,9 @@ References: [Electron packaging](https://electronjs.org/docs/latest/tutorial/tut
 [builder Windows options](https://www.electron.build/docs/win).
 The pinned builder 26.15.3 schema was also checked for `dir`, `signExecutable`
 and `verifyUpdateCodeSignature`; its native execution is still pending.
+
+## Windows native follow-up
+
+Native x64 build/acceptance work and the separately named portable preview are
+recorded in [WINDOWS_NATIVE_VALIDATION.md](WINDOWS_NATIVE_VALIDATION.md). The earlier
+handoff/access notes above describe the foundation checkpoint, not current access.

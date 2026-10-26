@@ -5,7 +5,7 @@
 // Never set an input value here: callers must assert the actual selection/events.
 async function nativePopupKey(application,key){
  const keys={ArrowDown:'Down',ArrowUp:'Up',Enter:'Return',Escape:'Escape',Tab:'Tab'};
- if(process.platform!=='darwin'||!Object.hasOwn(keys,key))throw Error('Native popup keyboard QA supports explicit Mac navigation keys only.');
+ if(!['darwin','win32'].includes(process.platform)||!Object.hasOwn(keys,key))throw Error('Native popup keyboard QA supports explicit Mac/Windows navigation keys only.');
  return application.evaluate(async({app,BrowserWindow},keyCode)=>{
   const window=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL()==='callsheet://app/index.html');
   if(!window||!window.isVisible())throw Error('Native popup QA requires a visible isolated test window.');
