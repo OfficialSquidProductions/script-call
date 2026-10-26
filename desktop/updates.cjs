@@ -32,6 +32,13 @@ class Updates {
  async setup(){
   if(this.updater)return;const updater=this.updaterFactory?this.updaterFactory():require('electron-updater').autoUpdater;this.updater=updater;
   updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.allowDowngrade=false;updater.allowPrerelease=false;updater.disableDifferentialDownload=true;updater.disableWebInstaller=true;
+  if(this.platform==='win32'){
+   const {publishers,verifyWindowsSignature}=require('./windows-signature.cjs');publishers(this.config.publisherName);
+   // Retain native verification and add a strict gate: unavailable PowerShell,
+   // malformed output or a missing signature must never become a successful check.
+   const nativeVerify=updater.verifyUpdateCodeSignature?.bind(updater);
+   updater.verifyUpdateCodeSignature=async(names,file)=>{await verifyWindowsSignature(this.config.publisherName,file);return nativeVerify?nativeVerify(names,file):null;};
+  }
   // A random loopback path exposes only metadata derived from the verified envelope.
   const token=crypto.randomBytes(24).toString('hex');this.server=http.createServer((req,res)=>{const name=this.platform==='darwin'?'latest-mac.yml':'latest.yml';if(req.method!=='GET'||new URL(req.url,'http://127.0.0.1').pathname!=='/'+token+'/'+name){res.writeHead(404).end();return;}const r=this.release,a=r.artifact;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify({version:r.version,releaseNotes:r.notes,releaseDate:r.issuedAt,minimumSystemVersion:a.minimumSystemVersion,path:a.url,sha512:a.sha512,files:[{url:a.url,sha512:a.sha512,size:a.size}]}));});
   await new Promise((resolve,reject)=>{this.server.once('error',reject);this.server.listen(0,'127.0.0.1',resolve);});this.server.unref();
