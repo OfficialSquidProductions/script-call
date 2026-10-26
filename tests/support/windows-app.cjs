@@ -19,7 +19,7 @@ function prepare(profile,destination){
  const config={directory:profile||path.join(path.dirname(bundle),'direct-profile'),allowedParent:root};
  assert(path.resolve(config.directory).startsWith(path.join(root,'tmp')+path.sep));
  fs.writeFileSync(path.join(bundle,'resources/app/desktop/preview-profile.json'),JSON.stringify(config));
- return {bundle,config,executable:path.join(bundle,manifest.kind==='portable-windows-preview'?'Script Call Windows Preview.exe':'Script Call.exe'),source};
+ return {bundle,config,executable:path.join(bundle,['portable-windows-preview','managed-portable-windows-preview'].includes(manifest.kind)?'Script Call Windows Preview.exe':'Script Call.exe'),source};
 }
 function executable(bundle){return path.join(bundle,fs.existsSync(path.join(bundle,'Script Call Windows Preview.exe'))?'Script Call Windows Preview.exe':'Script Call.exe');}
 module.exports={prepare,executable};

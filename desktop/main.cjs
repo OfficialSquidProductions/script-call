@@ -10,9 +10,10 @@ protocol.registerSchemesAsPrivileged([{scheme:'callsheet',privileges:{standard:t
 app.setName('Script Call');
 // Keep the original default profile and origin: branding must never orphan projects.
 const previewFile=path.join(__dirname,'preview-profile.json'),previewProfile=fs.existsSync(previewFile)?JSON.parse(fs.readFileSync(previewFile,'utf8')):null;
+const managedPortable=previewProfile?.kind==='managed-portable-windows-preview'?require('./portable-runtime.cjs').context():null;
 // A packaged development preview always has its own profile, including direct launch.
-const previewDirectory=previewProfile?require('./preview-location.cjs').previewLocation(previewProfile,process.env.CALLSHEET_DATA_DIR):null;
-const profileLocation=previewProfile?.kind==='portable-windows-preview'?{userData:previewDirectory,storeDirectory:previewDirectory}:require('./data-location.cjs').dataLocation({explicit:previewDirectory||process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
+const previewDirectory=managedPortable?managedPortable.directory:previewProfile?require('./preview-location.cjs').previewLocation(previewProfile,process.env.CALLSHEET_DATA_DIR):null;
+const profileLocation=managedPortable||previewProfile?.kind==='portable-windows-preview'?{userData:previewDirectory,storeDirectory:previewDirectory}:require('./data-location.cjs').dataLocation({explicit:previewDirectory||process.env.CALLSHEET_DATA_DIR,defaultProfile:path.join(app.getPath('appData'),'Call Sheet Prototype'),executable:app.getPath('exe')});
 app.setPath('userData',profileLocation.userData);
 // Keep all application-owned diagnostics with the selected profile, including release QA copies.
 app.setAppLogsPath(path.join(profileLocation.userData,'logs'));app.setPath('crashDumps',path.join(profileLocation.userData,'crash-dumps'));
@@ -39,6 +40,7 @@ async function pdf(snapshot){
 function frozen(projectId,dayId){const s=store.get(projectId),day=s.project.days.find(d=>d.id===dayId);if(!day)throw Error('Day not found.');return day.lockedRevisionId?store.revision(projectId,day.lockedRevisionId).snapshot:D.resolve(s.project,dayId);}
 async function saveFile(bytes,defaultPath,filter){const r=await dialog.showSaveDialog(win,{defaultPath,filters:[filter]});if(r.canceled)return {canceled:true};const target=r.filePath,tmp=target+'.'+D.id()+'.tmp';try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,target);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}return {path:target};}
 const actions={
+ async portableReady(){if(managedPortable){await require('./portable-runtime.cjs').ready(managedPortable);win.show();}return {ready:true};},
  bootstrap(){if(!store.list().length)store.create(D.newProject());return {projects:store.list(),fontAvailable:!!font,version:app.getVersion(),dataDirectory:store.dir,updates:updates.status(),diagnostics:diagnostics.status()};},
  diagnosticStatus:()=>diagnostics.status(),diagnosticDismiss:()=>diagnostics.dismiss(),
  diagnosticCapture:a=>{if(['renderer-error','renderer-unhandled-rejection'].includes(a.kind))diagnostics.capture(a.kind,a.error);return {recorded:true};},
@@ -46,7 +48,7 @@ const actions={
  reportCopy:a=>{clipboard.writeText(diagnostics.draft(a.id).text);return {copied:true};},
  reportExport:a=>saveFile(Buffer.from(diagnostics.draft(a.id).text),'Script-Call-Bug-Report.txt',{name:'Reviewed bug report',extensions:['txt']}),
  reportMail:a=>openDraft(diagnostics.draft(a.id),{app,shell}),
- updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>{if(previewProfile)throw Error('Preview builds cannot download or install updates.');return updates.download();},updateInstall:()=>{if(previewProfile)throw Error('Preview builds cannot install updates.');if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
+ updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>{if(previewProfile&&!managedPortable)throw Error('Preview builds cannot download or install updates.');return updates.download();},updateInstall:()=>{if(previewProfile&&!managedPortable)throw Error('Preview builds cannot install updates.');if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
  async chooseCompanyImage(a){store.get(a.projectId);const selected=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Company header image (PNG or JPEG)',extensions:['png','jpg','jpeg']}]});if(selected.canceled)return {canceled:true};const imageTools=require('../core/company-image.cjs'),fd=fs.openSync(selected.filePaths[0],'r');let bytes;try{const stat=fs.fstatSync(fd);if(!stat.isFile()||stat.size>imageTools.MAX_INPUT)throw Error('Choose a regular PNG or JPEG file under 5 MB.');bytes=Buffer.alloc(stat.size);let n=0;while(n<bytes.length){const count=fs.readSync(fd,bytes,n,bytes.length-n,null);if(!count)throw Error('Image changed while reading.');n+=count;}}finally{fs.closeSync(fd);}imageTools.inspectInput(bytes);let image=nativeImage.createFromBuffer(bytes);if(image.isEmpty())throw Error('This image could not be decoded; choose a valid PNG or JPEG.');const size=image.getSize(),scale=Math.min(1,imageTools.MAX_SIDE/size.width,imageTools.MAX_SIDE/size.height);if(scale<1)image=image.resize({width:Math.max(1,Math.round(size.width*scale)),height:Math.max(1,Math.round(size.height*scale)),quality:'best'});let encoded=image.toPNG();while(encoded.length>imageTools.MAX_PNG&&Math.max(image.getSize().width,image.getSize().height)>128){const size=image.getSize();image=image.resize({width:Math.max(1,Math.floor(size.width*.75)),height:Math.max(1,Math.floor(size.height*.75)),quality:'best'});encoded=image.toPNG();}return {image:imageTools.encode(encoded,path.basename(selected.filePaths[0]))};},
  list:()=>store.list(),get:a=>store.get(a.id),save:a=>store.save(a.project,a.version),
  recordChange:a=>{if(issueBusy)throw Error('Finish issuing before changing deleted records.');return store.changeRecord(a.projectId,a.version,a.command);},
@@ -98,7 +100,8 @@ const actions={
 app.whenReady().then(()=>{
  if(!primaryInstance)return;
  const dir=profileLocation.storeDirectory;store=new Store(dir);store.backup();font=headingFont();logo='data:image/png;base64,'+fs.readFileSync(path.join(ROOT,'web/assets/SP_PURPLE.png')).toString('base64');
- updates=new Updates({app,config:updateConfig,backup:()=>store.backup(),busy:()=>issueBusy,notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('update-status',state);}});
+ const updateOptions={app,config:updateConfig,backup:()=>store.backup(),busy:()=>issueBusy,notify:state=>{if(win&&!win.isDestroyed())win.webContents.send('update-status',state);}};
+ updates=managedPortable?new (require('./portable-updates.cjs').PortableUpdates)({...updateOptions,context:managedPortable}):new Updates(updateOptions);
  protocol.handle('callsheet',request=>{
   const u=new URL(request.url);if(u.host!=='app')return new Response('Not found',{status:404});
   if(u.pathname==='/fonts/heading.otf')return font?net.fetch(pathToFileURL(font).toString()):new Response('',{status:404});
@@ -106,7 +109,7 @@ app.whenReady().then(()=>{
   const p=path.resolve(ROOT,'web',relative);if(!p.startsWith(path.join(ROOT,'web')+path.sep))return new Response('',{status:403});return net.fetch(pathToFileURL(p).toString());
  });
  const hiddenPreview=!!previewProfile&&process.env.CALLSHEET_PREVIEW_HIDDEN==='1';
- win=new BrowserWindow({show:!hiddenPreview,width:1500,height:980,minWidth:1050,minHeight:700,title:'Script Call',backgroundColor:'#faf8f9',icon:path.join(ROOT,'web/assets/SP_PURPLE.png'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,spellcheck:false,backgroundThrottling:!hiddenPreview}});
+ win=new BrowserWindow({show:!hiddenPreview&&!managedPortable,width:1500,height:980,minWidth:1050,minHeight:700,title:'Script Call',backgroundColor:'#faf8f9',icon:path.join(ROOT,'web/assets/SP_PURPLE.png'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,spellcheck:false,backgroundThrottling:!hiddenPreview}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());
  win.webContents.on('render-process-gone',(_,details)=>{if(details.reason!=='clean-exit'){diagnostics.capture(['crashed','oom','abnormal-exit','integrity-failure'].includes(details.reason)?'renderer-crash':'renderer-interrupted',undefined,details);dialog.showMessageBox(win,{type:'error',title:'Script Call window stopped',message:'The editing window stopped unexpectedly.',detail:(diagnostics.available?'A minimal diagnostic summary was saved locally for review next time you open Script Call.':'Local diagnostic storage is unavailable; you can report this manually after reopening.')+' Unsaved edits may not have been saved. Nothing was sent.',buttons:['OK']}).catch(()=>{});}});
  // No renderer HTTP access: forecast traffic only originates from the explicit main-process action.
@@ -115,6 +118,6 @@ app.whenReady().then(()=>{
  Menu.setApplicationMenu(Menu.buildFromTemplate(require('./application-menu.cjs').applicationMenu(process.platform,event=>win.webContents.send(event))));
  win.on('close',event=>{if(win&&!win.forceClose&&!win.webContents.isCrashed()){event.preventDefault();win.webContents.send('before-close');}});
  ipcMain.on('close-ready',event=>{if(event.sender===win.webContents){win.forceClose=true;win.close();}});
- win.loadURL('callsheet://app/index.html');if(!previewProfile)updates.start();
+ win.loadURL('callsheet://app/index.html');if(!previewProfile||managedPortable)updates.start();
 }).catch(error=>{diagnostics.capture('startup-failure',error);dialog.showErrorBox('Script Call could not start',error.message);app.quit();});
 app.on('window-all-closed',()=>app.quit());app.on('will-quit',()=>{updates?.close();if(store)store.close();if(primaryInstance)diagnostics.clean();});

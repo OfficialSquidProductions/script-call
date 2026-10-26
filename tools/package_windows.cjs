@@ -16,26 +16,27 @@ function previewPlan(root,out,arch=process.arch) {
  if(fs.existsSync(out))throw Error('Preview output already exists; choose a fresh directory.');
  return {root,out,arch,profile:path.join(out,'profile')};
 }
-function previewConfig(plan,{portable=false}={}) {
- return {directories:{output:plan.out},asar:false,publish:null,...(portable?{appId:'org.squidproductions.scriptcall.windows-preview',productName:'Script Call Windows Preview',extraMetadata:{version:'0.3.16-windows.preview.1'}}:{}),
+function previewConfig(plan,{portable=false,managed=false,version='0.3.16-windows.preview.1'}={}) {
+ if(managed){require('../desktop/portable-policy.cjs').version(version);portable=true;}
+ return {directories:{output:plan.out},asar:false,publish:null,...(portable?{appId:'org.squidproductions.scriptcall.windows-preview',productName:'Script Call Windows Preview',extraMetadata:{version}}:{}),
   win:{target:'dir',icon:'web/assets/icon.ico',signExecutable:false,verifyUpdateCodeSignature:true},
   afterPack:async context=>{
    const app=path.join(context.appOutDir,'resources','app');
-   fs.writeFileSync(path.join(app,'desktop','preview-profile.json'),JSON.stringify(portable?{kind:'portable-windows-preview',schema:1}:{directory:plan.profile,allowedParent:plan.out}));
+   fs.writeFileSync(path.join(app,'desktop','preview-profile.json'),JSON.stringify(portable?{kind:managed?'managed-portable-windows-preview':'portable-windows-preview',schema:1}:{directory:plan.profile,allowedParent:plan.out}));
    // Manifest contains public shipped source, not project contents or credentials.
    const hashes={};for(const folder of ['desktop','core','web'])walk(path.join(app,folder),file=>{hashes[path.relative(app,file).split(path.sep).join('/')]=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');});
-   fs.writeFileSync(path.join(plan.out,'preview-build.json'),JSON.stringify({kind:portable?'portable-windows-preview':'development-preview',version:portable?'0.3.16-windows.preview.1':require(path.join(plan.root,'package.json')).version,platform:'win32',arch:plan.arch,profile:portable?'Script Call Preview Data beside executable':plan.profile,updates:'disabled by embedded preview profile',sourceHashes:hashes},null,2));
+   fs.writeFileSync(path.join(plan.out,'preview-build.json'),JSON.stringify({kind:managed?'managed-portable-windows-preview':portable?'portable-windows-preview':'development-preview',version:portable?version:require(path.join(plan.root,'package.json')).version,platform:'win32',arch:plan.arch,profile:portable?'Script Call Preview Data beside executable':plan.profile,updates:'disabled by embedded preview profile',sourceHashes:hashes},null,2));
   }};
 }
 function walk(dir,visit){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isSymbolicLink())throw Error('Unexpected linked shipping resource.');if(entry.isDirectory())walk(file,visit);else if(entry.isFile())visit(file);}}
-async function build({out,arch=process.arch,portable=false}={}) {
+async function build({out,arch=process.arch,portable=false,managed=false,version}={}) {
  if(process.platform!=='win32')throw Error('Build and verify this preview on the authorized Windows PC; Mac checks are not Windows verification.');
  const plan=previewPlan(path.resolve(__dirname,'..'),out,arch);
  if(arch!==process.arch)throw Error('Build the native Windows architecture first; cross-architecture validation is separate.');
  const {build,Platform,Arch}=require('electron-builder');
  // Prevent automatic certificate discovery during local preview preparation.
  const previous=process.env.CSC_IDENTITY_AUTO_DISCOVERY;process.env.CSC_IDENTITY_AUTO_DISCOVERY='false';
- try{await build({projectDir:plan.root,targets:Platform.WINDOWS.createTarget('dir',arch==='x64'?Arch.x64:Arch.arm64),publish:'never',config:previewConfig(plan,{portable})});}
+ try{await build({projectDir:plan.root,targets:Platform.WINDOWS.createTarget('dir',arch==='x64'?Arch.x64:Arch.arm64),publish:'never',config:previewConfig(plan,{portable,managed,version})});}
  finally{if(previous===undefined)delete process.env.CSC_IDENTITY_AUTO_DISCOVERY;else process.env.CSC_IDENTITY_AUTO_DISCOVERY=previous;}
  return plan;
 }
