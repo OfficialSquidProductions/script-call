@@ -26,7 +26,7 @@ if(primaryInstance){
  app.on('child-process-gone',(_,details)=>{if(['crashed','oom','abnormal-exit','integrity-failure'].includes(details.reason))diagnostics.capture('utility-crash',undefined,details);});
 }
 app.on('second-instance',()=>{if(win){win.show();win.focus();}});
-const safeName=s=>String(s).replace(/[^a-zA-Z0-9_.-]+/g,'_').slice(0,120)||'CallSheet';
+const {safeName}=require('./file-names.cjs');
 async function pdf(snapshot){
  const errors=D.printErrors(snapshot);if(errors.length)throw Error(errors.join('\n'));
  const output=new BrowserWindow({show:false,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
@@ -112,8 +112,7 @@ app.whenReady().then(()=>{
  // No renderer HTTP access: forecast traffic only originates from the explicit main-process action.
  win.webContents.session.webRequest.onBeforeRequest((details,callback)=>callback({cancel:details.webContentsId===win.webContents.id&&/^https?:/.test(details.url)}));
  ipcMain.handle('callsheet',async(event,action,args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!Object.hasOwn(actions,action))throw Error('Unsupported request.');if(!args||typeof args!=='object')throw Error('Invalid request.');try{return await actions[action](args);}catch(error){if(!action.startsWith('report')&&!action.startsWith('diagnostic')&&(error?.code||error instanceof TypeError||error instanceof RangeError||error instanceof ReferenceError||error instanceof SyntaxError))diagnostics.capture('operation-failure',error);throw error;}});
- const template=[...(process.platform==='darwin'?[{label:'Script Call',submenu:[{role:'about'},{label:'Check for Updates…',click:()=>win.webContents.send('check-updates')},{type:'separator'},{role:'hide'},{role:'quit'}]}]:[]),{label:'File',submenu:[{label:'Save',accelerator:'CmdOrCtrl+S',click:()=>win.webContents.send('menu-save')},{role:'close'}]},{role:'editMenu'},{role:'viewMenu'},{role:'windowMenu'}];
- template.push({label:'Help',submenu:[{label:'Report a Bug…',click:()=>win.webContents.send('report-bug')}]});Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+ Menu.setApplicationMenu(Menu.buildFromTemplate(require('./application-menu.cjs').applicationMenu(process.platform,event=>win.webContents.send(event))));
  win.on('close',event=>{if(win&&!win.forceClose&&!win.webContents.isCrashed()){event.preventDefault();win.webContents.send('before-close');}});
  ipcMain.on('close-ready',event=>{if(event.sender===win.webContents){win.forceClose=true;win.close();}});
  win.loadURL('callsheet://app/index.html');if(!previewProfile)updates.start();

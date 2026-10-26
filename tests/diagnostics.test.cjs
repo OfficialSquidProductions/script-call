@@ -5,7 +5,7 @@ const {openDraft}=require('../desktop/report-delivery.cjs');
 function fixture(t,options={}){const directory=fs.mkdtempSync(path.join(os.tmpdir(),'script-call-diagnostics-'));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));return new Diagnostics({directory,version:'0.3.4',alive:()=>false,...options});}
 test('automatic diagnostics retain only fixed categories and app-owned source locations',t=>{
  const d=fixture(t);d.begin();d.capture('renderer-error',{name:'TypeError',code:'EACCES',message:'PRIVATE-PROJECT screenplay token=secret',stack:'TypeError: PRIVATE-PROJECT\n at name (/Users/alice/private-film/core/store.cjs:20:4)\n at secretName (C:\\Users\\Alice\\Film\\web\\app.js:14:2)\n at /Users/alice/secret.txt:55:2'});
- const text=fs.readFileSync(d.log,'utf8');assert(!/PRIVATE|alice|Alice|secret|private-film|secretName/.test(text));assert.match(text,/core\/store.cjs:20:4/);assert.match(text,/web\/app.js:14:2/);assert.equal(fs.statSync(d.log).mode&0o777,0o600);assert.equal(fs.statSync(d.directory).mode&0o777,0o700);assert.equal(d.status().pending,1);
+ const text=fs.readFileSync(d.log,'utf8');assert(!/PRIVATE|alice|Alice|secret|private-film|secretName/.test(text));assert.match(text,/core\/store.cjs:20:4/);assert.match(text,/web\/app.js:14:2/);if(process.platform!=='win32'){assert.equal(fs.statSync(d.log).mode&0o777,0o600);assert.equal(fs.statSync(d.directory).mode&0o777,0o700);}assert.equal(d.status().pending,1);
  assert.deepEqual(summary(new Proxy({},{get(){throw Error('hostile getter');}})),{name:'Error',frames:[]});
 });
 test('clean shutdown differs from an interrupted session and live sessions are not misclassified',t=>{
@@ -28,7 +28,7 @@ test('corrupt/oversized logs are bounded and storage failure leaves manual repor
 });
 test('diagnostic storage refuses a symlink and preserves captured version across app upgrades',t=>{
  const d=fixture(t);d.begin();d.capture('renderer-crash');d.clean();const next=new Diagnostics({directory:d.directory,version:'0.3.5',alive:()=>false});next.begin();assert.match(next.preview().text,/v0.3.4 renderer-crash/);next.clean();
- const target=path.join(d.directory,'target'),link=path.join(d.directory,'linked');fs.mkdirSync(target,{mode:0o700});fs.symlinkSync(target,link);const blocked=new Diagnostics({directory:link,version:'0.3.4'});assert.doesNotThrow(()=>blocked.begin());assert.equal(blocked.status().available,false);assert.deepEqual(fs.readdirSync(target),[]);
+ const target=path.join(d.directory,'target'),link=path.join(d.directory,'linked');fs.mkdirSync(target,{mode:0o700});fs.symlinkSync(target,link,process.platform==='win32'?'junction':'dir');const blocked=new Diagnostics({directory:link,version:'0.3.4'});assert.doesNotThrow(()=>blocked.begin());assert.equal(blocked.status().available,false);assert.deepEqual(fs.readdirSync(target),[]);
 });
 test('only immutable reviewed drafts are delivered; previews expire and are bounded',t=>{
  let now=Date.now();const d=fixture(t,{now:()=>now});for(let n=0;n<12;n++)d.preview({description:String(n)});assert.equal(d.drafts.size,5);const a=d.preview();now+=31*60000;assert.throws(()=>d.draft(a.id),/expired/);assert.throws(()=>d.draft('unknown'),/expired/);

@@ -8,10 +8,10 @@
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/*.test.cjs",
+    "test": "node tools/test.cjs",
     "test:desktop": "node tests/desktop.cjs",
     "build:mac": "python3 tools/package_mac.py",
-    "build:win": "electron-builder --win nsis --publish never",
+    "build:win": "node tools/package_windows.cjs",
     "test:gcasper": "node tests/gcasper.cjs",
     "test:updates": "node --test tests/updates.test.cjs",
     "test:import": "node tests/productiondesk-desktop.cjs",
@@ -21,7 +21,8 @@
     "build:reporter-preview": "python3 tools/package_mac.py --out \"build/reporter-preview/Script Call.app\"",
     "test:reporter": "node tests/reporter-desktop.cjs",
     "test:days": "node tests/shooting-days-desktop.cjs",
-    "test:availability": "node tests/availability-desktop.cjs"
+    "test:availability": "node tests/availability-desktop.cjs",
+    "preflight:win": "node tools/windows_preflight.cjs"
   },
   "dependencies": {
     "fflate": "0.8.2",
@@ -46,7 +47,8 @@
       "package.json",
       "THIRD_PARTY_NOTICES.md",
       "licenses/**",
-      "LICENSE"
+      "LICENSE",
+      "!desktop/preview-profile.json"
     ],
     "win": {
       "target": "nsis",
@@ -73,5 +75,8 @@
     },
     "artifactName": "Script-Call-${version}-${os}-${arch}.${ext}"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  }
 }

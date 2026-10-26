@@ -2,13 +2,21 @@
 // Installation-local preference, outside the signed bundle. No project data is moved.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 function dataLocation({explicit,defaultProfile,executable,platform=process.platform,user=process.getuid?.()??crypto.createHash('sha256').update(os.homedir()).digest('hex').slice(0,12)}){
- const bundle=platform==='darwin'?path.dirname(path.dirname(path.dirname(executable))):path.dirname(executable),folder=platform==='darwin'?path.dirname(bundle):bundle;
- const marker=path.join(folder,'.script-call-profile-'+user+'.json');
+ const bundle=platform==='darwin'?path.dirname(path.dirname(path.dirname(executable))):path.dirname(executable);
+ // Keep Windows's remembered store outside the replaced installation directory,
+ // just as the Mac marker is outside its .app. A path hash separates side-by-side
+ // test installations without writing into the user's default project profile.
+ const windows=platform==='win32',folder=platform==='darwin'||windows?path.dirname(bundle):bundle;
+ const installation=windows?'-'+crypto.createHash('sha256').update(path.resolve(bundle).toLowerCase()).digest('hex').slice(0,16):'';
+ let marker=path.join(folder,'.script-call-profile-'+user+installation+'.json');
+ const legacyMarker=windows?path.join(bundle,'.script-call-profile-'+user+'.json'):null;
+ if(!explicit&&legacyMarker&&!fs.existsSync(marker)&&fs.existsSync(legacyMarker))marker=legacyMarker;
  const absolute=value=>typeof value==='string'&&path.isAbsolute(value)&&!value.includes('\0');
  function result(directory,error){return {userData:directory,storeDirectory:directory,marker,error};}
  if(explicit){
   if(!absolute(explicit))throw Error('CALLSHEET_DATA_DIR must be an absolute local path.');const directory=path.resolve(explicit);let error;
-  if(directory===bundle||directory.startsWith(bundle+path.sep))error='The chosen data directory is inside the app bundle. Updates are blocked to protect it.';
+  const locationKey=windows?directory.toLowerCase():directory,bundleKey=windows?bundle.toLowerCase():bundle;
+  if(locationKey===bundleKey||locationKey.startsWith(bundleKey+path.sep))error='The chosen data directory is inside the app bundle. Updates are blocked to protect it.';
   else{const tmp=marker+'.'+process.pid+'.tmp';try{fs.writeFileSync(tmp,JSON.stringify({format:'script-call-installation-data-location',version:1,directory}),{flag:'wx',mode:0o600});fs.renameSync(tmp,marker);}catch{error='The installation data location could not be saved. Updates are blocked so a restart cannot open a different project store.';}finally{try{fs.unlinkSync(tmp);}catch{}}}
   return result(directory,error);
  }
