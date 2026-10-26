@@ -1,6 +1,6 @@
 # Departments, solar times, company image and day planning
 
-This local feature builds on Script Call 0.3.15. It does not change the app version, installed app, release feed or website.
+Introduced in Script Call 0.3.16, building on 0.3.15. Existing production records, manual overrides and issued PDFs remain intact.
 
 ## Department suggestions
 
@@ -54,4 +54,4 @@ Native Mac QA uses a separately packaged Apple Silicon preview with dedicated pr
 
 The first externally seeded disposable SQLite profile stalled in a native file-open during startup. It was retained for diagnosis. A fresh app-created isolated profile started normally, imported the same fixture through Open Project and passed subsequent reopen checks. No shipping workaround, permission change or real-profile access was introduced.
 
-Native GUI QA was performed through CUA; no new Playwright permission was assumed. Windows and Intel Mac UI/packaged builds, signing/notarization, public release and native updater upgrade acceptance are outside this local task and remain untested for this candidate.
+Initial local GUI QA used CUA. The subsequent authorized0.3.16 release validation passed192 unit/data checks,176 Mac UI checks plus packaged smoke and all42 genuine0.3.15-to-0.3.16 native upgrade checks, including exact issued PDFs/backups/preferences and the six-feature round trip. Apple notarization, Developer ID, staple and Gatekeeper passed. Windows/Intel Mac/Linux distributions, physical touch and formal screen-reader auditing remain unvalidated.
