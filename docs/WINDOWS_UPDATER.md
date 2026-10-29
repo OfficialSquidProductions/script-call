@@ -103,3 +103,25 @@ opened the preserved synthetic production and closed cleanly. The final build's
 57 source hashes matched the checkout; its 402-file clean payload contains no
 fixture fetch shim. Production-key signing and live public feed acceptance remain
 pending. No production feed or replacement website download was published.
+
+## Production-key acceptance on 2026-10-29
+
+Both Mac-signed envelopes for source `b5a6e6a` verified against the existing pinned
+key, with exact candidate contents and all 402 payload files. Native predownloaded
+.1 to .2 upgrade preserved a synthetic production and acknowledged startup.
+Journal recovery and deliberate termination of the isolated .2 child before
+acknowledgement restored .1 and its original data, retaining failed trial data.
+
+Real HTTPS acceptance then found that GitHub release assets redirect to
+`release-assets.githubusercontent.com` with signed query parameters. The previous
+transport applied the stricter manifest-URL rule to these redirects and rejected
+the download. The corrected transport permits those queries only on that exact
+HTTPS CDN origin when the initial URL is github.com. Other redirects must remain
+on the initial origin without queries. Credentials, fragments, non-default ports,
+HTTP and lookalike hosts remain rejected; signatures, hashes, size limits and the
+query-free signed artifact URL policy are unchanged. Three focused regression
+tests cover this distinction and bounded redirect chains.
+
+The corrected payloads require new existing-key signatures and a new manual
+bootstrap. Do not advertise the old signed .1/.2 payloads as functional automatic
+updaters. The website download and Mac stable feed have not changed in this run.
