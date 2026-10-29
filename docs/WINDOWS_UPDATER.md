@@ -125,3 +125,45 @@ tests cover this distinction and bounded redirect chains.
 The corrected payloads require new existing-key signatures and a new manual
 bootstrap. Do not advertise the old signed .1/.2 payloads as functional automatic
 updaters. The website download and Mac stable feed have not changed in this run.
+
+## Completed production publication, 2026-10-29
+
+The signing and publication gates described above are now complete for the
+corrected x64 portable preview. Payload source is
+`d9de1e11345de3e2dc37cec5f01441f61c06d056`; the manual bootstrap starts on
+`0.3.17-windows.preview.3` and updates to `.4`. Existing-key signatures and both
+402-file payloads were verified on Windows. The clean bootstrap contains 499
+files, with no fixture shim or user production data.
+
+Native acceptance passed for production-key upgrade, startup acknowledgement,
+project identity/content preservation, copied-profile recovery after interrupted
+startup, retention of failed trial data, and standalone root-launcher startup and
+clean exit. Genuine unauthenticated HTTPS tests passed through both the GitHub
+release manifest and the final website feed: check, download/hash validation,
+explicit install, backup, relaunch, Internet-zone preservation and up-to-date
+status. Recovery also passed using the exact publicly downloaded payload.
+
+The full Windows unit suite passed 212 tests with 3 existing skips. Public website
+home/download pages passed desktop (1440px) and mobile (390px) link/overflow checks.
+The public bootstrap was re-downloaded without authentication and matched all
+318,226,624 bytes and SHA-256
+`49994bfa9aae4c47b57d653eb1daa1942eeb69d97dce5765fb6a0faf92d6ca79`.
+
+- [Bootstrap and release notes](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.17-windows.preview.3)
+- [Update payload](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.17-windows.preview.4)
+- [Signed Windows preview feed](https://scriptcall.squidproductions.org/updates/windows-portable-preview-x64.json)
+- Website commit: `7a5b46db78bfde1e424abbfc1f037835185196ff`.
+
+Both releases are prereleases and did not replace GitHub Latest. Mac latest
+release ID and every asset digest were verified unchanged. No Mac feed, installed
+application or user project was modified. The earlier `.2` transport-failing
+acceptance release was restored to draft. The corrected `.4` was temporarily
+published for live acceptance only after explicit owner approval, and retained
+public after success. Approval review initially blocked that publication; no
+bypass was used.
+
+Limits remain: unsigned executable, x64 portable only; no installer/file
+association acceptance, ARM64 validation, complete screen-reader/DPI matrix,
+new live Mac round trip, or irreversible migration rollback guarantee. This is
+not a declaration of full stable Windows parity. A manual bootstrap download and
+explicit import are required for users of the older update-disabled preview.
