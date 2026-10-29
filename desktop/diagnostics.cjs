@@ -29,7 +29,14 @@ function sanitizeText(value,max=3000){
   .replace(/(?:https?|ftp):\/\/\S+/gi,'[URL removed]')
   .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[email removed]').slice(0,max);
 }
-function environment(version,versions=process.versions){return {app:'Script Call',version:/^\d+\.\d+\.\d+$/.test(version)?version:'unknown',platform:['darwin','win32','linux'].includes(process.platform)?process.platform:'unknown',os:numeric(os.release()),arch:['arm64','x64','ia32'].includes(process.arch)?process.arch:'unknown',electron:numeric(versions.electron),chromium:numeric(versions.chrome)};}
+// Accept only shipped stable/Windows-preview labels, not arbitrary report text.
+function diagnosticVersion(value,fallback='unknown'){
+ if(typeof value!=='string'||value.length>64)return fallback;
+ const match=/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-windows\.preview\.(?:0|[1-9]\d*))?$/.exec(value);
+ // JS $ can match before a final newline; require the entire original string.
+ return match?.[0]===value?value:fallback;
+}
+function environment(version,versions=process.versions){return {app:'Script Call',version:diagnosticVersion(version),platform:['darwin','win32','linux'].includes(process.platform)?process.platform:'unknown',os:numeric(os.release()),arch:['arm64','x64','ia32'].includes(process.arch)?process.arch:'unknown',electron:numeric(versions.electron),chromium:numeric(versions.chrome)};}
 class Diagnostics{
  constructor({directory,version,versions,now=Date.now,pid=process.pid,alive=p=>{try{process.kill(p,0);return true;}catch{return false;}},notify}){
   Object.assign(this,{directory,now,pid,alive,notify});this.environment=environment(version,versions);this.events=[];this.available=true;this.started=false;this.lastCapture=0;this.drafts=new Map();
@@ -41,7 +48,7 @@ class Diagnostics{
  prune(){const cutoff=this.now()-RETENTION_MS;this.events=this.events.filter(e=>Date.parse(e.at)>=cutoff&&Date.parse(e.at)<=this.now()+300000).slice(-MAX_EVENTS);while(Buffer.byteLength(JSON.stringify(this.events))>MAX_BYTES)this.events.shift();}
  persist(){this.prune();this.safe(()=>this.write(this.log,this.events));try{this.notify?.(this.status());}catch{}}
  begin(){
-  const old=this.read(this.log,MAX_BYTES);if(Array.isArray(old))this.events=old.slice(-MAX_EVENTS).filter(e=>KINDS.has(e?.kind)&&typeof e.id==='string'&&/^[a-f0-9-]{36}$/.test(e.id)&&typeof e.at==='string').map(e=>({id:e.id,at:new Date(Date.parse(e.at)||0).toISOString(),version:/^\d+\.\d+\.\d+$/.test(e.version)?e.version:'unknown',kind:e.kind,pending:e.pending===true,diagnostic:summary({name:e.diagnostic?.name,code:e.diagnostic?.code,stack:Array.isArray(e.diagnostic?.frames)?e.diagnostic.frames.filter(x=>typeof x==='string').slice(0,5).join('\n'):''}),...(REASONS.has(e.reason)?{reason:e.reason}:{}),...(Number.isInteger(e.exitCode)&&Math.abs(e.exitCode)<65536?{exitCode:e.exitCode}:{})}));
+  const old=this.read(this.log,MAX_BYTES);if(Array.isArray(old))this.events=old.slice(-MAX_EVENTS).filter(e=>KINDS.has(e?.kind)&&typeof e.id==='string'&&/^[a-f0-9-]{36}$/.test(e.id)&&typeof e.at==='string').map(e=>({id:e.id,at:new Date(Date.parse(e.at)||0).toISOString(),version:diagnosticVersion(e.version),kind:e.kind,pending:e.pending===true,diagnostic:summary({name:e.diagnostic?.name,code:e.diagnostic?.code,stack:Array.isArray(e.diagnostic?.frames)?e.diagnostic.frames.filter(x=>typeof x==='string').slice(0,5).join('\n'):''}),...(REASONS.has(e.reason)?{reason:e.reason}:{}),...(Number.isInteger(e.exitCode)&&Math.abs(e.exitCode)<65536?{exitCode:e.exitCode}:{})}));
   const previous=this.read(this.session,2048);if(previous?.schema===1&&previous.clean===false&&Number.isSafeInteger(previous.pid)&&previous.pid>0&&!this.alive(previous.pid))this.capture('session-interrupted',undefined,{version:previous.version});
   this.started=true;this.safe(()=>this.write(this.session,{schema:1,pid:this.pid,version:this.environment.version,started:new Date(this.now()).toISOString(),clean:false}));this.persist();
   this.retentionTimer=setInterval(()=>this.persist(),3600000);this.retentionTimer.unref?.();
@@ -52,7 +59,7 @@ class Diagnostics{
   // Repeated identical failures cannot fill the disk or hammer IPC/storage.
   if(recent&&this.lastSignature===signature&&this.now()-this.lastCapture<10000)return;
   this.lastSignature=signature;this.lastCapture=this.now();
-  this.events.push({id:crypto.randomUUID(),at:new Date(this.now()).toISOString(),version:/^\d+\.\d+\.\d+$/.test(details.version)?details.version:this.environment.version,kind,pending:true,diagnostic,...(REASONS.has(details.reason)?{reason:details.reason}:{}),...(Number.isInteger(details.exitCode)&&Math.abs(details.exitCode)<65536?{exitCode:details.exitCode}:{})});this.persist();
+  this.events.push({id:crypto.randomUUID(),at:new Date(this.now()).toISOString(),version:diagnosticVersion(details.version,this.environment.version),kind,pending:true,diagnostic,...(REASONS.has(details.reason)?{reason:details.reason}:{}),...(Number.isInteger(details.exitCode)&&Math.abs(details.exitCode)<65536?{exitCode:details.exitCode}:{})});this.persist();
  }
  clean(){clearInterval(this.retentionTimer);if(this.started)this.safe(()=>this.write(this.session,{schema:1,pid:this.pid,clean:true}));}
  status(){this.prune();return {available:this.available,pending:this.events.filter(e=>e.pending).length,kinds:[...new Set(this.events.filter(e=>e.pending).map(e=>e.kind))],retentionDays:14,maxEvents:MAX_EVENTS};}
