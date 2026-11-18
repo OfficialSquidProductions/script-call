@@ -49,10 +49,10 @@ function map(parsed,scenarioId){
  // from shot-list start settings or invent a timezone from an address.
  out.defaults={generalCall:'',meal:'',wrap:'',zone:'',primaryLocationId:'',notes:[p.description,p._importNotes].filter(Boolean).join('\n\n')};
  out.sheetDefaults={...D.sheetDefaults(),safety:'',scriptColor:text(p.scriptColor),scheduleColor:text(p.schedColor)};
- out.people=p.elements.filter(e=>cats.get(e.category).ucid===100).map(e=>({id:e.id,sourceId:e.id,type:'cast',name:'',character:e.name,role:'Cast',department:'Cast',castNumber:text(e.elementId),phone:'',email:''}));
+ out.people=p.elements.filter(e=>cats.get(e.category).ucid===100).map(e=>({id:e.id,sourceId:e.id,type:'cast',name:'',character:e.name,role:'Cast',department:'Cast',castNumber:e.elementId==null?'':String(e.elementId),phone:'',email:''}));
  out.locations=p.elements.filter(e=>cats.get(e.category).ucid===6).map(e=>({id:e.id,sourceId:e.id,name:e.name,address:'',latitude:null,longitude:null,zone:'',parking:'',hospital:'',emergencyPhone:'',verified:false}));
  out.scenes=p.breakdowns.filter(b=>b.type==='scene').map(b=>{
-  const notes=[text(b.comments),...p.categories.filter(c=>[104,123,124].includes(c.ucid)).map(c=>{const names=values(b,c.ucid).map(e=>e.name);return names.length?c.name+': '+names.join(', '):'';})].filter(Boolean).join('\n');
+  const notes=[text(b.comments),...p.categories.filter(c=>c.ucid>=100&&c.ucid!==100).map(c=>{const names=b.elements.map(id=>el.get(id)).filter(e=>e.category===c.id).map(e=>e.name);return names.length?c.name+': '+names.join(', '):'';})].filter(Boolean).join('\n');
   return {id:b.id,sourceId:b.id,number:String(b.scene??''),slug:[value(b,1)+'.',value(b,0),value(b,2)?'— '+value(b,2):''].filter(Boolean).join(' '),synopsis:text(b.description),eighths:Math.round(b.pages*8),durationMinutes:b.duration/60000,castIds:values(b,100).map(e=>e.id),locationId:values(b,6)[0]?.id||'',script:text(b._scriptText),scriptDay:value(b,3),dayNight:value(b,2),notes,props:values(b,104).map(e=>e.name),breakdownElements:b.elements.map(id=>({...el.get(id),categoryName:cats.get(el.get(id).category).name,ucid:cats.get(el.get(id).category).ucid})),shots:(p._shots||[]).filter(s=>s.sceneId===b.id).map(s=>({...s,sourceId:s.id,number:String(b.scene??'')+s.number}))};
  });
  const cal=p.calendars.find(c=>c.id===scenario.calendar),board=scenario.boards.find(b=>b.name==='stripboard')||scenario.boards[0];
@@ -64,12 +64,16 @@ function map(parsed,scenarioId){
   const occurrences=new Map();d.schedule=group.map(id=>{const b=breakdowns.get(id),occurrence=occurrences.get(id)||0;occurrences.set(id,occurrence+1);return {id:'pd-'+D.hash(d.id+':'+id+':'+occurrence).slice(0,32),sourceId:id,type:b.type==='scene'?'scene':/^MEAL/i.test(b.bannerText)?'meal':'note',sceneId:b.type==='scene'?id:'',description:b.type==='scene'?'':text(b.bannerText),start:'',offset:0,duration:b.duration/60000};});
   const ds=out.scenes.filter(s=>group.includes(s.id)),people=new Set(ds.flatMap(s=>s.castIds));d.unit=[...new Set(ds.map(s=>value(breakdowns.get(s.id),4)).filter(Boolean))].join(', ');
   d.overrides={primaryLocationId:ds.find(s=>s.locationId)?.locationId||''};d.calls=out.people.filter(e=>people.has(e.id)).map(e=>({id:'pd-'+D.hash(d.id+':'+e.id).slice(0,32),sourceId:e.id,personId:e.id,call:'',pickup:'',makeup:'',ready:'',offset:0,notes:''}));
+  d.sheetOverrides.departmentNotes=p.categories.filter(c=>c.ucid>=100&&c.ucid!==100).map(c=>{
+   const rows=group.map(id=>out.scenes.find(s=>s.id===id)).filter(Boolean).map(s=>{const names=s.breakdownElements.filter(e=>e.category===c.id).map(e=>e.name);return names.length?'Scene '+s.number+': '+names.join(', '):'';}).filter(Boolean);
+   return rows.length?c.name+'\n'+rows.join('\n'):'';
+  }).filter(Boolean).join('\n\n');
   d.weather={mode:'manual',summary:'Unavailable — enter and review weather.',approved:false};out.days.push(d);if(date)date=D.addDate(date,1);
  }
  if(!out.days.length){out.days.push(D.newDay({...out,days:[]},''));out.days[0].unit='';}
  out.defaults.primaryLocationId=out.days[0].overrides.primaryLocationId||'';
  const scheduled=new Set(out.days.flatMap(d=>d.schedule.filter(s=>s.type==='scene').map(s=>s.sceneId)));
- const warnings=['Performer names, crew, contacts, call/preparation times, weather, timezone and verified location/emergency details are absent from the Production Desk v1 model. Enter them before issue.','Shot-list start time is a shot estimate setting and is not a crew call.','PDF originals and editable lined-script marks are validated but not imported into Call Sheet. Source model and annotation metadata are retained; keep the .productiondesk file.','Day IDs derive from scenario, board and day position because v1 day groups have no IDs. Review regrouped or inserted days on reimport.'];
+ const warnings=['Performer names, crew, contacts, call/preparation times, weather, timezone and verified location/emergency details are absent from the Production Desk v1 model. Enter them before issue.','Shot-list start time is a shot estimate setting and is not a crew call.','PDF originals and editable lined-script marks are validated but not imported into Call Sheet. Source model and annotation metadata are retained; keep the .productiondesk file.','Department elements are grouped by source category in scene notes and daily department instructions. Availability, linked elements and custom extensions remain in Source details; review availability locally before issuing.','Day IDs derive from scenario, board and day position because v1 day groups have no IDs. Review regrouped or inserted days on reimport.'];
  if(out.scenes.some(s=>s.eighths/8!==breakdowns.get(s.id).pages))warnings.push('Fractional page values were rounded to the nearest eighth; exact source values are retained.');
  if(!date)warnings.push('Calendar has no start date. Shooting dates remain blank.');
  if(outside.length)warnings.push(outside.length+' strips outside day groups are retained in the source model, not assigned to daily sheets.');

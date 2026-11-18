@@ -12,6 +12,14 @@
   return validDate(next)?next:today;
  }
  function weeks(days){const groups=[];for(const d of ordered(days)){let key='undated',end='';if(validDate(d.date)){const ms=Date.parse(d.date+'T12:00Z'),offset=(new Date(ms).getUTCDay()+6)%7;key=new Date(ms-offset*86400000).toISOString().slice(0,10);end=new Date(ms+(6-offset)*86400000).toISOString().slice(0,10);}let g=groups.at(-1);if(g?.key!==key){g={key,end,days:[]};groups.push(g);}g.days.push(d);}return groups;}
+ // Calendar cells use UTC noon so local timezones and DST never shift dates.
+ function monthGrid(month){
+  if(!/^\d{4}-\d{2}$/.test(month)||!validDate(month+'-01'))throw Error('Choose a valid calendar month.');
+  const first=Date.parse(month+'-01T12:00Z'),offset=(new Date(first).getUTCDay()+6)%7;
+  return Array.from({length:42},(_,i)=>new Date(first+(i-offset)*86400000).toISOString().slice(0,10));
+ }
+ function shiftMonth(month,delta){const d=new Date(month+'-01T12:00Z');d.setUTCMonth(d.getUTCMonth()+delta);const value=d.toISOString().slice(0,7);return validDate(value+'-01')?value:month;}
+ function months(days){return [...new Set(ordered(days).filter(d=>validDate(d.date)).map(d=>d.date.slice(0,7)))];}
  function apply(p,command){
   const {kind,id}=command;const index=p.days.findIndex(d=>d.id===id);p.deletedDays||=[];
   if(kind==='date'){
@@ -28,5 +36,5 @@
   }
   throw Error('Unknown shooting day change.');
  }
- return {validDate,nextDayDate,ordered,weeks,apply};
+ return {validDate,nextDayDate,ordered,weeks,monthGrid,shiftMonth,months,apply};
 });

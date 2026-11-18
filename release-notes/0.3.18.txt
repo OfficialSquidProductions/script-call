@@ -1,0 +1,9 @@
+Script Call 0.3.18 — Production Desk import and shooting calendar
+
+Production Desk imports bring shooting dates and scene assignments into Script Call, link character roles to their scenes and daily cast rows, and organize department elements into scene notes and daily department instructions. Imported breakdown elements are grouped by category in Production Info. Missing performers, call details and source dates remain blank for review.
+
+Shooting Days is now a top-level sidebar tab alongside Daily Sheet and Production Info. Its monthly calendar shows scheduled scenes and multiple units on the same date. Browse all production dates, select a day, open its Daily Sheet, add dates, edit or delete days, and restore deleted days with the existing recovery controls.
+
+The sidebar follows Production Desk's icon sizing, spacing and active-tab styling while keeping Script Call's purple SP branding. Local edits, imported identities, issued PDF bytes and existing projects remain preserved.
+
+Apple Silicon, macOS 13 or later. Keep the original Production Desk file: original PDF bytes and editable lined-script marks do not become Script Call assets. Performer contacts, verified call times, operational weather, source availability conversion and verified emergency/location details require local review. The existing 25 MB importer limit remains.

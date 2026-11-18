@@ -4,6 +4,16 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## 0.3.18 desktop candidate — import and shooting calendar
+
+Based on public 0.3.16 source `b090a0c`, carrying the reviewed import/calendar/sidebar changes from `e1c917c`. Unpublished Apple target history is excluded; existing Windows prereleases, drafts and mobile work remain untouched. The new version/build is 0.3.18, Apple Silicon/macOS 13+.
+
+The exact Developer ID app was accepted by Apple notarization job `77affa44-1ad3-4345-8575-5d3995ac272e` with no issues. Signature, staple and Gatekeeper checks passed. The 131,346,782-byte immutable ZIP has SHA-256 `30f8aa736244d3191a216001de5d894416f3821ae5b9b34a6ecaf23c33080239`; Ed25519 metadata expires `2026-12-18T22:40:09.781Z`. All 46 shipping source files match the notarized bundle. Test fixtures, preview profiles, private inputs, build credentials and unpublished Apple sources are excluded from app resources.
+
+Unit baseline: 195 passed, 2 existing optional provenance skips. Desktop acceptance: 19 checks; G-Casper: 12; exact notarized import: 12; calendar: 10; day management: 11; packaged smoke passed. Native public-candidate upgrade acceptance is pending; stable remains 0.3.16 until passed acceptance and promotion. No user installation is replaced.
+
+Historical native acceptance assertions now follow moved calendar controls and preserve the minimum archive reader recorded by the actual old app (0.3.16 data already requires reader10). The initial trial completed native replacement and preservation checks, then stopped at an obsolete reader6 assertion. Its evidence is retained locally. No signed application or artifact bytes changed for test corrections.
+
 ## 0.3.16 release validation
 
 0.3.16 adds all reference department suggestions/canonical display aliases while retaining custom strings, offline shoot-local sunrise/sunset/civil dawn/twilight with contextual manual overrides, embedded proportional company images with explicit removal/default states, new-day automatic lunch six elapsed hours after crew call with manual/date-offset/reset behavior, two independently labelled Advance shooting days, and date-specific O/C personal-call presentation without clearing saved times. Civil twilight is the sun center6° below the horizon. Solar calculations are estimates; twelve independent USNO events across Washington/DST and Sydney/year-end had maximum deviation127.358 seconds (three-minute test tolerance). Missing/polar events stay explicit. New fields/snapshots use portable reader10; unchanged legacy records retain their earlier minimum reader.

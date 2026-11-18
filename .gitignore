@@ -34,3 +34,4 @@ tools/verify_shared_demo.cjs
 
 # Isolated local reporter preview; never production release input.
 .reporter-preview-data/
+!tests/fixtures/current-productiondesk.productiondesk
