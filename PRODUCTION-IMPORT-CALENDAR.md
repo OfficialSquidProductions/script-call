@@ -99,3 +99,5 @@ runtime QA was performed. No installed app was replaced, and no release,
 publication, submission or remote push was performed.
 
 On the original feature checkout, open `Start Import Calendar Preview.command` to inspect the separate local Mac preview. Its projects, backups, diagnostics and preferences live under `build/shooting-days-preview/profile`, not the installed application profile.
+
+Desktop 0.3.18 is published at https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.18 with Developer ID signature, Apple notarization and stapled ticket. The actual 0.3.16 → 0.3.18 native update passed 43 checks. Anonymous stable-feed/download verification and the unmodified previous-client offer passed. All 22 prior releases and assets remain unchanged.
