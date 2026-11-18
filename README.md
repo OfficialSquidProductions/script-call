@@ -1,10 +1,12 @@
 # Script Call
 
-**0.3.12 adds scene disclosure cards, recoverable Delete Scene and direct page-fraction entry.** Type `2 3/8`, `3/8`, whole pages or exact decimals without rounding; incomplete/invalid text leaves the saved value untouched. Named deletion retains full scenes and schedule links for Restore while drafts omit them from schedules/totals/availability. Personal calls and issued PDFs stay unchanged. The exact notarized build passed 130 unit checks (two optional checks skipped), 129 Mac UI checks, packaged smoke and all 28 real 0.3.11 → 0.3.12 native-upgrade checks. See [SCENE-MANAGEMENT.md](SCENE-MANAGEMENT.md) and [RELEASING.md](RELEASING.md).
+**0.3.18 adds the Shooting Days calendar and complete categorized Production Desk breakdown import.** Daily Sheet, Shooting Days and Production Info are peer sidebar tabs. Imported dates, scene assignments and cast roles remain linked; department requirements appear in scene details and daily instructions. Missing source dates and performer details stay blank. Existing projects, local edits and issued PDFs are preserved. See [mapping and limits](PRODUCTION-IMPORT-CALENDAR.md) and [release verification](RELEASING.md).
+
+The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.18) is available for Apple Silicon/macOS 13+. Existing users can choose **Check for updates**, or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip). The actual 0.3.16 → 0.3.18 native upgrade passed 43 checks in a disposable installation.
 
 A Squid Productions Software
 
-Script Call **0.3.12** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
+Script Call **0.3.18** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 
