@@ -4,6 +4,16 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.23 — named layout presets and direct dragging
+
+Based on public `v0.3.22` at `5415207` and the local direct-calendar-drag follow-up at `a5938f8`. Template & Layout uses a single preset choice, stores reusable named layouts in the local profile and allows built-in and custom rows to be reordered. Custom text, production display preferences and contact-printing choices remain in the draft. G-Casper retains fixed emergency logistics and crew page placement. Portable archives with combined built-in and custom ordering use reader 11.
+
+Apple accepted notarization job `46d1bac8-d205-424c-b380-3415d7838239` without issues. Developer ID, stapling, Gatekeeper and arm64 checks passed. All 53 shipped source files match the checkout. The 131,370,138-byte immutable ZIP has SHA-256 `375628b6fd268e837dee93b3c69393a952d6b63a82ab7d1b7b12635b58e97fac`.
+
+213 unit checks passed with two optional provenance skips. The exact signed app passed the new preset, calendar, storage, local Email Call Sheet and PDF regression suites. Fresh PDF exports from named presets recalled after a relaunch placed a custom section between Daily Schedule and Production Notes on the same page, both in Original Narrative and G-Casper. The G-Casper fixture used two pages and retained the separate crew back. Time and temperature settings were retained and original issued PDFs compared byte-for-byte. Tests used disposable profiles and synthetic productions. Apple Mail was outside the test path.
+
+The exact public 0.3.22 app completed 44 native candidate checks, including signed download, native replacement and relaunch, recovery backup, saved production and revision preservation, calendar controls and named preset reuse across productions.
+
 ## macOS 0.3.22 — calendar moves
 
 Built from public `v0.3.21` at `d51078b`. Shooting Days supports reviewed drag and keyboard moves for entire days and scheduled scenes. Calendar advice uses the existing personal-call-start evaluator for manually entered and inherited calls and checks explicit overlaps. Calendar warning suppression leaves issue review active. Moving scenes preserves row IDs, ordered assignments and personal call records. Changing the date resets weather approval while preserving existing issued PDFs. Production Desk reimport retains local scene relocations over incoming schedule changes.

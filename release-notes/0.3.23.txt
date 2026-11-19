@@ -1,0 +1,9 @@
+Script Call 0.3.23 — Named layout presets and direct dragging
+
+Template & Layout has one Presets dropdown for built-in and saved templates. Drag built-in or custom rows to change their printed order. Up and down buttons provide the same controls from the keyboard. G-Casper retains emergency logistics in the front header and crew calls on the back.
+
+Choose Save Template at the bottom and give your layout a unique name. Reuse its paper, appearance, section order, visibility and custom headings across productions. Written custom text and contact-printing choices stay with the draft.
+
+In Shooting Days, drag day labels and scene rows directly. The selected-day highlight and separate drag handles are gone. Right-click or use Shift+F10 for move actions. Conflict review and Undo/Redo remain available.
+
+Apple Silicon, macOS 13 or later.

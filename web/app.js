@@ -4,9 +4,10 @@ function captureFailure(kind,error){api.request('diagnosticCapture',{kind,error:
 window.addEventListener('error',event=>captureFailure('renderer-error',event.error));
 window.addEventListener('unhandledrejection',event=>captureFailure('renderer-unhandled-rejection',event.reason));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const Days=window.ShootingDays,CalendarMoves=window.CalendarMoves,Availability=window.Availability,Records=window.RecordRecovery,PageLength=window.PageLength,ScheduleNotes=window.ScheduleNotes,TimeDisplay=window.TimeDisplay,CallDefaults=window.CallDefaults,Details=window.ProductionDetails,Temperature=window.TemperatureDisplay,Lunch=window.LunchTiming;
+const Days=window.ShootingDays,Layouts=window.LayoutPresets,CalendarMoves=window.CalendarMoves,Availability=window.Availability,Records=window.RecordRecovery,PageLength=window.PageLength,ScheduleNotes=window.ScheduleNotes,TimeDisplay=window.TimeDisplay,CallDefaults=window.CallDefaults,Details=window.ProductionDetails,Temperature=window.TemperatureDisplay,Lunch=window.LunchTiming;
 const clone=x=>JSON.parse(JSON.stringify(x)),uid=()=>crypto.randomUUID();
 let project,version,revisions=[],projects=[],dayId,view='daily',section='overview',master='general',dirty=0,saved=0,saveTimer,savePromise,previewTimer,previewSerial=0,toastTimer,boot,modalAction,previewObserver,lockedDisplay={},transitionQueue=Promise.resolve();
+let savedTemplates=[],layoutDrag,layoutPointer;
 let calendarMonth,visibleWeek,weekPage=0,undoDays=[],redoDays=[],productionBusy=false,calendarDrag,calendarReview;
 const readPreference=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 function writePreference(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{toast('The app preference could not be saved on this device.');}}
@@ -91,8 +92,54 @@ function background(){const p=`days.${di()}.background`;return `<p class="tiny">
 function weather(){
  const d=day(),loc=primaryLocation(),p=`days.${di()}.weather`;return `<p class="tiny">Forecasts need an internet request. Sunrise and sunset calculate locally from the selected location/date; no location is transmitted for solar calculations.</p><div class="form-grid">${field('Weather summary',p+'.summary','textarea',{wide:true,rows:4,value:Temperature.summary(d.weather.summary,tempMode())})}${['high','low','weatherIcon'].map(k=>sheetField(k)).join('')}${field('Weather reviewed for this date / location',p+'.approved','checkbox',{wide:true})}</div><div class="inline-notice"><p>Mode: ${esc(d.weather.mode)}. ${d.weather.fetchedAt?'Retrieved '+esc(d.weather.fetchedAt):'No online forecast requested.'}</p><p>${loc?.latitude===null||!loc?'Enter coordinates in Production Info → Locations to enable offline solar and optional forecasts.':'Coordinates: '+esc(loc.latitude)+', '+esc(loc.longitude)+' / '+esc(effectiveZone())}</p></div><div class="toolbar"><button data-action="forecast" ${locked()?'disabled':''}>Get NWS forecast…</button><button data-action="manual-weather" ${locked()?'disabled':''}>Use manual / offline</button></div><p class="tiny">NWS covers supported US locations for about 7 days. Future dates and outages stay explicitly unavailable. Requests never include cast, crew or the production title.</p>${solarEditor()}`;
 }
+function layoutRow(key,layout,sequence,custom){
+ const index=sequence.indexOf(key),item=custom.get(key),title=item?.title||sectionLabel[key]||'Untitled custom section';
+ const show=item?'':`<label><input data-hide="${key}" type="checkbox" ${!layout.hidden.includes(key)?'checked':''} ${key==='logistics'?'disabled':''}> Show</label>`;
+ if(index<0)return `<div><span>${esc(title)}</span><small>${key==='crew'?'Fixed on back':'Fixed in header'}</small>${show}</div>`;
+ return `<div data-layout-row="${esc(key)}" draggable="true"><span data-layout-order-name>${esc(title)}</span>${show}<button data-layout-move="${esc(key)}:up" ${index===0?'disabled':''} aria-label="Move ${esc(title)} up">↑</button><button data-layout-move="${esc(key)}:down" ${index===sequence.length-1?'disabled':''} aria-label="Move ${esc(title)} down">↓</button></div>`;
+}
 function layout(){
- const d=day(),p=`days.${di()}.layout`;return `<div class="template-cards">${[['gcasper','G-Casper-style','Dense front + three-column crew back'],['narrative','Original Narrative','The original flowing Production Desk design']].map(([id,name,desc])=>`<button class="template-card ${d.layout.preset===id?'selected':''}" data-template="${id}"><strong>${name}</strong><small>${desc}</small></button>`).join('')}</div><div class="form-grid">${field('Preset',p+'.preset','select',{items:[{id:'gcasper',name:'G-Casper-style · front & back (default)'},{id:'compact',name:'Compact Crew'},{id:'narrative',name:'Original Narrative'},{id:'commercial',name:'Commercial / Documentary'}],empty:null})}${field('Paper',p+'.paper','select',{items:['A4','Letter'],empty:null})}${field('Time display','timeDisplayClock','select',{value:timeMode(),items:[{id:'24',name:'24-hour (military)'},{id:'12',name:'12-hour (AM/PM)'}],empty:null,note:'Production preference; also available in Settings & help.'})}${field('Temperature preference','temperatureUnit','select',{value:tempMode(),items:[{id:'C',name:'Celsius (°C)'},{id:'F',name:'Fahrenheit (°F)'}],empty:null,note:'Production preference; also in Settings & help.'})}${field('Save toner / ink (monochrome)',p+'.mono','checkbox')}${field('D/N and INT/EXT scene strip colors',p+'.sceneColors','checkbox')}${field('Include personal phone / email in PDF',p+'.includeContacts','checkbox')}</div><p class="inline-notice">The same day data is kept when templates change. Hidden sections remain editable. Emergency logistics always prints. G-Casper-style keeps crew on a separate back; section order controls the front. Dense content continues onto extra pages. Existing saved template choices are preserved.</p><h3>Section order & visibility</h3><div class="section-order">${d.layout.order.map((k,i)=>`<div><span>${esc(sectionLabel[k])}</span><label><input data-hide="${k}" type="checkbox" ${!d.layout.hidden.includes(k)?'checked':''} ${locked()||k==='logistics'?'disabled':''}> Show</label><button data-move="layout:${i}:-1" data-layout-move="${k}:up" ${locked()?'disabled':''} aria-label="Move section up">↑</button><button data-move="layout:${i}:1" data-layout-move="${k}:down" ${locked()?'disabled':''} aria-label="Move section down">↓</button></div>`).join('')}</div><h3 class="row-card">Custom sections</h3>${d.layout.custom.map((c,i)=>`<article class="row-card" data-layout-custom="${layoutCustomKey(c)}"><div class="form-grid">${field('Heading',p+`.custom.${i}.title`,'text',{wide:true})}${field('Text',p+`.custom.${i}.text`,'textarea',{wide:true})}</div>${!locked()?`<button class="text-button" data-remove="custom:${i}">Remove section</button>`:''}</article>`).join('')}<button data-action="custom-section" ${locked()?'disabled':''}>+ Add custom section</button>`;
+ const d=day(),l=d.layout,p=`days.${di()}.layout`,selected=savedTemplates.some(t=>t.id===l.templateId)?l.templateId:l.preset;
+ const custom=new Map(l.custom.map(c=>[layoutCustomKey(c),c])),keys=Layouts.order(l,layoutCustomKey),sequence=keys.filter(k=>Layouts.movable(l,k));
+ const row=k=>layoutRow(k,l,sequence,custom);
+ const chooser=`<label class="field">Presets<select id="layout-preset"><optgroup label="Built-in presets">${options(Layouts.builtIns,selected,null)}</optgroup>${savedTemplates.length?`<optgroup label="Saved templates">${options(savedTemplates,selected,null)}</optgroup>`:''}</select></label>`;
+ const controls=`<div class="form-grid">${chooser}${field('Paper',p+'.paper','select',{items:['A4','Letter'],empty:null})}${field('Time display','timeDisplayClock','select',{value:timeMode(),items:[{id:'24',name:'24-hour (military)'},{id:'12',name:'12-hour (AM/PM)'}],empty:null,note:'Production preference; also available in Settings & help.'})}${field('Temperature preference','temperatureUnit','select',{value:tempMode(),items:[{id:'C',name:'Celsius (°C)'},{id:'F',name:'Fahrenheit (°F)'}],empty:null,note:'Production preference; also in Settings & help.'})}${field('Save toner / ink (monochrome)',p+'.mono','checkbox')}${field('D/N and INT/EXT scene strip colors',p+'.sceneColors','checkbox')}${field('Include personal phone / email in PDF',p+'.includeContacts','checkbox')}</div>`;
+ const ordered=`<h3>Section order &amp; visibility</h3><p class="tiny layout-section-help">Drag a section above or below another, or use its up and down buttons.</p>${l.preset==='gcasper'?'<h4 class="layout-page-heading">Front page</h4>':''}<div class="section-order">${l.preset==='gcasper'?row('logistics'):''}${sequence.map(row).join('')}</div>${l.preset==='gcasper'?`<h4 class="layout-page-heading">Back page</h4><div class="section-order">${row('crew')}</div>`:''}`;
+ const editors=l.custom.map((c,i)=>`<article class="row-card" data-layout-custom="${esc(layoutCustomKey(c))}"><div class="form-grid">${field('Heading',p+`.custom.${i}.title`,'text',{wide:true})}${field('Text',p+`.custom.${i}.text`,'textarea',{wide:true})}</div><button class="text-button" data-remove="custom:${i}">Remove section</button></article>`).join('');
+ return `${controls}<p class="inline-notice">Hidden sections remain editable. Emergency logistics always prints.</p>${ordered}<h3 class="row-card">Custom sections</h3>${editors}<button data-action="custom-section" ${l.custom.length>=20?'disabled':''}>+ Add custom section</button><div class="layout-save"><button class="primary" data-action="save-layout-template">Save Template…</button></div>`;
+}
+function chooseLayoutPreset(value){
+ if(view!=='layout'||locked())return;
+ const l=day().layout,preset=savedTemplates.find(t=>t.id===value);
+ try{
+  if(preset)day().layout=Layouts.apply(l,preset.layout,preset.id,layoutCustomKey);
+  else if(Layouts.builtIns.some(item=>item.id===value)){l.preset=value;delete l.templateId;}
+  else throw Error('Choose an available preset.');
+  mark();renderDaily();
+ }catch(e){error(e);renderDaily();}
+}
+function saveLayoutTemplate(){
+ if(view!=='layout'||locked())return;
+ const projectId=project.id,selectedDay=day(),selectedLayout=selectedDay.layout,dayId=selectedDay.id;
+ modal('Save Template',`<label class="field">Template name<input id="layout-template-name" maxlength="120" autocomplete="off" required></label><p>Save the paper, appearance, section order, visibility and custom headings for use in any production on this device. Written section text and contact-printing preferences stay with the draft.</p>`,[{label:'Save Template',primary:true,run:async()=>{
+  const input=$('layout-template-name'),{display:name}=Layouts.name(input.value);
+  await flush();
+  if(!$('modal').open||$('layout-template-name')!==input)return;
+  if(project.id!==projectId||day()?.id!==dayId||day().layout!==selectedLayout||locked())throw Error('The draft changed. Open Save Template again.');
+  productionBusy=true;
+  try{
+   const template=await api.request('saveLayoutPreset',{projectId,dayId,version,name});
+   savedTemplates.push(template);
+   savedTemplates.sort((a,b)=>a.name.localeCompare(b.name));
+   for(const [i,item] of selectedLayout.custom.entries())if(!item.id)item.id=template.layout.custom[i].id;
+   selectedLayout.templateId=template.id;
+   mark();await flush();
+  }finally{productionBusy=false;}
+  closeModal();renderDaily();toast('Template saved: '+name);
+ }}]);
+ const input=$('layout-template-name');
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('modal-actions').querySelector('[data-modal-action]').click();}});
+ input.focus();
 }
 const callListQueries=new Map();
 function callListTools(type){return `<div class="call-list-tools"><label>Search ${type}<input type="search" data-call-search="${type}" value="${esc(callListQueries.get(callScope(type))||'')}" placeholder="Find a name, character or role"></label><div class="toolbar"><button data-call-collapse="all">Collapse all</button><button data-call-expand="all">Expand all</button><span data-call-count role="status"></span></div></div>`;}
@@ -109,13 +156,14 @@ function refreshCallList(position){const pane=document.querySelector('[data-call
 document.addEventListener('toggle',event=>{const el=event.target;if(!el.matches?.('[data-call-advanced]'))return;const scope=el.closest('[data-call-scope]')?.dataset.callScope;if(!scope)return;const key='call-advanced:'+scope,pref=readPreference(key,{});if(pref[el.dataset.callAdvanced]!==el.open){pref[el.dataset.callAdvanced]=el.open;writePreference(key,pref);}},true);
 const layoutCustomKeys=new WeakMap();
 function layoutCustomKey(custom){
+ if(custom.id)return Layouts.customKey(custom);
  if(!layoutCustomKeys.has(custom))layoutCustomKeys.set(custom,uid());
- return layoutCustomKeys.get(custom);
+ return 'custom:'+layoutCustomKeys.get(custom);
 }
 function layoutControlKey(el){
  const custom=el.closest('[data-layout-custom]')?.dataset.layoutCustom;
  if(custom)return custom+':'+(el.dataset.bind?.split('.').at(-1)||'remove');
- return el.dataset.bind||el.dataset.layoutMove||el.dataset.template||el.dataset.hide||el.dataset.action;
+ return el.dataset.bind||el.dataset.layoutMove||el.dataset.hide||el.dataset.action||(el.id==='layout-preset'?el.id:null);
 }
 function captureLayoutView(scope){
  const pane=document.querySelector('[data-layout-scope]');
@@ -133,23 +181,89 @@ function restoreLayoutView(state){
   const key=layoutControlKey(el),textarea=state.textareas.get(key);
   if(textarea){el.style.height=textarea.height;el.scrollTop=textarea.top;}
   if(key&&key===state.focus){
-   el.focus({preventScroll:true});
-   if(state.selection)el.setSelectionRange(...state.selection);
+   const control=el.disabled&&el.dataset.layoutMove?el.parentElement.querySelector('[data-layout-move]:not(:disabled)'):el;
+   control?.focus({preventScroll:true});
+   if(state.selection&&control?.setSelectionRange)control.setSelectionRange(...state.selection);
   }
  }
  pane.scrollTop=state.top;
  window.scrollTo(state.x,state.y);
 }
-function renderDaily(){
+function renderDaily(layoutPositionOverride){
  const dedicated=view==='layout',current=section,callList=!dedicated&&!locked()&&['cast','crew'].includes(current);
  const layoutScope=dedicated?project.id+':'+day().id:'';
- const position=callList?captureCallView(callScope(current)):null,layoutPosition=dedicated?captureLayoutView(layoutScope):null;
+ const position=callList?captureCallView(callScope(current)):null,layoutPosition=dedicated?(layoutPositionOverride||captureLayoutView(layoutScope)):null;
  const body=locked()?'<div class="inline-notice"><h3>Issued snapshot</h3><p>The preview shows the approved values from this revision. Its original PDF exports unchanged. Production registers may continue to evolve.</p><p>Create a new draft to edit this day using current production records.</p></div>':dedicated?layout():({overview,logistics,schedule,cast:()=>calls('cast'),crew:()=>calls('crew'),notes,background,weather}[current])();
  const navigation=dedicated?'':`<aside class="panel"><div class="panel-header"><span class="panel-title">Sheet sections</span></div><div class="section-nav">${Object.entries(labels).map(([k,t])=>`<button data-section="${k}" class="${k===current?'active':''}">${t}</button>`).join('')}</div></aside>`;
  const editorScope=dedicated?`data-layout-scope="${esc(layoutScope)}"`:callList?`data-call-scope="${esc(callScope(current))}"`:'';
  $('content').innerHTML=`${locked()?`<div class="locked"><span>Issued revision is frozen. Its original PDF will export unchanged.</span><button data-action="new-draft">Create new draft</button></div>`:''}<div id="availability-alerts" aria-live="polite"></div><div class="workspace${dedicated?' layout-workspace':''}">${navigation}<div class="panel${callList?' call-list-panel':''}"><div class="panel-header"><span class="panel-title">${dedicated?'Template &amp; Layout':esc(labels[current])}</span><span class="tiny">${locked()?'READ ONLY':'AUTOSAVE'}</span></div>${callList?callListTools(current):''}<div class="panel-body editor-scroll" ${editorScope}>${body}</div></div><section class="panel preview-panel"><div class="panel-header"><span class="panel-title">Print preview</span><div class="preview-tools"><button data-action="refresh-preview">Refresh</button><button data-action="pdf">PDF</button></div></div><div class="preview-wrap"><iframe title="Call sheet print preview" id="preview" sandbox="allow-same-origin"></iframe></div><p class="tiny panel-body" id="preview-note">Loading local preview…</p></section></div>`;
  bindFields();filterCallRows();refreshAvailabilityWarnings();refreshPreview();restoreCallView(position);restoreLayoutView(layoutPosition);
 }
+function layoutScopeId(){return project?.id+':'+day()?.id;}
+function moveLayoutSection(source,target,edge,position){
+ if(view!=='layout'||locked())return;
+ const l=Layouts.move(day().layout,source,target,edge,layoutCustomKey);
+ if(!l)return;
+ day().layout=l;mark();renderDaily(position);
+}
+function stepLayoutSection(value){
+ const split=value.lastIndexOf(':'),source=value.slice(0,split),up=value.slice(split+1)==='up';
+ const l=day().layout,keys=Layouts.order(l,layoutCustomKey).filter(key=>Layouts.movable(l,key));
+ const index=keys.indexOf(source),target=keys[index+(up?-1:1)];
+ if(index>=0&&target)moveLayoutSection(source,target,up?'before':'after');
+}
+const layoutDragType='application/x-script-call-layout';
+function clearLayoutDrop(){
+ if(layoutDrag?.target){layoutDrag.target.classList.remove('layout-insert-before','layout-insert-after');layoutDrag.target=null;}
+}
+document.addEventListener('pointerdown',e=>{
+ const row=e.target.closest('[data-layout-row]');
+ layoutPointer=row?{row,position:captureLayoutView(layoutScopeId()),interactive:!!e.target.closest('button,input,label,select,textarea')}:null;
+});
+document.addEventListener('dragstart',e=>{
+ const row=e.target.closest('[data-layout-row]');
+ if(!row)return;
+ if(view!=='layout'||locked()||layoutPointer?.row!==row||layoutPointer.interactive){e.preventDefault();return;}
+ layoutDrag={row,key:row.dataset.layoutRow,scope:layoutScopeId(),dirty,token:uid(),position:layoutPointer.position};
+ e.dataTransfer.effectAllowed='move';e.dataTransfer.setData(layoutDragType,layoutDrag.token);
+});
+function layoutDrop(e,drag){
+ const target=e.target.closest('[data-layout-row]');
+ if(!target||target===drag.row||drag.scope!==layoutScopeId()||dirty!==drag.dirty||!target.closest('[data-layout-scope]'))return null;
+ const rect=target.getBoundingClientRect(),edge=e.clientY<rect.top+rect.height/2?'before':'after';
+ return {target,edge};
+}
+document.addEventListener('dragover',e=>{
+ const drag=layoutDrag;
+ if(!drag||!e.dataTransfer.types.includes(layoutDragType))return;
+ const drop=layoutDrop(e,drag);
+ clearLayoutDrop();
+ if(!drop)return;
+ e.preventDefault();e.dataTransfer.dropEffect='move';
+ drag.target=drop.target;drop.target.classList.add('layout-insert-'+drop.edge);
+});
+document.addEventListener('dragleave',e=>{if(layoutDrag?.target&&!layoutDrag.target.contains(e.relatedTarget))clearLayoutDrop();});
+function layoutDragPosition(drag){
+ const current=captureLayoutView(drag.scope);
+ if(current&&drag.position?.focus)Object.assign(current,{focus:drag.position.focus,selection:drag.position.selection});
+ return current;
+}
+function finishLayoutDrag(){
+ clearLayoutDrop();layoutDrag=null;layoutPointer=null;
+}
+document.addEventListener('dragend',()=>{
+ if(!layoutDrag)return;
+ const drag=layoutDrag;finishLayoutDrag();
+ if(view==='layout'&&dirty===drag.dirty)restoreLayoutView(layoutDragPosition(drag));
+});
+document.addEventListener('drop',e=>{
+ const drag=layoutDrag;
+ if(!drag||e.dataTransfer.getData(layoutDragType)!==drag.token)return;
+ e.preventDefault();
+ const drop=layoutDrop(e,drag),position=layoutDragPosition(drag);finishLayoutDrag();
+ if(drop)moveLayoutSection(drag.key,drop.target.dataset.layoutRow,drop.edge,position);
+ else restoreLayoutView(position);
+});
 function lunchField(){const lunch=Lunch.resolve(project,day());return field('Lunch',`days.${di()}.overrides.meal`,'time',{value:lunch.time,note:`<span id="lunch-hint">${lunchHint()}</span>`})+field('Lunch date',`days.${di()}.mealOffset`,'select',{value:lunch.offset,disabled:lunch.automatic,extra:'data-lunch-offset',items:[{id:0,name:'Shoot date'},{id:1,name:'Following date (+1 day)'}],empty:null});}
 function lunchHint(){const lunch=Lunch.resolve(project,day());return lunch.automatic?'Automatic · crew call + 6 hours'+(lunch.offset?' · following date (+1 day)':'')+(lunch.reason?' · '+esc(lunch.reason):lunch.time?'':' · enter a crew call first'):'Manual / retained legacy lunch. <button data-action="lunch-auto" type="button" '+(locked()?'disabled':'')+'>Use crew call + 6 hours</button>';}
 function refreshLunchHint(){if($('lunch-hint'))$('lunch-hint').innerHTML=lunchHint();const offset=document.querySelector('[data-lunch-offset]');if(offset){const lunch=Lunch.resolve(project,day());offset.disabled=locked()||lunch.automatic;offset.value=String(lunch.offset);}}
@@ -273,7 +387,13 @@ function bindFields(){
   put(path,value);if(/^locations\.\d+\.(latitude|longitude)$/.test(path)){const location=project.locations[Number(path.split('.')[1])];location.coordinateSource={kind:'manual'};coordinateLookupState.delete(project.id+':'+location.id);refreshLocationMapInfo('locations.'+path.split('.')[1]+'.mapsUrl');}if(path==='timeDisplayClock')writePreference('default-time-display',value);if(path==='temperatureUnit')writePreference('default-temperature-unit',value);refreshLocationMapInfo(path);if(/^days\.\d+\.schedule\.\d+\.notes$/.test(path)){const item=day().schedule[Number(path.split('.')[3])],note=el.closest('label').querySelector('small');if(note)note.innerHTML='This schedule row only. <button type="button" data-scene-notes-reset="'+esc(item.id)+'">Use production scene notes</button>';}if(/^scenes\.\d+\.(number|slug)$/.test(path)){const sc=project.scenes[Number(path.split('.')[1])],title=document.querySelector(`[data-scene-card="${sc.id}"]>summary span`);if(title)title.textContent=sc.number+' · '+(sc.slug||'Untitled scene');}if(/^locations\.\d+\.name$/.test(path)){const loc=project.locations[Number(path.split('.')[1])];const title=document.querySelector(`[data-location-card="${loc.id}"]>summary span`);if(title)title.textContent=value||'New location';}if(path.includes('.sheetOverrides.')){const note=el.closest('label').querySelector('small');if(note)note.innerHTML=`Day override <button data-sheet-reset="${path.split('.').at(-1)}" type="button">Reset to production</button>`;}
   if(/(\.date|\.zone|latitude|longitude|primaryLocationId)$/.test(path)){for(const d of project.days)d.weather.approved=false;}
   if(/weather\.summary$/.test(path)&&day().weather.mode==='nws'){day().weather.mode='manual';delete day().weather.key;delete day().weather.fetchedAt;day().weather.approved=false;}
-  mark();renderHeader();if(/layout\.preset$/.test(path))renderDaily();
+  const editedSection=el.closest('[data-layout-custom]');
+  if(editedSection&&path.endsWith('.title')){
+   const key=editedSection.dataset.layoutCustom;
+   const row=document.querySelector(`[data-layout-row="${key}"]`);
+   if(row){const title=value||'Untitled custom section';row.querySelector('[data-layout-order-name]').textContent=title;for(const button of row.querySelectorAll('[data-layout-move]'))button.setAttribute('aria-label','Move '+title+(button.dataset.layoutMove.endsWith(':up')?' up':' down'));}
+  }
+  mark();renderHeader();
  });});
 }
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(()=>refreshPreview().catch(error),550);}
@@ -561,7 +681,8 @@ const actions={
  'manual-weather':()=>{day().weather={mode:'manual',summary:day().weather.summary,approved:false};mark();render();},
  'add-scene':()=>{const id=$('add-scene-select').value,s=project.scenes.find(s=>s.id===id);if(!s||Records.deleted(project,'scenes',s.id))return toast('Choose an active scene to add.');day().schedule.push({id:uid(),type:'scene',sceneId:id,description:'',start:'',offset:0,duration:s.durationMinutes||60});s.castIds.forEach(addCall);mark();render();},
  'add-break':()=>{day().schedule.push({id:uid(),type:'meal',sceneId:'',description:'Meal break',start:'12:30',offset:0,duration:30});mark();render();},
- 'custom-section':()=>{day().layout.custom.push({title:'Additional information',text:''});mark();render();},
+ 'custom-section':()=>{const l=day().layout;if(l.custom.length>=20)return;const item={id:uid(),title:'Additional information',text:''};l.custom.push(item);l.sectionOrder?.push(layoutCustomKey(item));mark();renderDaily();},
+ 'save-layout-template':saveLayoutTemplate,
  'add-background':()=>{day().background.push({id:uid(),type:'background',quantity:1,description:'',call:'',notes:''});mark();render();},
  'add-cast':()=>addPerson('cast'),'add-crew':()=>addPerson('crew'),
  'add-location':()=>{const locationId=uid();const expanded=readPreference('location-cards:'+project.id,{});expanded[locationId]=true;writePreference('location-cards:'+project.id,expanded);project.locations.push({id:locationId,name:'New location',address:'',latitude:null,longitude:null,zone:project.defaults.zone,parking:'',hospital:'',emergencyPhone:'',verified:false});mark();render();},
@@ -596,12 +717,17 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
   if(b.dataset.view)return transition(async()=>{view=b.dataset.view;render();});
   if(b.dataset.section)return transition(async()=>{view='daily';section=b.dataset.section;render();});
   if(b.dataset.master){master=b.dataset.master;await flush();return renderProduction();}
-  if(b.dataset.template){day().layout.preset=b.dataset.template;mark();return render();}
   if(b.dataset.sheetReset){delete day().sheetOverrides[b.dataset.sheetReset];mark();return render();}
   if(b.dataset.reset){delete day().overrides[b.dataset.reset];mark();return render();}
   if(b.dataset.action){await actions[b.dataset.action]?.();return;}
-  if(b.dataset.move){const [kind,a,delta]=b.dataset.move.split(':'),i=Number(a),list=kind==='layout'?day().layout.order:day().schedule,j=kind==='schedule'?Records.scheduleNeighbor(project,list,i,Number(delta)):i+Number(delta);if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];mark();return render();}
-  if(b.dataset.remove){const [kind,i]=b.dataset.remove.split(':');(kind==='custom'?day().layout.custom:kind==='background'?day().background:day().schedule).splice(Number(i),1);mark();return render();}
+  if(b.dataset.layoutMove)return stepLayoutSection(b.dataset.layoutMove);
+  if(b.dataset.move){const [,a,delta]=b.dataset.move.split(':'),i=Number(a),list=day().schedule,j=Records.scheduleNeighbor(project,list,i,Number(delta));if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];mark();return render();}
+  if(b.dataset.remove){
+   const [kind,i]=b.dataset.remove.split(':');
+   if(kind==='custom'){const l=day().layout;day().layout=Layouts.remove(l,layoutCustomKey(l.custom[Number(i)]),layoutCustomKey);}
+   else (kind==='background'?day().background:day().schedule).splice(Number(i),1);
+   mark();return render();
+  }
   if(b.dataset.script){const s=project.scenes.find(s=>s.id===b.dataset.script);
    const source=calendarDragSource(b),sceneActions=source?[{label:'Move Scene',run:()=>transition(async()=>calendarReviewDialog(source))}]:[];
    modal(s.number+' · '+s.slug,`<p>${esc(s.synopsis)}</p><p class="tiny">Local scene ID: ${esc(s.id)}<br>Source ID: ${esc(s.sourceId||'User-created')}</p>${s.script?'<pre>'+esc(s.script)+'</pre>':'<p>No screenplay text supplied by this source.</p>'}${s.shots?.length?'<h3>Source shots & camera setups</h3>'+s.shots.map(shot=>'<article class="row-card"><p><b>'+esc(shot.number)+' · '+esc(shot.name)+'</b><br>'+esc(shot.description||'')+'</p><p>'+esc(shot.size)+' / Camera '+esc(shot.camera||'—')+' / '+esc(shot.lens)+' mm / '+esc(shot.movement||'')+' / '+esc(shot.equipment||'')+'</p><p>'+esc(shot.day||'Unscheduled')+' · '+esc(shot.status||'')+' · takes '+esc(shot.takes??'')+' · circle '+esc(shot.circleTake||'—')+'<br>Setup '+esc(shot.setupMinutes??'—')+' min / shoot '+esc(shot.shootMinutes??'—')+' min / actual '+esc(shot.actualMinutes||'—')+' min</p><p class="tiny">Shot ID: '+esc(shot.id)+'<br>Source shot ID: '+esc(shot.sourceId||'Not supplied')+'<br>Camera object: '+esc(shot.cameraObjectId||'Not supplied')+'</p><p>'+esc(shot.notes)+'</p></article>').join(''):''}`,sceneActions);return;}
@@ -610,6 +736,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  }catch(err){error(err);}
 });
 document.addEventListener('change',e=>{const el=e.target;
+ if(el.id==='layout-preset')return chooseLayoutPreset(el.value);
  if(el.id==='calendar-month'){calendarMonth=el.value;renderCalendar();return;}
  if(el.dataset.attend){const position=captureCallView(callScope(section),el.dataset.attend);if(el.checked)addCall(el.dataset.attend);else day().calls=day().calls.filter(c=>c.personId!==el.dataset.attend);refreshCallList(position);}
  if(el.dataset.hide){const k=el.dataset.hide;day().layout.hidden=day().layout.hidden.filter(x=>x!==k);if(!el.checked)day().layout.hidden.push(k);mark();}
@@ -684,4 +811,4 @@ function saveFailure(e){error(e);modal('Unsaved changes remain','<p>The local sa
 api.onSave(()=>Promise.resolve().then(()=>{commitPageLengths();return flush();}).catch(error));api.onBeforeClose(async()=>{try{commitPageLengths();}catch(e){error(e);return;}try{await flush();api.closeReady();}catch(e){saveFailure(e);}});
 window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();Promise.resolve().then(()=>{commitPageLengths();return flush();}).catch(error);}});
 initAvailabilityUI();
-(async()=>{try{document.documentElement.dataset.theme=localStorage.getItem('callsheet-theme')||'light';boot=await api.request('bootstrap');$('app-version').textContent='VERSION '+boot.version;diagnosticNotice(boot.diagnostics);projects=boot.projects;await useState(await api.request('get',{id:projects[0].id}));$('save-state').textContent='Saved on this device';}catch(e){$('save-state').textContent='Could not open local data';error(e);}})();
+(async()=>{try{document.documentElement.dataset.theme=localStorage.getItem('callsheet-theme')||'light';boot=await api.request('bootstrap');savedTemplates=await api.request('layoutPresets');$('app-version').textContent='VERSION '+boot.version;diagnosticNotice(boot.diagnostics);projects=boot.projects;await useState(await api.request('get',{id:projects[0].id}));$('save-state').textContent='Saved on this device';}catch(e){$('save-state').textContent='Could not open local data';error(e);}})();

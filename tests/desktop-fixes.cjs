@@ -87,7 +87,7 @@ async function seedLongLists(){
 }
 async function verifyLayout(){
  await page.click('[data-view="daily"]');
- assert.equal(await page.locator('[data-section="layout"],[data-layout-scope],[data-template]').count(),0);
+ assert.equal(await page.locator('[data-section="layout"],[data-layout-scope],#layout-preset').count(),0);
  await menu('View','Template & Layout');
  await editor().waitFor();
  assert.equal(await page.locator('[data-section]').count(),0);
@@ -126,9 +126,11 @@ async function verifyLayout(){
  assert(Math.abs(await editor().evaluate(el=>el.scrollTop)-beforeMove)<=2);
  await flush();
  const moved=await readState();
- assert.equal(moved.project.days[0].layout.order.indexOf('cast'),stored.project.days[0].layout.order.indexOf('cast')+1);
+ const movedOrder=moved.project.days[0].layout.order,originalOrder=stored.project.days[0].layout.order;
+ assert.equal(movedOrder.indexOf('crew'),originalOrder.indexOf('crew'));
+ assert(movedOrder.indexOf('notes')<movedOrder.indexOf('cast'));
  await page.click('[data-view="daily"]');
- assert.equal(await page.locator('[data-section="layout"],[data-layout-scope],[data-template]').count(),0);
+ assert.equal(await page.locator('[data-section="layout"],[data-layout-scope],#layout-preset').count(),0);
  await page.waitForFunction(()=>document.querySelector('#preview').contentDocument?.body?.textContent.includes('RECHECK'));
  console.log('PASS sidebar/menu separation, deep text drag-resize and repeated edits across rerenders, section movement and rendered sheet');
 }

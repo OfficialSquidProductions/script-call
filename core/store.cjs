@@ -1,14 +1,26 @@
 'use strict';
 const {DatabaseSync}=require('node:sqlite');
 const fs=require('node:fs'),path=require('node:path');
-const D=require('./domain.cjs');
+const D=require('./domain.cjs'),Layouts=require('../web/layout-presets.js');
 class Store{
  constructor(dir){
   fs.mkdirSync(dir,{recursive:true,mode:0o700});this.dir=dir;this.db=new DatabaseSync(path.join(dir,'callsheet.sqlite'));
-  this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS projects(id TEXT PRIMARY KEY,version INTEGER NOT NULL,data TEXT NOT NULL,updated TEXT NOT NULL); CREATE TABLE IF NOT EXISTS revisions(id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id),day_id TEXT NOT NULL,number INTEGER NOT NULL,snapshot TEXT NOT NULL,pdf BLOB NOT NULL,hash TEXT NOT NULL,issued TEXT NOT NULL, UNIQUE(project_id,day_id,number)); CREATE TABLE IF NOT EXISTS deleted_productions(project_id TEXT PRIMARY KEY REFERENCES projects(id),deleted_at TEXT NOT NULL); PRAGMA user_version=1;');
+  this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS projects(id TEXT PRIMARY KEY,version INTEGER NOT NULL,data TEXT NOT NULL,updated TEXT NOT NULL); CREATE TABLE IF NOT EXISTS revisions(id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id),day_id TEXT NOT NULL,number INTEGER NOT NULL,snapshot TEXT NOT NULL,pdf BLOB NOT NULL,hash TEXT NOT NULL,issued TEXT NOT NULL, UNIQUE(project_id,day_id,number)); CREATE TABLE IF NOT EXISTS deleted_productions(project_id TEXT PRIMARY KEY REFERENCES projects(id),deleted_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS layout_presets(id TEXT PRIMARY KEY,name TEXT NOT NULL,name_key TEXT UNIQUE NOT NULL,layout TEXT NOT NULL); PRAGMA user_version=1;');
  }
  list(){return this.db.prepare('SELECT id,version,data,updated FROM projects WHERE NOT EXISTS (SELECT 1 FROM deleted_productions WHERE project_id=projects.id) ORDER BY updated DESC,id').all().map(r=>({id:r.id,version:r.version,title:JSON.parse(r.data).title,demo:!!JSON.parse(r.data).demo,updated:r.updated}));}
  create(project){D.validateProject(project);this.db.prepare('INSERT INTO projects VALUES(?,?,?,?)').run(project.id,1,JSON.stringify(project),new Date().toISOString());return this.get(project.id);}
+ layoutPresets(){return this.db.prepare('SELECT id,name,layout FROM layout_presets ORDER BY name_key,id').all().map(row=>({...row,layout:JSON.parse(row.layout)}));}
+ saveLayoutPreset({projectId,dayId,version,name}){
+  const {display,key}=Layouts.name(name),state=this.get(projectId),day=state.project.days.find(day=>day.id===dayId);
+  if(state.version!==version||!day||day.lockedRevisionId)throw Error('The draft changed. Open Save Template again.');
+  const preset={id:D.id(),name:display,layout:Layouts.capture(day.layout,D.id)};
+  const saved=this.db.prepare('INSERT INTO layout_presets SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM layout_presets)<100 ON CONFLICT(name_key) DO NOTHING').run(preset.id,preset.name,key,JSON.stringify(preset.layout));
+  if(!saved.changes){
+   if(this.db.prepare('SELECT 1 FROM layout_presets WHERE name_key=?').get(key))throw Error('That template name already exists. Choose a different name to save a copy.');
+   throw Error('This profile already has 100 saved templates.');
+  }
+  return preset;
+ }
  get(id){const r=this.db.prepare('SELECT * FROM projects WHERE id=? AND NOT EXISTS (SELECT 1 FROM deleted_productions WHERE project_id=projects.id)').get(id);if(!r)throw Error('Production not found or moved to Deleted productions.');return {project:JSON.parse(r.data),version:r.version,revisions:this.revisions(id)};}
  save(project,version){D.validateProject(project);const r=this.db.prepare('UPDATE projects SET data=?,version=version+1,updated=? WHERE id=? AND version=? AND NOT EXISTS (SELECT 1 FROM deleted_productions WHERE project_id=projects.id)').run(JSON.stringify(project),new Date().toISOString(),project.id,version);if(!r.changes)throw Error('Save conflict: a newer version exists. Keep your current window open and export a recovery copy before reloading.');return this.get(project.id);}
  changeRecord(projectId,version,command){const before=this.get(projectId);if(before.version!==version)throw Error('Production changed. Review the record before trying again.');const project=D.clone(before.project);require('../web/record-recovery.js').apply(project,command);D.validateProject(project);this.backup();return this.save(project,version);}

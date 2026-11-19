@@ -12,7 +12,8 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 const hash=x=>crypto.createHash('sha256').update(typeof x==='string'||Buffer.isBuffer(x)?x:JSON.stringify(x)).digest('hex');
 const SHEET_FIELDS=['header','director','producer','upm','firstAD','secondAD','breakfast','shootingCall','scriptColor','scheduleColor','safety','walkies','departmentNotes','basecamp','hospitalNotes','parkingNotes','high','low','weatherIcon',...Details.extraFields];
 const sheetDefaults=()=>Object.fromEntries(SHEET_FIELDS.filter(k=>!Details.extraFields.includes(k)).map(k=>[k,k==='safety'?'SAFETY FIRST | NO SMOKING ON SET | CHECK IN WITH PRODUCTION':k==='weatherIcon'?'None':'']));
-const ORDER=['logistics','schedule','cast','crew','notes','advance'];
+const LayoutPresets=require('../web/layout-presets.js');
+const ORDER=LayoutPresets.sections;
 const ID=/^[a-zA-Z0-9_.-]{1,100}$/;
 const TIME=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const okDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number(x.slice(0,4))>=1900&&Number(x.slice(0,4))<=2100&&Number.isFinite(Date.parse(x+'T12:00Z'))&&new Date(x+'T12:00Z').toISOString().slice(0,10)===x;
@@ -58,7 +59,8 @@ function validateProject(p){
   if(!Array.isArray(l.hidden)||l.hidden.some(x=>!ORDER.includes(x)||x==='logistics')||!Array.isArray(l.custom)||l.custom.length>20)throw Error('Invalid template sections.');
   if(l.includeKeyPhones!==undefined&&typeof l.includeKeyPhones!=='boolean')throw Error('Invalid key-position phone choice.');
   if(l.sceneColors!==undefined&&typeof l.sceneColors!=='boolean')throw Error('Invalid scene color choice.');
-  for(const c of l.custom)if(typeof c.title!=='string'||typeof c.text!=='string')throw Error('Invalid custom section.');
+  for(const c of l.custom)if(!c||typeof c.title!=='string'||typeof c.text!=='string')throw Error('Invalid custom section.');
+  LayoutPresets.validate(l);
  }
  return p;
 }
