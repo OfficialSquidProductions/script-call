@@ -1,8 +1,8 @@
 # Script Call
 
-**0.3.23 adds named layout presets and direct dragging.** In Template & Layout, select a built-in or saved template, drag section rows to change print order, and choose **Save Template…** at the bottom to reuse your arrangement. In Shooting Days, grab the day label or the scene itself. See [template presets](#save-and-reuse-a-layout), [calendar moves](PRODUCTION-IMPORT-CALENDAR.md#move-days-and-scenes) and [release verification](RELEASING.md).
+**0.3.24 restores layout presets on selection.** Choose a built-in or saved template in **Template & Layout** to start from its defaults. Use **Reload Preset** to reset the current selection and **Undo preset change** to go back before making further layout edits. [Save and reuse a layout](#save-and-reuse-a-layout) · [Release verification](RELEASING.md)
 
-The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.23) targets Apple Silicon and macOS 13 or later. Choose **Settings & Help → Check for Updates** or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip).
+The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.24) targets Apple Silicon and macOS 13 or later. Choose **Settings & Help → Check for Updates** or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip).
 
 A Squid Productions Software
 
@@ -14,7 +14,9 @@ Script Call is local-first Electron software for production records, daily call 
 2. Drag a row above or below another row, or use its up and down buttons. For G-Casper-style sheets, emergency logistics stays in the front header and crew calls stay on the back. Custom sections can move among the other front sections.
 3. Choose **Save Template…** at the bottom and enter a unique name. Enter a different name to save another copy. Saved templates are available across productions in this app profile.
 
-A saved template includes paper, appearance, visibility, section order, and custom headings. The draft retains written section text and personal contact-printing choices. A portable project keeps the layout applied to its days. Archives that interleave custom and built-in sections require Script Call 0.3.23 or later.
+A saved template includes paper, appearance, visibility, section order, and custom headings. Selecting or reloading a preset restores those settings from an independent copy. When the draft is marked **Modified**, use **Save Template…** to keep those changes as a new named preset. Preset recall keeps the production's time and temperature settings and the draft's contact-printing choices. Written custom text goes back into a matching section or stays under **Unplaced custom sections** until you add it back.
+
+A portable project keeps the layouts applied to its days. Archives with interleaved custom sections require 0.3.23 or later. Archives containing unplaced custom draft text require 0.3.24 or later.
 
 ## Run locally
 

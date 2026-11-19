@@ -8,6 +8,7 @@ const Days=window.ShootingDays,Layouts=window.LayoutPresets,CalendarMoves=window
 const clone=x=>JSON.parse(JSON.stringify(x)),uid=()=>crypto.randomUUID();
 let project,version,revisions=[],projects=[],dayId,view='daily',section='overview',master='general',dirty=0,saved=0,saveTimer,savePromise,previewTimer,previewSerial=0,toastTimer,boot,modalAction,previewObserver,lockedDisplay={},transitionQueue=Promise.resolve();
 let savedTemplates=[],layoutDrag,layoutPointer;
+const layoutRecallUndo=new Map();
 let calendarMonth,visibleWeek,weekPage=0,undoDays=[],redoDays=[],productionBusy=false,calendarDrag,calendarReview;
 const readPreference=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 function writePreference(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{toast('The app preference could not be saved on this device.');}}
@@ -32,7 +33,7 @@ async function flush(){
  savePromise=(async()=>{while(saved<dirty){const target=dirty,payload=clone(project);try{const result=await api.request('save',{project:payload,version});version=result.version;revisions=result.revisions;saved=target;projects=projects.map(p=>p.id===payload.id?{...p,title:payload.title,version:result.version}:p);const option=[...$('production').options].find(o=>o.value===payload.id);if(option)option.textContent=payload.title+(payload.demo?' · Demo':'');$('save-state').textContent='Saved on this device';}catch(e){$('save-state').textContent='Save failed - click Save to retry';throw e;}}})();
  try{await savePromise;}finally{savePromise=null;}
 }
-async function useState(state){const changed=project?.id!==state.project.id;project=state.project;const pref=readPreference('shooting-days:'+project.id,{});if(changed){calendarMonth=pref.calendarMonth;dayId=pref.dayId;visibleWeek=pref.visibleWeek;weekPage=Number.isSafeInteger(pref.weekPage)?pref.weekPage:0;undoDays=[];redoDays=[];resetAvailabilityUI();}project.sheetDefaults={...sheetBase(),...project.sheetDefaults};project.days.forEach(d=>{d.sheetOverrides||={};d.background||=[];d.layout.sceneColors??=true;});version=state.version;revisions=state.revisions;dirty=0;saved=0;dayId=project.days.find(d=>d.id===dayId)?.id||project.days[0]?.id;projects=await api.request('list');render();}
+async function useState(state){const changed=project?.id!==state.project.id;project=state.project;const pref=readPreference('shooting-days:'+project.id,{});if(changed){calendarMonth=pref.calendarMonth;dayId=pref.dayId;visibleWeek=pref.visibleWeek;weekPage=Number.isSafeInteger(pref.weekPage)?pref.weekPage:0;undoDays=[];redoDays=[];layoutRecallUndo.clear();resetAvailabilityUI();}project.sheetDefaults={...sheetBase(),...project.sheetDefaults};project.days.forEach(d=>{d.sheetOverrides||={};d.background||=[];d.layout.sceneColors??=true;});version=state.version;revisions=state.revisions;dirty=0;saved=0;dayId=project.days.find(d=>d.id===dayId)?.id||project.days[0]?.id;projects=await api.request('list');render();}
 function transition(fn){const run=async()=>{try{commitPageLengths();await flush();await fn();}catch(e){error(e);renderSide();}};transitionQueue=transitionQueue.then(run,run);return transitionQueue;}
 function effective(k){if(Object.hasOwn(day().overrides,k))return day().overrides[k];return project.defaults[k]??'';}
 function selectedLocation(){return project.locations.find(l=>l.id===effective('primaryLocationId'));}
@@ -99,24 +100,62 @@ function layoutRow(key,layout,sequence,custom){
  return `<div data-layout-row="${esc(key)}" draggable="true"><span data-layout-order-name>${esc(title)}</span>${show}<button data-layout-move="${esc(key)}:up" ${index===0?'disabled':''} aria-label="Move ${esc(title)} up">↑</button><button data-layout-move="${esc(key)}:down" ${index===sequence.length-1?'disabled':''} aria-label="Move ${esc(title)} down">↓</button></div>`;
 }
 function layout(){
- const d=day(),l=d.layout,p=`days.${di()}.layout`,selected=savedTemplates.some(t=>t.id===l.templateId)?l.templateId:l.preset;
+ const d=day(),l=d.layout,p=`days.${di()}.layout`,selected=currentLayoutPreset(l);
  const custom=new Map(l.custom.map(c=>[layoutCustomKey(c),c])),keys=Layouts.order(l,layoutCustomKey),sequence=keys.filter(k=>Layouts.movable(l,k));
  const row=k=>layoutRow(k,l,sequence,custom);
- const chooser=`<label class="field">Presets<select id="layout-preset"><optgroup label="Built-in presets">${options(Layouts.builtIns,selected,null)}</optgroup>${savedTemplates.length?`<optgroup label="Saved templates">${options(savedTemplates,selected,null)}</optgroup>`:''}</select></label>`;
+ const chooser=`<div class="layout-preset-controls"><label class="field">Presets<select id="layout-preset"><optgroup label="Built-in presets">${options(Layouts.builtIns,selected,null)}</optgroup>${savedTemplates.length?`<optgroup label="Saved templates">${options(savedTemplates,selected,null)}</optgroup>`:''}</select></label><button data-action="reload-layout-preset">Reload Preset</button><div class="layout-preset-status"><span id="layout-modified" class="tiny" role="status" hidden>Modified. Use Save Template to keep these layout changes.</span><button class="text-button" data-action="undo-layout-preset" hidden>Undo preset change</button></div></div>`;
  const controls=`<div class="form-grid">${chooser}${field('Paper',p+'.paper','select',{items:['A4','Letter'],empty:null})}${field('Time display','timeDisplayClock','select',{value:timeMode(),items:[{id:'24',name:'24-hour (military)'},{id:'12',name:'12-hour (AM/PM)'}],empty:null,note:'Production preference; also available in Settings & help.'})}${field('Temperature preference','temperatureUnit','select',{value:tempMode(),items:[{id:'C',name:'Celsius (°C)'},{id:'F',name:'Fahrenheit (°F)'}],empty:null,note:'Production preference; also in Settings & help.'})}${field('Save toner / ink (monochrome)',p+'.mono','checkbox')}${field('D/N and INT/EXT scene strip colors',p+'.sceneColors','checkbox')}${field('Include personal phone / email in PDF',p+'.includeContacts','checkbox')}</div>`;
  const ordered=`<h3>Section order &amp; visibility</h3><p class="tiny layout-section-help">Drag a section above or below another, or use its up and down buttons.</p>${l.preset==='gcasper'?'<h4 class="layout-page-heading">Front page</h4>':''}<div class="section-order">${l.preset==='gcasper'?row('logistics'):''}${sequence.map(row).join('')}</div>${l.preset==='gcasper'?`<h4 class="layout-page-heading">Back page</h4><div class="section-order">${row('crew')}</div>`:''}`;
  const editors=l.custom.map((c,i)=>`<article class="row-card" data-layout-custom="${esc(layoutCustomKey(c))}"><div class="form-grid">${field('Heading',p+`.custom.${i}.title`,'text',{wide:true})}${field('Text',p+`.custom.${i}.text`,'textarea',{wide:true})}</div><button class="text-button" data-remove="custom:${i}">Remove section</button></article>`).join('');
- return `${controls}<p class="inline-notice">Hidden sections remain editable. Emergency logistics always prints.</p>${ordered}<h3 class="row-card">Custom sections</h3>${editors}<button data-action="custom-section" ${l.custom.length>=20?'disabled':''}>+ Add custom section</button><div class="layout-save"><button class="primary" data-action="save-layout-template">Save Template…</button></div>`;
+ const unplaced=d.unplacedCustom?.length?`<details class="layout-unplaced"><summary>Unplaced custom sections (${d.unplacedCustom.length})</summary><p class="tiny">These draft notes are kept here until you add them to the sheet or recall their template.</p>${d.unplacedCustom.map(item=>`<article class="row-card"><strong>${esc(item.title||'Untitled custom section')}</strong><pre>${esc(item.text)}</pre><button data-restore-layout-section="${esc(item.id)}" ${l.custom.length>=20?'disabled':''}>Add to sheet</button></article>`).join('')}</details>`:'';
+ return `${controls}<p class="inline-notice">Hidden sections remain editable. Emergency logistics always prints.</p>${ordered}<h3 class="row-card">Custom sections</h3>${editors}<button data-action="custom-section" ${l.custom.length>=20?'disabled':''}>+ Add custom section</button>${unplaced}<div class="layout-save"><button class="primary" data-action="save-layout-template">Save Template…</button></div>`;
+}
+function currentLayoutPreset(layout){return savedTemplates.some(item=>item.id===layout.templateId)?layout.templateId:layout.preset;}
+function presetSource(value){
+ const custom=savedTemplates.find(item=>item.id===value);
+ if(custom)return {template:custom.layout,id:custom.id};
+ if(Layouts.builtIns.some(item=>item.id===value))return {template:Layouts.defaults(value)};
+ throw Error('Choose an available preset.');
+}
+function layoutDraft(d){return {layout:d.layout,unplacedCustom:d.unplacedCustom||[]};}
+function putLayoutDraft(d,state){
+ d.layout=state.layout;
+ if(state.unplacedCustom.length)d.unplacedCustom=state.unplacedCustom;
+ else delete d.unplacedCustom;
+}
+function refreshPresetControls(){
+ const edited=$('layout-modified');
+ if(!edited||view!=='layout'||locked())return;
+ const d=day(),undo=layoutRecallUndo.get(layoutScopeId());
+ edited.hidden=Layouts.matches(d.layout,presetSource(currentLayoutPreset(d.layout)).template);
+ document.querySelector('[data-action="undo-layout-preset"]').hidden=!undo||undo.after!==JSON.stringify(layoutDraft(d));
 }
 function chooseLayoutPreset(value){
  if(view!=='layout'||locked())return;
- const l=day().layout,preset=savedTemplates.find(t=>t.id===value);
+ const d=day(),before=clone(layoutDraft(d));
  try{
-  if(preset)day().layout=Layouts.apply(l,preset.layout,preset.id,layoutCustomKey);
-  else if(Layouts.builtIns.some(item=>item.id===value)){l.preset=value;delete l.templateId;}
-  else throw Error('Choose an available preset.');
+  const {template,id}=presetSource(value),next=Layouts.recall(d,template,id,layoutCustomKey),after=JSON.stringify(next);
+  if(JSON.stringify(before)===after)return refreshPresetControls();
+  putLayoutDraft(d,next);
+  layoutRecallUndo.set(layoutScopeId(),{before,after});
   mark();renderDaily();
  }catch(e){error(e);renderDaily();}
+}
+function undoLayoutPreset(){
+ if(view!=='layout'||locked())return;
+ const d=day(),scope=layoutScopeId(),undo=layoutRecallUndo.get(scope);
+ if(!undo||undo.after!==JSON.stringify(layoutDraft(d)))return;
+ putLayoutDraft(d,undo.before);
+ layoutRecallUndo.delete(scope);mark();renderDaily();$('layout-preset').focus({preventScroll:true});
+}
+function restoreLayoutSection(id){
+ if(view!=='layout'||locked())return;
+ const d=day(),item=d.unplacedCustom?.find(item=>item.id===id);
+ if(!item||d.layout.custom.length>=20)return;
+ const unplacedCustom=d.unplacedCustom.filter(item=>item.id!==id);
+ const layout={...d.layout,custom:[...d.layout.custom,{...item}]};
+ if(layout.sectionOrder)layout.sectionOrder=[...layout.sectionOrder,Layouts.customKey(item)];
+ putLayoutDraft(d,{layout,unplacedCustom});mark();renderDaily();
 }
 function saveLayoutTemplate(){
  if(view!=='layout'||locked())return;
@@ -169,14 +208,15 @@ function captureLayoutView(scope){
  const pane=document.querySelector('[data-layout-scope]');
  if(pane?.dataset.layoutScope!==scope)return null;
  const active=document.activeElement;
- return {top:pane.scrollTop,x:window.scrollX,y:window.scrollY,
+ return {top:pane.scrollTop,x:window.scrollX,y:window.scrollY,unplacedOpen:pane.querySelector('.layout-unplaced')?.open||false,
   focus:pane.contains(active)?layoutControlKey(active):null,
   selection:typeof active.selectionStart==='number'?[active.selectionStart,active.selectionEnd,active.selectionDirection]:null,
   textareas:new Map([...pane.querySelectorAll('textarea')].map(el=>[layoutControlKey(el),{height:el.style.height,top:el.scrollTop}]))};
 }
 function restoreLayoutView(state){
  if(!state)return;
- const pane=document.querySelector('[data-layout-scope]');
+ const pane=document.querySelector('[data-layout-scope]'),unplaced=pane.querySelector('.layout-unplaced');
+ if(unplaced)unplaced.open=state.unplacedOpen;
  for(const el of pane.querySelectorAll('input,select,textarea,button')){
   const key=layoutControlKey(el),textarea=state.textareas.get(key);
   if(textarea){el.style.height=textarea.height;el.scrollTop=textarea.top;}
@@ -197,7 +237,7 @@ function renderDaily(layoutPositionOverride){
  const navigation=dedicated?'':`<aside class="panel"><div class="panel-header"><span class="panel-title">Sheet sections</span></div><div class="section-nav">${Object.entries(labels).map(([k,t])=>`<button data-section="${k}" class="${k===current?'active':''}">${t}</button>`).join('')}</div></aside>`;
  const editorScope=dedicated?`data-layout-scope="${esc(layoutScope)}"`:callList?`data-call-scope="${esc(callScope(current))}"`:'';
  $('content').innerHTML=`${locked()?`<div class="locked"><span>Issued revision is frozen. Its original PDF will export unchanged.</span><button data-action="new-draft">Create new draft</button></div>`:''}<div id="availability-alerts" aria-live="polite"></div><div class="workspace${dedicated?' layout-workspace':''}">${navigation}<div class="panel${callList?' call-list-panel':''}"><div class="panel-header"><span class="panel-title">${dedicated?'Template &amp; Layout':esc(labels[current])}</span><span class="tiny">${locked()?'READ ONLY':'AUTOSAVE'}</span></div>${callList?callListTools(current):''}<div class="panel-body editor-scroll" ${editorScope}>${body}</div></div><section class="panel preview-panel"><div class="panel-header"><span class="panel-title">Print preview</span><div class="preview-tools"><button data-action="refresh-preview">Refresh</button><button data-action="pdf">PDF</button></div></div><div class="preview-wrap"><iframe title="Call sheet print preview" id="preview" sandbox="allow-same-origin"></iframe></div><p class="tiny panel-body" id="preview-note">Loading local preview…</p></section></div>`;
- bindFields();filterCallRows();refreshAvailabilityWarnings();refreshPreview();restoreCallView(position);restoreLayoutView(layoutPosition);
+ bindFields();filterCallRows();refreshAvailabilityWarnings();refreshPreview();refreshPresetControls();restoreCallView(position);restoreLayoutView(layoutPosition);
 }
 function layoutScopeId(){return project?.id+':'+day()?.id;}
 function moveLayoutSection(source,target,edge,position){
@@ -393,7 +433,7 @@ function bindFields(){
    const row=document.querySelector(`[data-layout-row="${key}"]`);
    if(row){const title=value||'Untitled custom section';row.querySelector('[data-layout-order-name]').textContent=title;for(const button of row.querySelectorAll('[data-layout-move]'))button.setAttribute('aria-label','Move '+title+(button.dataset.layoutMove.endsWith(':up')?' up':' down'));}
   }
-  mark();renderHeader();
+  mark();renderHeader();refreshPresetControls();
  });});
 }
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(()=>refreshPreview().catch(error),550);}
@@ -450,7 +490,7 @@ async function emailCallSheet(){
 function closeModal(){if(!productionBusy){cancelEmailReview();$('modal').close();}}
 $('modal').addEventListener('cancel',e=>{if(productionBusy)e.preventDefault();});
 function addCall(personId){if(Records.deleted(project,'people',personId))return;if(day().calls.some(c=>c.personId===personId))return;day().calls.push({id:uid(),personId,...CallDefaults.initial(project,day(),project.people.find(p=>p.id===personId)),offset:0,pickup:'',makeup:'',ready:'',notes:''});}
-function addDayData(date,label){return {id:uid(),label,date,unit:day()?.unit||'A',lunchMode:'auto',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:clone(day()?.layout||{preset:'gcasper',sceneColors:true,paper:'A4',clock:'24',temperature:'C',mono:false,includeContacts:false,order:Object.keys(sectionLabel),hidden:[],custom:[]}),baseRevisionId:null};}
+function addDayData(date,label){return {id:uid(),label,date,unit:day()?.unit||'A',lunchMode:'auto',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:clone(day()?.layout||Layouts.defaults()),baseRevisionId:null};}
 function dayDialog(duplicate=false,date){const initialDate=date||(duplicate?(day()?.date||new Date().toISOString().slice(0,10)):Days.nextDayDate(project.days));modal(duplicate?'Duplicate shooting day':'Add shooting day',`<div class="form-grid"><label class="field">Day label<input id="new-day-label" value="Day ${String(project.days.length+1).padStart(2,'0')}"></label><label class="field">Date<input type="date" id="new-day-date" value="${esc(initialDate)}"></label></div><p>${duplicate?'A separate draft will copy calls, schedule and layout. Weather approval and issued state reset.':'Days have stable identities independent of their dates. Multiple units can share one date.'}</p>`,[{label:duplicate?'Create copy':'Add day',primary:true,run:async()=>{const date=$('new-day-date').value;if(!date)throw Error('Choose a shooting date.');let d=duplicate?clone(day()):addDayData(date,$('new-day-label').value);d.id=uid();d.label=$('new-day-label').value||'New day';d.date=date;d.lockedRevisionId=null;d.baseRevisionId=null;d.weather={mode:'manual',summary:'',approved:false};d.calls.forEach(c=>c.id=uid());d.schedule.forEach(c=>c.id=uid());project.days.push(d);dayId=d.id;calendarMonth=d.date.slice(0,7);revealDay();mark();await flush();closeModal();render();}}]);}
 function weekLabel(g){return g.key==='undated'?'Dates needed':`${g.key} – ${g.end}`;}
 function chooseWeek(key){const g=Days.weeks(project.days).find(g=>g.key===key);if(!g)return;visibleWeek=key;weekPage=0;selectDay(g.days[0].id);}
@@ -683,6 +723,8 @@ const actions={
  'add-break':()=>{day().schedule.push({id:uid(),type:'meal',sceneId:'',description:'Meal break',start:'12:30',offset:0,duration:30});mark();render();},
  'custom-section':()=>{const l=day().layout;if(l.custom.length>=20)return;const item={id:uid(),title:'Additional information',text:''};l.custom.push(item);l.sectionOrder?.push(layoutCustomKey(item));mark();renderDaily();},
  'save-layout-template':saveLayoutTemplate,
+ 'reload-layout-preset':()=>chooseLayoutPreset(currentLayoutPreset(day().layout)),
+ 'undo-layout-preset':undoLayoutPreset,
  'add-background':()=>{day().background.push({id:uid(),type:'background',quantity:1,description:'',call:'',notes:''});mark();render();},
  'add-cast':()=>addPerson('cast'),'add-crew':()=>addPerson('crew'),
  'add-location':()=>{const locationId=uid();const expanded=readPreference('location-cards:'+project.id,{});expanded[locationId]=true;writePreference('location-cards:'+project.id,expanded);project.locations.push({id:locationId,name:'New location',address:'',latitude:null,longitude:null,zone:project.defaults.zone,parking:'',hospital:'',emergencyPhone:'',verified:false});mark();render();},
@@ -720,6 +762,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
   if(b.dataset.sheetReset){delete day().sheetOverrides[b.dataset.sheetReset];mark();return render();}
   if(b.dataset.reset){delete day().overrides[b.dataset.reset];mark();return render();}
   if(b.dataset.action){await actions[b.dataset.action]?.();return;}
+  if(b.dataset.restoreLayoutSection)return restoreLayoutSection(b.dataset.restoreLayoutSection);
   if(b.dataset.layoutMove)return stepLayoutSection(b.dataset.layoutMove);
   if(b.dataset.move){const [,a,delta]=b.dataset.move.split(':'),i=Number(a),list=day().schedule,j=Records.scheduleNeighbor(project,list,i,Number(delta));if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];mark();return render();}
   if(b.dataset.remove){
@@ -739,7 +782,7 @@ document.addEventListener('change',e=>{const el=e.target;
  if(el.id==='layout-preset')return chooseLayoutPreset(el.value);
  if(el.id==='calendar-month'){calendarMonth=el.value;renderCalendar();return;}
  if(el.dataset.attend){const position=captureCallView(callScope(section),el.dataset.attend);if(el.checked)addCall(el.dataset.attend);else day().calls=day().calls.filter(c=>c.personId!==el.dataset.attend);refreshCallList(position);}
- if(el.dataset.hide){const k=el.dataset.hide;day().layout.hidden=day().layout.hidden.filter(x=>x!==k);if(!el.checked)day().layout.hidden.push(k);mark();}
+ if(el.dataset.hide){const k=el.dataset.hide;day().layout.hidden=day().layout.hidden.filter(x=>x!==k);if(!el.checked)day().layout.hidden.push(k);mark();refreshPresetControls();}
  if(el.dataset.sceneCast){const [i,id]=el.dataset.sceneCast.split(':');project.scenes[i].castIds=project.scenes[i].castIds.filter(x=>x!==id);if(el.checked)project.scenes[i].castIds.push(id);mark();}
 });
 $('production').onchange=()=>transition(async()=>useState(await api.request('get',{id:$('production').value})));

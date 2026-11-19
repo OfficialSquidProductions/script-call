@@ -138,11 +138,13 @@ async function openDemo(){
  check('custom name normalization, cancel and duplicate rejection preserve data; Save As keeps both presets and the selected day');
  await page.selectOption('#layout-preset','narrative');
  assert.equal(await row('crew').count(),1);
+ await pane().locator('.layout-unplaced summary').click();
+ for(const section of [first,second])await pane().locator(`[data-restore-layout-section="${section.slice(7)}"]`).click();
  await pointerDrag(row('crew'),row('logistics'));
  await flush();
  assert.equal((await state()).project.days[0].layout.order[0],'crew');
- await pointerDrag(row(first),row('notes'),{after:true});
  await pointerDrag(row(first),row('schedule'),{after:true});
+ await pane().locator('[data-hide="advance"]').uncheck();
  await saveTemplate('Synthetic Narrative PDF');
  const narrative=(await presets()).find(item=>item.name==='Synthetic Narrative PDF');
  assert.equal(narrative.layout.preset,'narrative');

@@ -4,6 +4,16 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.24 — restore preset defaults
+
+Based on public `v0.3.23` at `6319788`. The exact 0.3.23 app reproduced the reported sequence: after switching away and returning, G-Casper retained Letter paper, monochrome, and hidden cast calls. 0.3.24 restores the built-in defaults or the exact named layout. Reload Preset restores the active selection, Undo reverses the last preset change before further layout edits, and Save Template keeps a separate named copy. Captured custom headings are independent from draft text. Draft text unavailable to the selected preset stays recoverable in Unplaced custom sections. Portable project archives using that storage require reader 12.
+
+Apple accepted notarization job `310e1cbc-d6a7-4f42-b674-c420cc20d686` without issues. Developer ID, stapling, Gatekeeper and arm64 checks passed. All 53 shipped source files match the checkout. The 131,371,373-byte immutable ZIP has SHA-256 `2cbae3db1f80133783d3b96bad00298cb41c70c7d5088273fb568814f04e2cdf`.
+
+215 unit tests passed with two optional provenance skips. Mac tests used disposable profiles. The reset restored pixel-identical G-Casper pages, and Original Narrative and custom section ordering continued to export correctly. The named preset tests covered switching away and back, reloading, relaunching and reuse in another production, including exact preservation of the stored preset and issued PDF bytes. Clock, temperature and draft contact-printing choices stayed with the production or day. Email Call Sheet was exercised only through local review, copy and export controls.
+
+The exact public 0.3.23 app completed 44 native candidate checks. The upgraded app restored the default G-Casper layout and reloaded the same named preset created in 0.3.23 while preserving the signed app, recovery backup, and original issued PDF in the isolated installation. The acceptance test identifies the restored shooting day by stable ID because the legacy restore flow can change its array position. The signed candidate bytes stayed the same throughout verification.
+
 ## macOS 0.3.23 — named layout presets and direct dragging
 
 Based on public `v0.3.22` at `5415207` and the local direct-calendar-drag follow-up at `a5938f8`. Template & Layout uses a single preset choice, stores reusable named layouts in the local profile and allows built-in and custom rows to be reordered. Custom text, production display preferences and contact-printing choices remain in the draft. G-Casper retains fixed emergency logistics and crew page placement. Portable archives with combined built-in and custom ordering use reader 11.

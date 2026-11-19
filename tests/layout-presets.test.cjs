@@ -61,11 +61,12 @@ test('preset names normalize safely and reject duplicates without rewriting earl
  const expected=store.layoutPresets();store.close();
  store=new Store(dir);assert.deepEqual(store.layoutPresets(),expected);
  const other={...D.defaultLayout(),clock:'12',temperature:'F',custom:[{id:'unrelated',title:'Local heading',text:'Local content'}]};
- const applied=Layouts.apply(other,preset.layout,preset.id);
+ const recalled=Layouts.recall({layout:other},preset.layout,preset.id),applied=recalled.layout;
  assert.equal(applied.paper,'Letter');assert.equal(applied.mono,true);
  assert.equal(applied.includeContacts,false);assert.equal(applied.clock,'12');assert.equal(applied.temperature,'F');
- assert.deepEqual(applied.custom.map(c=>c.text),['','','Local content']);
- assert.equal(Layouts.apply(day.layout,preset.layout,preset.id).custom[0].text,'Private day notes');
+ assert.deepEqual(applied.custom.map(c=>c.text),['','']);
+ assert.deepEqual(recalled.unplacedCustom,other.custom);
+ assert.equal(Layouts.recall(day,preset.layout,preset.id).layout.custom[0].text,'Private day notes');
  D.validateProject({...p,days:[{...day,layout:applied}]});
  const frozen=D.resolve(p,day.id);frozen.revision={id:'synthetic-layout-revision',number:1,issued:'2026-11-04'};
  const pdf=Buffer.from('%PDF-1.7\nSynthetic issued layout\n%%EOF');
@@ -77,11 +78,54 @@ test('preset names normalize safely and reject duplicates without rewriting earl
  store.close();
 });
 
-test('combined order rejects malformed or ambiguous keys and apply guards the section limit',()=>{
+test('combined order rejects malformed or ambiguous keys and recall retains written sections outside the selected layout',()=>{
  const l=Layouts.move(draft(),'custom:first','schedule','before');
  for(const change of [{sectionOrder:l.sectionOrder.slice(1)},{sectionOrder:l.sectionOrder.map((k,i)=>i===0?'unrecognized':k)},{order:l.order.slice().reverse()},{custom:[l.custom[0],{...l.custom[1],id:l.custom[0].id}]}])assert.throws(()=>Layouts.validate({...l,...change}),/order|identity/);
  const preset=Layouts.capture(l,()=>{throw Error('existing identities should be reused');});
  const crowded={...D.defaultLayout(),custom:Array.from({length:20},(_,i)=>({id:'existing-'+i,title:String(i),text:'Retain me'}))};
- assert.throws(()=>Layouts.apply(crowded,preset,'saved'),/20-section/);
+ const recalled=Layouts.recall({layout:crowded},preset,'saved');
+ assert.equal(recalled.layout.custom.length,2);
+ assert.deepEqual(recalled.unplacedCustom,crowded.custom);
  assert.equal(crowded.custom.length,20);
+});
+
+
+test('recalling a built-in restores canonical independent layout defaults and retains draft-owned preferences',()=>{
+ const edit=Layouts.move({...draft(),paper:'Letter',mono:true,clock:'12',temperature:'F',sceneColors:false,includeContacts:true,includeKeyPhones:true,hidden:['cast']},'custom:first','schedule','before');
+ const day={layout:{...edit,templateId:'saved-original'},schedule:[{id:'synthetic-row'}],calls:[{id:'synthetic-call'}]};
+ const before=structuredClone(day),narrative=Layouts.recall(day,Layouts.defaults('narrative'));
+ const gcasper=Layouts.recall(narrative,Layouts.defaults());
+ assert.deepEqual(gcasper.layout,{...D.defaultLayout(),clock:'12',temperature:'F',includeContacts:true,includeKeyPhones:true});
+ assert.deepEqual(gcasper.unplacedCustom,draft().custom);
+ assert.deepEqual(day,before);
+ assert.equal(Layouts.matches(gcasper.layout,Layouts.defaults()),true);
+ assert.equal(Layouts.matches(before.layout,Layouts.defaults()),false);
+ const saved=Layouts.capture(edit,()=>{throw Error('Identity already exists');}),untouched=structuredClone(saved);
+ const applied=Layouts.recall(gcasper,saved,'saved-original');
+ assert.deepEqual(applied.layout.custom,edit.custom);
+ assert.deepEqual(applied.layout.sectionOrder,edit.sectionOrder);
+ assert.deepEqual(applied.unplacedCustom,[]);
+ applied.layout.custom[0].title='Edit only the draft';applied.layout.hidden.push('notes');applied.layout.sectionOrder.reverse();
+ assert.deepEqual(saved,untouched);
+});
+
+test('unplaced custom sections survive a portable copy while remaining outside the rendered and frozen data',t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'unplaced-layout-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const store=new Store(dir);
+ try{
+  const p=D.newProject(),d=D.newDay(p,'2026-11-04');p.days.push(d);
+  d.layout=draft();Object.assign(d,Layouts.recall(d,Layouts.defaults()));
+  const state=store.create(p),resolved=D.resolve(p,d.id);
+  assert(!Object.hasOwn(resolved.day,'unplacedCustom'));
+  assert(!renderSheet(resolved,'').includes('Private day notes'));
+  const digest=Buffer.from('%PDF-1.7\nFrozen issue\n%%EOF');
+  resolved.revision={id:'synthetic-unplaced-issue',number:1,issued:'2026-11-04'};
+  store.issue(p.id,d.id,state.version,resolved,digest);
+  const archive=Archive.exportArchive(store,p.id),manifest=JSON.parse(Buffer.from(require('fflate').unzipSync(archive)['manifest.json']));
+  assert.equal(manifest.minReaderVersion,12);
+  const copy=Archive.importAsCopy(store,archive);
+  assert.deepEqual(copy.project.days.find(day=>day.id===d.id).unplacedCustom,d.unplacedCustom);
+  assert.deepEqual(store.revision(copy.project.id,copy.revisions[0].id).pdf,digest);
+  assert.throws(()=>D.validateProject({...p,days:[{...d,unplacedCustom:[d.unplacedCustom[0],d.unplacedCustom[0]]}]}),/Invalid unplaced/);
+ }finally{store.close();}
 });

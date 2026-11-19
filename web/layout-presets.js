@@ -8,6 +8,8 @@
   {id:'narrative',name:'Original Narrative'},
   {id:'commercial',name:'Commercial / Documentary'}
  ];
+ const maxUnplaced=1000;
+ const defaults=(preset='gcasper')=>({preset,sceneColors:true,paper:'A4',clock:'24',temperature:'C',mono:false,includeContacts:false,order:sections.slice(),hidden:[],custom:[]});
  const idPattern=/^[a-zA-Z0-9_.-]{1,100}$/;
  const customKey=(item,index)=>'custom:'+(item.id||'legacy-'+index);
  const order=(layout,key=customKey)=>layout.sectionOrder||[...layout.order,...layout.custom.map(key)];
@@ -58,16 +60,37 @@
   const {preset,paper,mono,sceneColors}=layout;
   return withOrder({preset,paper,mono,sceneColors:sceneColors??true,hidden:[...layout.hidden]},keys,custom);
  }
- function apply(layout,preset,templateId,key=customKey){
-  const current=new Map(layout.custom.map((item,i)=>[key(item,i),item]));
-  // Preserve the draft's written text and privacy preferences when applying a reusable layout.
-  const custom=preset.custom.map(item=>({...item,text:current.get(customKey(item))?.text||''}));
-  const known=new Set(custom.map(customKey));
-  const retained=layout.custom.flatMap((item,i)=>item.text.trim()&&!known.has(key(item,i))?[{...item,id:key(item,i).slice(7)}]:[]);
-  if(custom.length+retained.length>20)throw Error('This preset and the written custom sections exceed the 20-section limit.');
+ function validateUnplaced(day){
+  const items=day.unplacedCustom;
+  if(items===undefined)return;
+  const used=new Set(day.layout.custom.map(item=>item.id).filter(Boolean));
+  if(!Array.isArray(items)||items.length>maxUnplaced)throw Error('Invalid unplaced custom sections.');
+  for(const item of items){
+   if(!item||typeof item.id!=='string'||!idPattern.test(item.id)||used.has(item.id)||typeof item.title!=='string'||typeof item.text!=='string')throw Error('Invalid unplaced custom section.');
+   used.add(item.id);
+  }
+ }
+ function matches(layout,preset){
+  const structure=l=>JSON.stringify([l.preset,l.paper,l.mono,l.sceneColors??true,[...new Set(l.hidden)].sort(),order(l),l.custom.map(item=>item.title)]);
+  return structure(layout)===structure(preset);
+ }
+ function recall(day,preset,templateId,key=customKey){
+  const layout=day.layout,content=new Map((day.unplacedCustom||[]).map(item=>[customKey(item),item]));
+  for(const [index,item] of layout.custom.entries())if(item.text.trim()){
+   const id=key(item,index);content.set(id,{id:id.slice(7),title:item.title,text:item.text});
+  }
+  const custom=preset.custom.map(item=>{
+   const id=customKey(item),text=content.get(id)?.text||'';
+   content.delete(id);
+   return {...item,text};
+  });
+  if(content.size>maxUnplaced)throw Error('There are too many unplaced custom sections. Add some back to the sheet before switching presets.');
   const {preset:base,paper,mono,sceneColors,hidden}=preset;
-  return withOrder({...layout,preset:base,paper,mono,sceneColors,hidden:[...hidden],templateId},[...order(preset),...retained.map(customKey)],[...custom,...retained]);
+  const next={...defaults(base),paper,mono,sceneColors:sceneColors??true,hidden:[...hidden],clock:layout.clock,temperature:layout.temperature,includeContacts:layout.includeContacts};
+  if(layout.includeKeyPhones!==undefined)next.includeKeyPhones=layout.includeKeyPhones;
+  if(templateId)next.templateId=templateId;
+  return {layout:withOrder(next,order(preset).slice(),custom),unplacedCustom:[...content.values()]};
  }
  function archiveData(layout){return layout.sectionOrder!==undefined;}
- return {sections,builtIns,customKey,order,movable,validate,move,remove,name,capture,apply,archiveData};
+ return {sections,builtIns,defaults,customKey,order,movable,validate,validateUnplaced,move,remove,name,capture,matches,recall,archiveData};
 });

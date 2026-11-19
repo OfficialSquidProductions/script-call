@@ -1,0 +1,9 @@
+Script Call 0.3.24 — Restore preset defaults
+
+Selecting a built-in restores its original layout. Selecting a named preset restores the saved layout independently of earlier draft edits. Use Reload Preset beside the dropdown to reset the current selection, or Undo preset change to return to the prior layout before further layout edits. Save Template keeps edits as a separate named preset.
+
+The production's time and temperature settings and the draft's contact-printing choices stay in place. Written notes for sections outside the chosen preset remain under Unplaced custom sections, with an option to add them back. Issued PDFs stay frozen.
+
+Portable project archives containing unplaced custom draft text require 0.3.24 or later.
+
+Apple Silicon, macOS 13 or later.
