@@ -4,6 +4,14 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.21 — Email Call Sheet
+
+Built from public `v0.3.20` at `1c55725`. The review follows visible day call sections and resolves current contacts by stable person ID. It preserves the selected revision, combines duplicates and flags missing or invalid addresses. The final build opened both attachment formats in native Apple Mail on macOS 27.2.1. **Message → Send Again** produced editable, unsent compose windows with the expected subject and body, exactly two synthetic Bcc addresses, empty To and Cc, and either the complete two-page issued PDF or the two PNG pages. Both test windows were closed unsent. A failed Mail handoff was simulated separately to verify the export and copy fallback. This workflow needs no new Automation permission.
+
+Apple accepted final notarization job `fe71e4e9-d734-4904-ad41-d98287431aaf` without issues. Developer ID, stapling, Gatekeeper and arm64 checks passed. All 51 shipped source files match the checkout. The 131,357,475-byte immutable ZIP has SHA-256 `5a2d09fc1a65df66958a53e87caa9acf9bf9c498ff5e8bc74c6838ea6a81536d`.
+
+203 unit checks passed with two optional provenance skips. Mac development acceptance passed 19 general desktop and 12 G-Casper checks. The exact notarized app passed four email checks, 12 importer checks, 10 calendar checks and packaged smoke. The real signed 0.3.20 → 0.3.21 upgrade passed 44 checks using the public candidate. A PDF actually issued in the previous version was byte-identical when exported through Email Call Sheet after the upgrade. Tests used isolated profiles and synthetic production fixtures.
+
 ## macOS 0.3.20 — scene-linked Shoot Locations
 
 The release starts from public `v0.3.19` at `ff74fd5`. The exact signed 0.3.19 app already excluded registry-only and day-only locations on fresh import. It retained an untouched row when a revised export removed its final scene link. 0.3.20 lists that row in the reviewed cleanup and retains local addresses, local location references and issued PDFs. Regression fixtures cover shared sites, a site linked only to an unscheduled scene, day-only and unused inventory, and a source with no physical scene links.

@@ -1,8 +1,8 @@
 # Script Call
 
-**0.3.19 streamlined Settings & Help, moved Template & Layout into its own workspace, and fixed scrolling in long cast and crew call lists.** Production Desk imports use the Breakdown Shoot Location field. **0.3.20** extends reviewed reimport cleanup to untouched locations that lost their last scene link. See [Shoot Location reconciliation](PRODUCTION-IMPORT-CALENDAR.md#shoot-location-reconciliation) and [release verification](RELEASING.md).
+**0.3.21 adds Email Call Sheet to Daily Sheet.** Review Bcc recipients for the selected day and prepare one PDF or separate PNG attachments from the selected draft or issued revision. See [how to email a call sheet](#email-a-call-sheet) and [release verification](RELEASING.md). Production Desk imports continue to follow explicit scene location links. See [Shoot Location reconciliation](PRODUCTION-IMPORT-CALENDAR.md#shoot-location-reconciliation).
 
-The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.20) targets Apple Silicon and macOS 13 or later. Choose **Script Call → Check for Updates** from the macOS menu or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip). The same action is available in **Settings & Help**. The actual 0.3.19 → 0.3.20 native upgrade passed 45 checks in a disposable installation.
+The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.21) targets Apple Silicon and macOS 13 or later. Choose **Settings & Help → Check for Updates** or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip).
 
 A Squid Productions Software
 
