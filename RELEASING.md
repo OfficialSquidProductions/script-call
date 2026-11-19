@@ -4,6 +4,14 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.20 — scene-linked Shoot Locations
+
+The release starts from public `v0.3.19` at `ff74fd5`. The exact signed 0.3.19 app already excluded registry-only and day-only locations on fresh import. It retained an untouched row when a revised export removed its final scene link. 0.3.20 lists that row in the reviewed cleanup and retains local addresses, local location references and issued PDFs. Regression fixtures cover shared sites, a site linked only to an unscheduled scene, day-only and unused inventory, and a source with no physical scene links.
+
+Apple accepted notarization job `19e3f8ea-2e35-4027-b433-d407a5d773f6` without issues. Developer ID, staple, Gatekeeper and arm64 checks passed, and 47 shipped files match the checkout. The 131,348,592-byte immutable ZIP has SHA-256 `708497d3207f1f0f28042917ce55fc9110e1de19b9cf574d86329603b995b942`.
+
+199 unit checks passed with two optional provenance skips. Mac development acceptance passed 19 general and 12 G-Casper checks. The exact notarized build passed five Shoot Location checks, 12 importer checks, 10 calendar checks, the Settings/Layout/Cast/Crew suite and packaged smoke. The real signed 0.3.19 → 0.3.20 download, replacement and relaunch passed 45 checks using the public candidate in a disposable installation. The upgraded client reconciled the reviewed source revision while preserving the manually edited address, manual day assignment and byte-identical issued PDF.
+
 ## macOS 0.3.19 — desktop editing and Shoot Locations
 
 The release starts from public main `d09f26c`. It includes compact Settings display controls, a dedicated Template & Layout workspace, and clipped, independently scrolling cast and crew lists. Production Desk follows explicit Shoot Location IDs and offers reviewed cleanup of untouched, unused location rows on older linked imports. The existing update trust key and portable project schemas are retained.
