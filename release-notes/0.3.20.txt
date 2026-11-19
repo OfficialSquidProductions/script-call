@@ -1,0 +1,7 @@
+Script Call 0.3.20 — scene-linked Shoot Locations
+
+Production Desk imports use the Shoot Location field on scenes, including imported scenes that are still unscheduled. Scenes linked to the same location share a record. Locations used only by a day or listed only in the source registry do not create records. Day primary locations are filled when all scheduled scenes share one clear Shoot Location.
+
+When a revised export removes the last scene link, the reimport review offers to clear the unused imported row. Local location edits, addresses, links and issued sheets are preserved. Review the proposed cleanup before applying the reimport.
+
+Apple Silicon, macOS 13 or later.

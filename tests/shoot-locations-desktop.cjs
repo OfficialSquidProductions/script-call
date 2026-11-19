@@ -1,10 +1,12 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {playwright:{_electron},electron}=require('./runtime.cjs');
-const {fresh,seed,reconcile}=require('./support/shoot-location-upgrade.cjs');
+const {fresh,seed,reconcile,seedSceneLinks,reconcileSceneLinks}=require('./support/shoot-location-upgrade.cjs');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'verification/shoot-locations');
 const legacy=process.env.CALLSHEET_PREVIOUS_APP;
+const previousLinked=process.env.CALLSHEET_LINKED_LOCATIONS_PREVIOUS_APP;
 assert(legacy&&path.resolve(legacy).startsWith(path.join(root,'tmp')+path.sep),'Set CALLSHEET_PREVIOUS_APP to a disposable copy of signed 0.3.18 under tmp/');
+if(previousLinked)assert(path.resolve(previousLinked).startsWith(path.join(root,'tmp')+path.sep),'Use a disposable copy of signed 0.3.19 under tmp/');
 const current=process.env.CALLSHEET_PACKAGED_APP;
 const check=message=>console.log('PASS',message);
 const errors=[];
@@ -28,5 +30,13 @@ async function launch(profile,bundle=current){
  await app.close();app=null;
  await launch(profile);
  await reconcile(app,page,before,out,check);
+ await app.close();app=null;
+ const linkedProfile=fs.mkdtempSync(path.join(root,'tmp/linked-shoot-locations-'));
+ await launch(linkedProfile,previousLinked||current);
+ if(previousLinked)assert.equal(await app.evaluate(({app})=>app.getVersion()),'0.3.19');
+ const linked=await seedSceneLinks(app,page,out,check);
+ await app.close();app=null;
+ await launch(linkedProfile);
+ await reconcileSceneLinks(app,page,linked,out,check);
  assert.deepEqual(errors,[]);
 }finally{if(app)await app.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

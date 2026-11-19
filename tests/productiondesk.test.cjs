@@ -115,3 +115,59 @@ test('reviewed legacy same-file cleanup only drops unedited and unreferenced gen
   assert(P.preview(store,parsed).duplicate);
  }finally{store.close();}
 });
+
+const {sceneLocationExport}=require('./support/scene-location-fixture.cjs');
+
+test('only scene-linked Shoot Locations enter the register, including sites used only by unscheduled scenes',()=>{
+ const {envelope,locationIds:ids}=sceneLocationExport();
+ const {project,summary}=P.map(parse(envelope));
+ assert.deepEqual(project.locations.map(loc=>loc.id),[ids.stage,ids.yard,ids.unscheduled]);
+ assert.equal(project.locations.filter(loc=>loc.id===ids.stage).length,1);
+ assert(project.scenes.slice(0,4).every(scene=>scene.locationId===ids.stage));
+ assert.equal(project.scenes.find(scene=>scene.number==='12').locationId,ids.unscheduled);
+ assert.deepEqual(summary.unscheduled,['12']);
+ assert.deepEqual(project.days.map(day=>day.overrides.primaryLocationId),[ids.stage,ids.yard,'','']);
+ assert.equal(project.defaults.primaryLocationId,'');
+ assert(project.days[2].schedule.some(item=>item.type==='note'&&item.description==='Fictional logistics note'));
+ assert(!project.locations.some(loc=>[ids.dayOnly,ids.unused].includes(loc.id)));
+ // With every physical scene link gone, Set, blank/custom fields, a day
+ // banner, and the registry cannot create an operational location.
+ const missing=P.map(parse(sceneLocationExport({withoutSceneLinks:true}).envelope)).project;
+ assert.deepEqual(missing.locations,[]);
+ assert.equal(new Set(missing.scenes.map(scene=>scene.slug)).size,12);
+ assert(missing.scenes.every(scene=>scene.locationId===''));
+ assert(missing.days.every(day=>day.overrides.primaryLocationId===''));
+ assert.equal(missing.defaults.primaryLocationId,'');
+});
+
+test('reviewed reimport removes an untouched location after its last scene link is removed',()=>{
+ const store=temp();
+ try{
+  const {envelope,locationIds:ids}=sceneLocationExport();
+  const first=P.commit(store,P.preview(store,parse(envelope)));
+  const local=first.project;
+  local.locations.find(loc=>loc.id===ids.yard).address='20 Manual Yard Road';
+  local.days[2].overrides.primaryLocationId=ids.yard;
+  const original=store.save(local,first.version);
+  const day=local.days[0],snapshot=D.resolve(local,day.id);
+  const pdf=Buffer.from('%PDF-1.7\nissued location preservation fixture');
+  snapshot.revision={id:D.id(),number:1,issued:new Date().toISOString()};
+  store.issue(local.id,day.id,original.version,snapshot,pdf);
+  const before=store.get(local.id);
+  const revised=parse(sceneLocationExport({withoutSceneLinks:true}).envelope);
+  const review=P.preview(store,revised);
+  assert.deepEqual(review.locationCleanup.map(loc=>loc.id),[ids.unscheduled]);
+  assert.deepEqual(store.get(local.id),before);
+  const {project,importBackup}=P.commit(store,review);
+  assert(fs.existsSync(importBackup));
+  assert.deepEqual(project.locations.map(loc=>loc.id),[ids.stage,ids.yard]);
+  assert.equal(project.locations.find(loc=>loc.id===ids.yard).address,'20 Manual Yard Road');
+  assert.deepEqual(project.days.map(day=>day.overrides.primaryLocationId),[ids.stage,'',ids.yard,'']);
+  assert(project.scenes.every(scene=>scene.locationId===''));
+  assert.deepEqual(project.days[0],before.project.days[0]);
+  const issued=store.revision(local.id,snapshot.revision.id);
+  assert.deepEqual(issued.snapshot,snapshot);
+  assert.deepEqual(issued.pdf,pdf);
+  assert(P.preview(store,revised).duplicate);
+ }finally{store.close();}
+});

@@ -104,9 +104,10 @@ function map(parsed,scenarioId){
  D.validateProject(out);
  return {project:out,warnings,summary:{title:out.title,sourceId:p.id,scenario:scenario.name,scenes:out.scenes.length,locations:out.locations.length,cast:out.people.length,shots:out.scenes.flatMap(s=>s.shots).length,days:out.days.map(d=>({id:d.id,date:d.date,scenes:d.schedule.filter(s=>s.type==='scene').map(s=>out.scenes.find(x=>x.id===s.sceneId).number)})),unscheduled},scenarios:p.stripboards.map(s=>({id:s.id,name:s.name}))};
 }
-// The old importer registered every Location element, including unused
-// elements left behind when a Shoot Location was changed in Production Desk.
-function cleanLegacyLocations(current,output,sourceLocations){
+// An earlier import may have registered unused inventory or a later export
+// may have removed the last scene link. Only remove unchanged source rows
+// whose previous baseline proves their origin and whose local links are gone.
+function cleanUnusedImportedLocations(current,output,sourceLocations){
  const {baseline,model}=current.productionDesk;
  const prior=new Map(baseline.locations.map(loc=>[loc.id,loc]));
  const sourceIds=new Set(model.elements.map(e=>e.id));
@@ -150,7 +151,7 @@ function merge(current,incoming){
  // A new importer default must not switch an existing legacy day's lunch mode.
  for(const next of target.days){const local=current.days.find(d=>d.id===next.id);if(local&&local.lunchMode===undefined)delete next.lunchMode;}
  const output=walk(D.clone(current),old,target,'production');
- const locationCleanup=current.productionDesk.shootLocationMapping?[]:cleanLegacyLocations(current,output,new Set(target.locations.map(loc=>loc.id)));
+ const locationCleanup=cleanUnusedImportedLocations(current,output,new Set(target.locations.map(loc=>loc.id)));
  const removedMessages=new Set(locationCleanup.map(loc=>'production.locations '+loc.id+': removed at source; local record retained'));
  output.id=current.id;output.productionDesk=D.clone(incoming.productionDesk);D.validateProject(output);
  return {project:output,conflicts:[...new Set(conflicts.filter(message=>!removedMessages.has(message)))],locationCleanup};
