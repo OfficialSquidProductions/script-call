@@ -4,6 +4,14 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.19 — desktop editing and Shoot Locations
+
+The release starts from public main `d09f26c`. It includes compact Settings display controls, a dedicated Template & Layout workspace, and clipped, independently scrolling cast and crew lists. Production Desk follows explicit Shoot Location IDs and offers reviewed cleanup of untouched, unused location rows on older linked imports. The existing update trust key and portable project schemas are retained.
+
+Apple accepted notarization job `25e15ee2-09b0-4ca8-851e-016f87dba836` without issues. Developer ID, stapling, Gatekeeper, and arm64 checks passed, and 47 shipped source files match the reviewed checkout. The 131,348,558-byte immutable ZIP has SHA-256 `bf39bd12b5be3198c7d355fc9d0fce3f68698cd2df6e30a9bcdfd6faa0766530`.
+
+197 unit checks passed with two optional provenance skips. Mac development acceptance passed 19 general and 12 G-Casper checks. The exact notarized build passed the new Settings, Layout and two-size Cast/Crew checks, the old/new Shoot Location fixture, 12 importer checks, 10 calendar checks, nine personal-call scrolling checks and packaged smoke. The real signed 0.3.18 → 0.3.19 download, replacement and relaunch passed 45 checks using the public candidate and a disposable profile. Same-file reimport preserved local addresses, references and the issued PDF bytes. The first upgrade trial reached replacement and stopped at a hardcoded production count after adding the new fixture. The completed rerun checks exact production IDs. The archived app and release ZIP are identical between the two trials.
+
 ## Public macOS 0.3.18 — import and shooting calendar
 
 Based on public 0.3.16 source `b090a0c`, carrying the reviewed import/calendar/sidebar changes from `e1c917c`. Unpublished Apple target history is excluded; existing Windows prereleases, drafts and mobile work remain untouched. The new version/build is 0.3.18, Apple Silicon/macOS 13+.
