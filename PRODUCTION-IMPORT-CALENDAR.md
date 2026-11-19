@@ -1,5 +1,12 @@
 # Production Desk import and shooting calendar
 
+## Move days and scenes
+
+- Drag the grip beside a shooting day to another date. Existing days on that date are listed in the review and keep their separate cards. A date change resets weather approval.
+- Drag the arrow beside a scene onto another day's card to append it, or onto a scene to insert it before that scene. Dropping on the date number opens a picker for shooting days on that date. Activate a grip or arrow with Enter or Space for the same review. While dragging, hold over a month arrow to browse.
+- Review known scheduling overlaps and availability conflicts before confirming. Missing call times or availability appear separately. You can confirm anyway or hide future calendar conflict warnings on this device. **Settings & Help → Reset Warnings** restores them. Daily Sheet issue review continues to show availability warnings.
+- Scene moves keep the existing scene's timing and cast links. Personal calls stay on their original days. Review the resulting calls on both Daily Sheets. To move a scene into or out of an issued day, first create a new draft. Issued PDF files retain their original contents. **Undo day change** and **Redo** reverse or repeat calendar moves during the current session.
+
 The desktop release is based on public main `b090a0c` (0.3.16), with the requested changes carried over from reviewed feature commit `e1c917c`. The original feature branch was verified at `949738e`; its unpublished Apple-target history is excluded from this desktop release. Existing dirty work and Windows/mobile branches and assets remain untouched.
 
 Production Desk was inspected read-only at source commit `6c10ec075c25212be05b67ae41bd8629dd7527a9`. Its current Mac appcast is

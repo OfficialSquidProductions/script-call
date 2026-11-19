@@ -4,6 +4,16 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.22 — calendar moves
+
+Built from public `v0.3.21` at `d51078b`. Shooting Days supports reviewed drag and keyboard moves for entire days and scheduled scenes. Calendar advice uses the existing personal-call-start evaluator for manually entered and inherited calls and checks explicit overlaps. Calendar warning suppression leaves issue review active. Moving scenes preserves row IDs, ordered assignments and personal call records. Changing the date resets weather approval while preserving existing issued PDFs. Production Desk reimport retains local scene relocations over incoming schedule changes.
+
+Apple accepted notarization job `7e4953eb-9ef8-421e-becd-ac1341730323` without issues. Developer ID, stapling, Gatekeeper and arm64 checks passed. All 52 shipped source files match the checkout. The 131,364,794-byte immutable ZIP has SHA-256 `a7567b6bf31b616d42352ac9ce3ceb2e57f88e95949833cdafa8ed7087b70d70`.
+
+209 unit checks passed with two optional provenance skips. Mac development acceptance passed 19 general and 12 G-Casper checks. The exact notarized app passed seven calendar-move, 11 shooting-day, 11 availability, 12 importer, 10 calendar/import, and four Email Call Sheet checks, plus packaged smoke. Email testing covered local recipient review, copy, PDF export and PNG export. Apple Mail and mailbox access were outside this release's tests. All profiles and project fixtures were disposable.
+
+The native 0.3.21 → 0.3.22 public candidate update passed 45 checks. The 0.3.21 updater downloaded the signed ZIP, installed and relaunched it in a disposable copy, and preserved saved data, recovery backups and the original issued PDF. The upgraded app moved and undid a scene and exported the exact prior-issued PDF through Email Call Sheet.
+
 ## macOS 0.3.21 — Email Call Sheet
 
 Built from public `v0.3.20` at `1c55725`. The review follows visible day call sections and resolves current contacts by stable person ID. It preserves the selected revision, combines duplicates and flags missing or invalid addresses. The final build opened both attachment formats in native Apple Mail on macOS 27.2.1. **Message → Send Again** produced editable, unsent compose windows with the expected subject and body, exactly two synthetic Bcc addresses, empty To and Cc, and either the complete two-page issued PDF or the two PNG pages. Both test windows were closed unsent. A failed Mail handoff was simulated separately to verify the export and copy fallback. This workflow needs no new Automation permission.

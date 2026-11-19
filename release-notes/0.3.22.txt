@@ -1,0 +1,9 @@
+Script Call 0.3.22 — Move shooting days and scenes
+
+In Shooting Days, drag a day's grip to a new date. Drag a scene's arrow onto another shooting day, or onto a scene to insert it before that row. You can also activate either control with the keyboard. Hover over a month arrow during a drag to browse other dates.
+
+Review who is affected, recorded availability and known overlaps before confirming. Confirm anyway when needed, or hide future calendar conflict warnings and restore them from Settings & Help → Reset Warnings. Issue review still shows its own warnings.
+
+A day move resets weather approval. Scene moves preserve the row and its cast links while keeping personal calls where they were entered. Undo and Redo are available in the calendar. Existing issued PDFs retain their original contents.
+
+Apple Silicon, macOS 13 or later.

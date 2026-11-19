@@ -7,7 +7,8 @@ fs.mkdirSync(installation);fs.mkdirSync(out,{recursive:true});const checks=[],er
 const candidateURL=process.env.CALLSHEET_CANDIDATE_FEED||null;let targetRelease,deletedBeforeUpdate,locationFixture,minimumReaderVersion=0;
 if(candidateURL&&candidateURL!==repo+'/releases/download/v'+to+'/stable-darwin-'+process.arch+'.json')throw Error('Use the exact candidate release metadata path.');
 const locationUpgrade=((from==='0.3.18'&&to==='0.3.19')||(from==='0.3.19'&&to==='0.3.20'))?require('./support/shoot-location-upgrade.cjs'):null;
-const emailUpgrade=from==='0.3.20'&&to==='0.3.21'?require('./support/email-desktop.cjs'):null;
+const calendarMovesUpgrade=from==='0.3.21'&&to==='0.3.22';
+const emailUpgrade=(from==='0.3.20'&&to==='0.3.21')||calendarMovesUpgrade?require('./support/email-desktop.cjs'):null;
 const check=s=>{checks.push(s);console.log('PASS',s);},wait=ms=>new Promise(r=>setTimeout(r,ms)),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 async function state(){return page.evaluate(()=>CallSheet.request('get',{id:document.querySelector('#production').value}));}
 async function select(id){await page.selectOption('#production',id);await page.waitForFunction(id=>document.body.dataset.projectId===id,id);}
@@ -98,6 +99,23 @@ async function checkForUpdates(page){
   const sample=path.join(root,'tests/fixtures/current-productiondesk.productiondesk');await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},sample);await page.click('#import-productiondesk');await page.waitForSelector('#pd-scenario');await page.click('[data-modal-cancel]');assert.deepEqual((await state()).project,before.project);
   await page.click('#import-productiondesk');await page.waitForSelector('#pd-scenario');await page.click('[data-modal-action="0"]');await page.waitForFunction(()=>!document.querySelector('#modal').open);const afterImport=await state();assert.equal(afterImport.project.id,importID);assert.equal(afterImport.project.people[0].name,before.project.people[0].name);assert.equal(afterImport.project.days[0].id,first.id);assert(afterImport.project.days[0].sheetOverrides.departmentNotes.includes('Camera'));await calendar();await page.screenshot({path:path.join(out,'upgraded-shooting-calendar.png'),fullPage:true});
   check('native-upgraded calendar replaces sidebar days and opens Daily Sheets; current-exporter reimport maps department instructions while preserving local performer/day IDs and cancel safety');
+ }
+ if(calendarMovesUpgrade){
+  await select(fresh.project.id);await calendar();
+  const saved=await state(),[source,target]=saved.project.days;
+  const row=source.schedule.find(row=>row.type==='scene'&&!target.schedule.some(existing=>existing.sceneId===row.sceneId));
+  assert(row);
+  await page.locator(`[data-drag-scene="${row.id}"]`).press('Enter');
+  await page.selectOption('#calendar-scene-destination',target.id);
+  await page.locator('#modal [data-modal-action="0"]').click();
+  await page.waitForFunction(()=>!document.querySelector('#modal').open);
+  const moved=(await state()).project;
+  assert.deepEqual(moved.days[1].schedule.at(-1),row);
+  assert.deepEqual(moved.days.map(d=>d.calls),saved.project.days.map(d=>d.calls));
+  await page.click('#undo-day');
+  await page.waitForFunction(({rowId,dayId})=>[...document.querySelectorAll('[data-drag-scene]')].some(el=>el.dataset.dragScene===rowId&&el.closest('[data-calendar-day]').dataset.calendarDay===dayId),{rowId:row.id,dayId:source.id});
+  assert.deepEqual((await state()).project,saved.project);
+  check('actual upgraded Mac app reviews and commits a keyboard scene move, retains the original row and calls, then undoes the entire change');
  }
  if(locationUpgrade){
   if(from==='0.3.18')await locationUpgrade.reconcile(app,page,locationFixture,out,check);

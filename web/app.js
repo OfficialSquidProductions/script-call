@@ -4,10 +4,10 @@ function captureFailure(kind,error){api.request('diagnosticCapture',{kind,error:
 window.addEventListener('error',event=>captureFailure('renderer-error',event.error));
 window.addEventListener('unhandledrejection',event=>captureFailure('renderer-unhandled-rejection',event.reason));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const Days=window.ShootingDays,Availability=window.Availability,Records=window.RecordRecovery,PageLength=window.PageLength,ScheduleNotes=window.ScheduleNotes,TimeDisplay=window.TimeDisplay,CallDefaults=window.CallDefaults,Details=window.ProductionDetails,Temperature=window.TemperatureDisplay,Lunch=window.LunchTiming;
+const Days=window.ShootingDays,CalendarMoves=window.CalendarMoves,Availability=window.Availability,Records=window.RecordRecovery,PageLength=window.PageLength,ScheduleNotes=window.ScheduleNotes,TimeDisplay=window.TimeDisplay,CallDefaults=window.CallDefaults,Details=window.ProductionDetails,Temperature=window.TemperatureDisplay,Lunch=window.LunchTiming;
 const clone=x=>JSON.parse(JSON.stringify(x)),uid=()=>crypto.randomUUID();
 let project,version,revisions=[],projects=[],dayId,view='daily',section='overview',master='general',dirty=0,saved=0,saveTimer,savePromise,previewTimer,previewSerial=0,toastTimer,boot,modalAction,previewObserver,lockedDisplay={},transitionQueue=Promise.resolve();
-let calendarMonth,visibleWeek,weekPage=0,undoDays=[],redoDays=[],productionBusy=false;
+let calendarMonth,visibleWeek,weekPage=0,undoDays=[],redoDays=[],productionBusy=false,calendarDrag,calendarReview;
 const readPreference=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 function writePreference(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{toast('The app preference could not be saved on this device.');}}
 function rememberDays(){if(project)writePreference('shooting-days:'+project.id,{dayId,visibleWeek,weekPage,calendarMonth});}
@@ -229,8 +229,8 @@ function sceneElements(scene){
  return groups.size?`<details class="source-elements"><summary>Imported breakdown elements</summary><dl>${[...groups.values()].map(g=>`<dt>${esc(g.name)}</dt><dd>${esc(g.elements.join(', '))}</dd>`).join('')}</dl><p class="tiny">Source tags are retained here. Edit operational instructions in Department notes.</p></details>`:'';
 }
 function calendarDay(d){
- const revision=revisions.find(r=>r.id===d.lockedRevisionId),scenes=d.schedule.filter(row=>row.type==='scene'&&!Records.deleted(project,'scenes',row.sceneId)).map(row=>project.scenes.find(s=>s.id===row.sceneId)).filter(Boolean);
- return `<article class="calendar-day ${d.id===dayId?'selected-day':''}"><div class="calendar-day-heading"><button data-day="${esc(d.id)}" class="day-row ${d.id===dayId?'active':''}" aria-current="${d.id===dayId?'date':'false'}"><strong>${esc(d.label)}</strong><small>Unit ${esc(d.unit||'—')} · ${revision?'Issued R'+revision.number:'Draft'}</small></button><button data-day-options="${esc(d.id)}" aria-label="Actions for ${esc(d.label)}" title="Change date or delete">⋯</button></div><div class="calendar-scenes">${scenes.length?scenes.map(s=>`<button data-script="${esc(s.id)}" class="calendar-scene"><b>${esc(s.number)}</b> ${esc(s.slug)}<small>${esc(s.synopsis)}</small></button>`).join(''):'<p class="tiny">No scenes scheduled</p>'}</div><button data-open-daily="${esc(d.id)}" class="calendar-open">Open Daily Sheet →</button></article>`;
+ const revision=revisions.find(r=>r.id===d.lockedRevisionId),scenes=d.schedule.filter(row=>row.type==='scene'&&!Records.deleted(project,'scenes',row.sceneId)).map(row=>({row,scene:project.scenes.find(s=>s.id===row.sceneId)})).filter(x=>x.scene);
+ return `<article class="calendar-day ${d.id===dayId?'selected-day':''}" data-calendar-day="${esc(d.id)}"><div class="calendar-day-heading"><button class="calendar-grip day-grip" draggable="true" data-drag-day="${esc(d.id)}" aria-label="Move shooting day ${esc(d.label)}, Unit ${esc(d.unit||'—')}" title="Drag to another date or activate to change the date">⠿</button><button data-day="${esc(d.id)}" class="day-row ${d.id===dayId?'active':''}" aria-current="${d.id===dayId?'date':'false'}"><strong>${esc(d.label)}</strong><small>Unit ${esc(d.unit||'—')} · ${revision?'Issued R'+revision.number:'Draft'}</small></button><button data-day-options="${esc(d.id)}" aria-label="Actions for ${esc(d.label)}" title="Change date or delete">⋯</button></div><div class="calendar-scenes">${scenes.length?scenes.map(({row,scene:s})=>`<div class="calendar-scene-row" data-calendar-row="${esc(row.id)}"><button data-script="${esc(s.id)}" class="calendar-scene"><b>${esc(s.number)}</b> ${esc(s.slug)}<small>${esc(s.synopsis)}</small></button>${d.lockedRevisionId?'':`<button class="calendar-grip scene-grip" draggable="true" data-drag-scene="${esc(row.id)}" aria-label="Move scene ${esc(CalendarMoves.sceneLabel(s))}" title="Drag to a shooting day or activate to choose a day">↗</button>`}</div>`).join(''):'<p class="tiny">No scenes scheduled</p>'}</div><button data-open-daily="${esc(d.id)}" class="calendar-open">Open Daily Sheet →</button></article>`;
 }
 function renderCalendar(){
  const months=Days.months(project.days);if(!Days.validDate(calendarMonth+'-01'))calendarMonth=Days.validDate(day()?.date)?day().date.slice(0,7):months[0]||new Date().toISOString().slice(0,7);
@@ -239,7 +239,11 @@ function renderCalendar(){
  const dated=Days.ordered(project.days).filter(d=>Days.validDate(d.date)),undated=project.days.filter(d=>!Days.validDate(d.date));
  $('calendar-range').textContent=`${project.days.length} shooting days · ${dated.length?dated[0].date+' – '+dated.at(-1).date:'No production dates entered'}${undated.length?' · '+undated.length+' dates needed':''}`;
  const byDate=new Map();for(const d of dated){if(!byDate.has(d.date))byDate.set(d.date,[]);byDate.get(d.date).push(d);}
- $('days').innerHTML=`<div class="calendar-grid">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(n=>`<div class="calendar-weekday">${n}</div>`).join('')}${Days.monthGrid(calendarMonth).map(date=>`<section class="calendar-cell ${date.slice(0,7)!==calendarMonth?'outside-month':''}" aria-label="${date}"><div class="calendar-date"><time datetime="${date}">${Number(date.slice(8))}</time>${Days.validDate(date)?`<button data-add-date="${date}" aria-label="Add shooting day on ${date}">+</button>`:''}</div>${(byDate.get(date)||[]).map(calendarDay).join('')}</section>`).join('')}</div>${undated.length?`<section class="calendar-undated"><h2>Dates needed</h2><p class="tiny">These source days have no dates. Use a day’s actions to set one.</p><div>${undated.map(calendarDay).join('')}</div></section>`:''}`;
+ const container=$('days'),previous=container.querySelector('.calendar-month-body:not(.drag-parked)');
+ if(previous&&calendarDrag&&previous.contains(calendarDrag.handle)){
+  previous.classList.add('drag-parked');previous.inert=true;previous.setAttribute('aria-hidden','true');
+ }else previous?.remove();
+ container.insertAdjacentHTML('beforeend',`<div class="calendar-month-body"><div class="calendar-grid">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(n=>`<div class="calendar-weekday">${n}</div>`).join('')}${Days.monthGrid(calendarMonth).map(date=>`<section class="calendar-cell ${date.slice(0,7)!==calendarMonth?'outside-month':''}" aria-label="${date}"><div class="calendar-date"><time datetime="${date}">${Number(date.slice(8))}</time>${Days.validDate(date)?`<button data-add-date="${date}" aria-label="Add shooting day on ${date}">+</button>`:''}</div>${(byDate.get(date)||[]).map(calendarDay).join('')}</section>`).join('')}</div>${undated.length?`<section class="calendar-undated"><h2>Dates needed</h2><p class="tiny">These source days have no dates. Use a day’s actions to set one.</p><div>${undated.map(calendarDay).join('')}</div></section>`:''}</div>`);
  rememberDays();
 }
 function masterScenes(){return `<div class="toolbar"><button class="primary" data-action="add-scene-master">+ Add scene</button><button data-scene-collapse="all">Collapse all</button><button data-scene-expand="all">Expand all</button>${recordTrashButton('scenes')}</div><p class="tiny">Length is in pages, stored exactly at eighth-page precision. Draft schedules omit deleted scenes; retained personal calls are reviewed independently.</p>${project.scenes.map((s,i)=>{if(Records.deleted(project,'scenes',s.id))return '';const p=`scenes.${i}`,used=project.days.filter(d=>d.schedule.some(item=>item.sceneId===s.id));return `<details class="master-card location-card scene-card" data-scene-card="${esc(s.id)}" ${readPreference('scene-cards:'+project.id,{})[s.id]?'open':''}><summary><span>${esc(s.number)} · ${esc(s.slug||'Untitled scene')}</span></summary><div class="location-card-body"><div class="master-head"><span class="badge">${used.length?used.map(d=>esc(d.label)).join(', '):'Unscheduled'}</span><button data-script="${s.id}" class="text-button">Scene & shots</button></div><div class="form-grid">${field('Scene number',p+'.number')}${field('Title / slugline',p+'.slug')}${pageLengthField(s)}${field('Location',p+'.locationId','select',{items:activeLocations(),note:Records.deleted(project,'locations',s.locationId)?'This scene refers to a deleted location. Restore it or explicitly reassign.':''})}${field('Script day',p+'.scriptDay')}${field('Day / night code',p+'.dayNight')}${field('Department notes',p+'.notes','textarea',{wide:true})}${field('Synopsis',p+'.synopsis','textarea',{wide:true})}</div>${sceneElements(s)}<p class="tiny">Cast: ${activePeople().filter(p=>p.type==='cast').map(who=>`<label class="check"><input type="checkbox" data-scene-cast="${i}:${who.id}" ${s.castIds.includes(who.id)?'checked':''}> ${esc(who.character||who.name)}</label>`).join('')}</p><div class="record-actions"><button class="danger" data-record-delete="scenes:${esc(s.id)}" aria-label="Delete Scene: ${esc(s.number+' · '+s.slug)}">Delete Scene</button></div></div></details>`;}).join('')}`;}
@@ -327,19 +331,212 @@ async function changeDay(command,stack=undoDays){
  const before=clone(project),oldSelected=dayId;const oldOrder=Days.ordered(project.days),index=oldOrder.findIndex(d=>d.id===dayId);
  const inverse=Days.apply(project,command);if(!project.days.some(d=>d.id===dayId))dayId=Days.ordered(project.days)[Math.min(Math.max(index,0),project.days.length-1)]?.id;
  mark();try{await flush();}catch(e){project=before;dayId=oldSelected;mark();render();throw e;}
- stack.push(inverse);if(command.kind==='date'&&command.id===dayId&&Days.validDate(day()?.date))calendarMonth=day().date.slice(0,7);revealDay();render();return inverse;
+ stack.push(inverse);
+ const changedDate=command.kind==='date'&&command.id===dayId?day()?.date:command.kind==='scene'?project.days.find(d=>d.id===command.targetId)?.date:null;
+ if(Days.validDate(changedDate))calendarMonth=changedDate.slice(0,7);
+ revealDay();render();return inverse;
 }
-function dayActions(id){const d=project.days.find(d=>d.id===id);if(!d)return;modal('Shooting day actions',`<p><b>${esc(d.label)}</b> · ${esc(d.date||'Date needed')} · Unit ${esc(d.unit)}</p>`,[{label:'Change Date',run:async()=>dateDialog(id)},{label:'Delete',run:async()=>deleteDay(id)}]);}
-function dateDialog(id){const d=project.days.find(d=>d.id===id);if(!d)return;modal('Change shooting date',`<p>${esc(d.label)} keeps its identity, calls, schedule and layout. The calendar and overview sort by date; equal dates keep production order. Issued PDFs retain their original date and bytes. This day's weather approval resets.</p><label class="field">New shooting date<input id="change-day-date" type="date" min="1900-01-01" max="2100-12-31" value="${esc(d.date)}"></label>`,[{label:'Change Date',primary:true,run:async()=>{await changeDay({kind:'date',id,date:$('change-day-date').value});redoDays=[];closeModal();renderSide();}}]);}
+const calendarWarningPreference='confirm-calendar-conflicts';
+function calendarFocus(kind,id,rowId){
+ const root=$('days').querySelector('.calendar-month-body:not(.drag-parked)');
+ const card=[...root?.querySelectorAll('[data-calendar-day]')||[]].find(el=>el.dataset.calendarDay===id);
+ const handle=kind==='scene'?[...card?.querySelectorAll('[data-drag-scene]')||[]].find(el=>el.dataset.dragScene===rowId):card?.querySelector('[data-drag-day]');
+ (handle||$('days-overview')).focus();
+}
+function restoreCalendarFocus(session){
+ if(view!=='calendar'||project.id!==session.projectId)return;
+ const month=session.destinationMonth||session.originMonth;
+ if(calendarMonth!==month){calendarMonth=month;renderCalendar();}
+ if(!session.destinationId&&session.originScroll!==undefined)window.scrollTo(0,session.originScroll);
+ calendarFocus(session.kind,session.destinationId||session.id,session.rowId);
+}
+$('modal').addEventListener('close',()=>{
+ if($('modal').open||!calendarReview)return;
+ const session=calendarReview;calendarReview=null;
+ restoreCalendarFocus(session);
+});
+function calendarReviewDialog(data){
+ const source=project.days.find(d=>d.id===data.id);
+ if(!source)return;
+ const movingScene=data.kind==='scene';
+ const row=source.schedule.find(r=>r.id===data.rowId),scene=project.scenes.find(s=>s.id===row?.sceneId);
+ if(movingScene&&!scene)return;
+ const session={...data,projectId:project.id,version,dirty,originMonth:data.originMonth||calendarMonth};
+ const dayChoices=Days.ordered(project.days).filter(d=>d.id!==source.id&&Days.validDate(d.date)&&(!data.targetDate||d.date===data.targetDate));
+ const inputId=movingScene?'calendar-scene-destination':'change-day-date';
+ const description=movingScene
+  ? `Move <b>${esc(CalendarMoves.sceneLabel(scene))}</b> from ${esc(CalendarMoves.dayLabel(source))}. Personal calls stay as entered on both days. The scene keeps its timing, notes, and cast links.`
+  : `<b>${esc(CalendarMoves.dayLabel(source))}</b> keeps its identity, calls, schedule and layout. Weather approval resets for the new date. Issued PDFs retain their original date and bytes.`;
+ const input=movingScene
+  ? `<label class="field">Destination shooting day<select id="${inputId}">${options(dayChoices.map(d=>({id:d.id,name:CalendarMoves.dayLabel(d)+(d.lockedRevisionId?' · Issued':'')})),data.targetId,'Choose a shooting day and unit…')}</select></label>`
+  : `<label class="field">New shooting date<input id="${inputId}" type="date" min="1900-01-01" max="2100-12-31" value="${esc(data.date||source.date)}"></label>`;
+ const action={label:movingScene?'Move Scene':'Change Date',primary:true,run:confirm};
+ modal(movingScene?'Move scheduled scene':'Change shooting date',`<p>${description}</p>${input}<div id="calendar-move-review" aria-live="polite"></div>`,[action]);
+ calendarReview=session;
+ const field=$(inputId),button=$('modal-actions').querySelector('[data-modal-action]');
+ const focus=()=>field.focus();
+ function command(){
+  const value=field.value;
+  if(movingScene)return {kind:'scene',id:data.id,rowId:data.rowId,targetId:value,beforeId:value===data.targetId?data.beforeId:undefined};
+  return {kind:'date',id:data.id,date:value};
+ }
+ function refresh(){
+  $('modal-error').textContent='';button.disabled=true;button.textContent=action.label;
+  const output=$('calendar-move-review');output.innerHTML='';
+  if(!field.value){
+   if(!movingScene){$('modal-error').textContent='Choose a valid date between 1900 and 2100.';button.disabled=false;}
+   return;
+  }
+  if(!movingScene&&field.value===source.date)return;
+  try{
+   const plan=CalendarMoves.plan(project,command()),suppressed=readPreference(calendarWarningPreference,true)===false;
+   const list=items=>'<ul class="issues">'+items.map(item=>'<li>'+esc(item)+'</li>').join('')+'</ul>';
+   const insertion=movingScene&&command().beforeId?plan.target.schedule.find(r=>r.id===command().beforeId):null;
+   const next=project.scenes.find(s=>s.id===insertion?.sceneId);
+   output.innerHTML=`${movingScene?`<p>${next?'Insert before '+esc(CalendarMoves.sceneLabel(next))+' on ':'Append to '}${esc(CalendarMoves.dayLabel(plan.target))}.</p>`:''}${plan.occupied.length?`<h3>Already on this date</h3>${list(plan.occupied)}<p>The moved day will remain a separate shooting day.</p>`:''}${plan.conflicts.length&&!suppressed?`<h3>Scheduling conflicts (${plan.conflicts.length})</h3>${list(plan.conflicts)}<label class="check"><input id="suppress-calendar-warning" type="checkbox"> Don't show this warning again</label><p class="tiny">Settings &amp; Help → Reset Warnings restores calendar conflict warnings.</p>`:suppressed?'<p class="tiny">Calendar conflict warnings are hidden on this device. Restore them in Settings &amp; Help → Reset Warnings.</p>':''}${plan.unknown.length?`<details class="calendar-review-details"><summary>Missing or uncertain information (${plan.unknown.length})</summary>${list(plan.unknown)}</details>`:''}`;
+   if(plan.conflicts.length&&!suppressed)button.textContent=movingScene?'Move Scene Anyway':'Change Date Anyway';
+   button.disabled=false;
+  }catch(e){$('modal-error').textContent=e.message;}
+ }
+ async function confirm(){
+  const active=()=>calendarReview===session&&$('modal').open&&view==='calendar'&&project.id===session.projectId;
+  const selected=command(),suppress=$('suppress-calendar-warning')?.checked;
+  field.disabled=true;
+  try{
+   await flush();
+   if(!active())return;
+   const current=await api.request('get',{id:session.projectId});
+   if(!active())return;
+   if(dirty!==session.dirty||version!==session.version||current.version!==session.version)throw Error('The production changed during review. Close this dialog and review the move again.');
+   const plan=CalendarMoves.plan(project,selected);
+   productionBusy=true;
+   try{
+    await changeDay(selected);
+    redoDays=[];renderSide();
+    if(suppress&&plan.conflicts.length)writePreference(calendarWarningPreference,false);
+    session.destinationId=plan.target.id;
+    session.destinationMonth=plan.target.date.slice(0,7);
+   }finally{productionBusy=false;}
+   closeModal();
+   toast(movingScene?'Scene moved.':'Shooting date changed.');
+  }finally{field.disabled=false;}
+ }
+ field.addEventListener('input',refresh);field.addEventListener('change',refresh);
+ refresh();
+ focus();
+}
+function dayActions(id){const d=project.days.find(d=>d.id===id);if(!d)return;modal('Shooting day actions',`<p><b>${esc(d.label)}</b> · ${esc(d.date||'Date needed')} · Unit ${esc(d.unit)}</p>`,[{label:'Change Date',run:async()=>calendarReviewDialog({kind:'date',id})},{label:'Delete',run:async()=>deleteDay(id)}]);}
 async function deleteDay(id){const d=project.days.find(d=>d.id===id);if(!d)return;const remove=async suppress=>{await changeDay({kind:'delete',id});redoDays=[];if(suppress)writePreference('confirm-day-deletion',false);closeModal();renderSide();toast('Day moved to Deleted days. Restore it there or use Undo day change.');};if(readPreference('confirm-day-deletion',true)===false)return remove(false);
  modal('Delete shooting day?',`<p>Move <b>${esc(d.label)}</b> (${esc(d.date||'Date needed')}, Unit ${esc(d.unit)}) to Deleted days?</p><p>Only this day leaves the active schedule. Its calls, schedule, layout and IDs are retained for restoration, including after reopening. Production cast, crew, scenes, locations, other shooting days and all original issued PDFs remain. Restore from Deleted days or use Undo day change.</p><label class="check"><input id="suppress-day-warning" type="checkbox"> Don't show again</label><p class="tiny">Settings → Reset Warnings restores this confirmation.</p>`,[{label:'Delete shooting day',primary:true,run:async()=>remove($('suppress-day-warning').checked)}]);
 }
 function showDeletedDays(){modal('Deleted shooting days',`<p>Days are retained in this project and its exported archive. Restoring retains the original day ID, contents and issued links.</p>${(project.deletedDays||[]).map(d=>`<article class="deleted-day"><div><strong>${esc(d.label)}</strong><p>${esc(d.date||'Date needed')} · Unit ${esc(d.unit)} · ${d.schedule.length} schedule items · ${d.calls.length} calls</p></div><button data-restore-day="${d.id}">Restore ${esc(d.label)}</button></article>`).join('')||'<p class="empty">No deleted shooting days.</p>'}`,[]);}
 $('days-overview').onclick=()=>transition(async()=>daysOverview());$('deleted-days').onclick=()=>transition(async()=>showDeletedDays());
-$('undo-day').onclick=()=>transition(async()=>{const command=undoDays.at(-1);if(command){await changeDay(command,redoDays);undoDays.pop();render();}});
-$('redo-day').onclick=()=>transition(async()=>{const command=redoDays.at(-1);if(command){await changeDay(command,undoDays);redoDays.pop();render();}});
-$('days').addEventListener('contextmenu',e=>{const row=e.target.closest('[data-day],[data-day-options]');if(row){e.preventDefault();transition(async()=>dayActions(row.dataset.day||row.dataset.dayOptions));}});
-$('days').addEventListener('keydown',e=>{if(e.key==='ContextMenu'||e.shiftKey&&e.key==='F10'){const row=e.target.closest('[data-day],[data-day-options]');if(row){e.preventDefault();transition(async()=>dayActions(row.dataset.day||row.dataset.dayOptions));}}});
+async function replayCalendarChange(source,destination,buttonID){
+ const command=source.at(-1);if(!command)return;
+ const keepFocus=document.activeElement===$(buttonID);
+ await changeDay(command,destination);source.pop();renderSide();
+ if(keepFocus){
+  const button=$(buttonID),alternative=buttonID==='undo-day'?'redo-day':'undo-day';
+  (button.disabled?$(alternative):button).focus();
+ }
+}
+$('undo-day').onclick=()=>transition(()=>replayCalendarChange(undoDays,redoDays,'undo-day'));
+$('redo-day').onclick=()=>transition(()=>replayCalendarChange(redoDays,undoDays,'redo-day'));
+function calendarHandle(element){
+ const handle=element.closest('[data-drag-day],[data-drag-scene]');
+ if(!handle)return;
+ return {handle,kind:handle.dataset.dragDay?'date':'scene',id:handle.closest('[data-calendar-day]').dataset.calendarDay,rowId:handle.dataset.dragScene};
+}
+function calendarActionMenu(e){
+ const handle=calendarHandle(e.target),row=e.target.closest('[data-day],[data-day-options]'),scene=e.target.closest('[data-calendar-row]');
+ if(handle?.kind==='scene'||scene?.querySelector('[data-drag-scene]')){
+  e.preventDefault();
+  const source=handle||calendarHandle(scene.querySelector('[data-drag-scene]'));
+  transition(async()=>calendarReviewDialog(source));
+ }else if(handle||row){
+  e.preventDefault();
+  transition(async()=>dayActions(handle?.id||row.dataset.day||row.dataset.dayOptions));
+ }
+}
+$('days').addEventListener('contextmenu',calendarActionMenu);
+$('days').addEventListener('keydown',e=>{if(e.key==='ContextMenu'||e.shiftKey&&e.key==='F10')calendarActionMenu(e);});
+
+const calendarDragType='application/x-script-call-calendar';
+function clearDragTarget(){
+ if(!calendarDrag)return;
+ clearTimeout(calendarDrag.monthTimer);calendarDrag.monthTimer=null;calendarDrag.monthButton=null;
+ calendarDrag.target?.classList.remove('calendar-drop-target');calendarDrag.target=null;
+}
+function finishCalendarDrag(restore){
+ const drag=calendarDrag;if(!drag)return;
+ clearDragTarget();
+ calendarDrag=null;
+ $('shooting-calendar').classList.remove('calendar-dragging');
+ $('days').querySelector('.drag-parked')?.remove();
+ if(restore)restoreCalendarFocus(drag);
+}
+function dropTarget(element,drag){
+ const cell=element.closest('.calendar-cell'),date=cell?.getAttribute('aria-label'),card=element.closest('[data-calendar-day]');
+ if(drag.kind==='date'){
+  if(!Days.validDate(date)||project.days.find(d=>d.id===drag.id)?.date===date)return;
+  return {element:cell,date};
+ }
+ if(!Days.validDate(date))return;
+ const source=project.days.find(d=>d.id===drag.id),row=source?.schedule.find(r=>r.id===drag.rowId);
+ const eligible=d=>d.id!==drag.id&&!d.lockedRevisionId&&!d.schedule.some(r=>r.id===drag.rowId||r.type==='scene'&&r.sceneId===row?.sceneId);
+ if(card){
+  const target=project.days.find(d=>d.id===card.dataset.calendarDay);
+  if(!target||!eligible(target))return;
+  const insertion=element.closest('[data-calendar-row]');
+  return {element:insertion||card,targetId:target.id,beforeId:insertion?.dataset.calendarRow};
+ }
+ const possible=project.days.filter(d=>d.date===date&&eligible(d));
+ if(possible.length)return {element:cell,targetDate:date};
+}
+$('days').addEventListener('dragstart',e=>{
+ const source=calendarHandle(e.target);
+ if(!source||$('modal').open){e.preventDefault();return;}
+ finishCalendarDrag(false);
+ calendarDrag={...source,token:uid(),projectId:project.id,dirty,originMonth:calendarMonth,originScroll:window.scrollY};
+ e.dataTransfer.effectAllowed='move';e.dataTransfer.setData(calendarDragType,calendarDrag.token);
+ $('shooting-calendar').classList.add('calendar-dragging');
+});
+$('shooting-calendar').addEventListener('dragover',e=>{
+ const drag=calendarDrag;
+ if(!drag||drag.projectId!==project.id||drag.dirty!==dirty||!e.dataTransfer.types.includes(calendarDragType))return;
+ const month=e.target.closest('[data-month-step]:not([disabled])');
+ if(month){
+  if(drag.monthButton!==month){
+   clearDragTarget();drag.monthButton=month;month.classList.add('calendar-drop-target');
+   drag.target=month;
+   drag.monthTimer=setTimeout(()=>{
+    if(calendarDrag!==drag||drag.monthButton!==month)return;
+    clearDragTarget();
+    calendarMonth=Days.shiftMonth(calendarMonth,Number(month.dataset.monthStep));renderCalendar();window.scrollTo(0,0);
+   },650);
+  }
+  e.preventDefault();e.dataTransfer.dropEffect='move';return;
+ }
+ const target=dropTarget(e.target,drag);
+ if(drag.target!==target?.element){clearDragTarget();drag.target=target?.element;drag.target?.classList.add('calendar-drop-target');}
+ if(target){e.preventDefault();e.dataTransfer.dropEffect='move';}
+});
+$('shooting-calendar').addEventListener('dragleave',e=>{if(!e.relatedTarget||!$('shooting-calendar').contains(e.relatedTarget))clearDragTarget();});
+$('shooting-calendar').addEventListener('drop',e=>{
+ const drag=calendarDrag;
+ if(!drag||e.dataTransfer.getData(calendarDragType)!==drag.token)return;
+ e.preventDefault();
+ const target=dropTarget(e.target,drag);
+ const valid=target&&project.id===drag.projectId&&drag.dirty===dirty;
+ finishCalendarDrag(!valid);
+ if(!valid)return;
+ transition(async()=>{
+  if(view!=='calendar'||project.id!==drag.projectId||drag.dirty!==dirty||$('modal').open){restoreCalendarFocus(drag);return;}
+  calendarReviewDialog({...drag,...target});
+ });
+});
+window.addEventListener('dragend',()=>finishCalendarDrag(true));
+document.addEventListener('dragover',e=>{if(calendarDrag&&!$('shooting-calendar').contains(e.target))clearDragTarget();});
 
 async function issue(){
  await flush();if(locked()){day().lockedRevisionId=null;mark();await flush();render();toast('New draft created. Earlier issued PDFs remain unchanged.');return;}
@@ -384,6 +581,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
   if(b.hasAttribute('data-calendar-selected'))return transition(async()=>{if(Days.validDate(day()?.date))calendarMonth=day().date.slice(0,7);renderCalendar();document.querySelector('.calendar-day.selected-day')?.scrollIntoView({block:'nearest'});});
   if(b.dataset.addDate)return transition(async()=>dayDialog(false,b.dataset.addDate));
   if(b.dataset.openDaily)return transition(async()=>{view='daily';selectDay(b.dataset.openDaily);});
+  if(b.matches('[data-drag-day],[data-drag-scene]'))return transition(async()=>calendarReviewDialog(calendarHandle(b)));
   if(b.dataset.dayOptions)return transition(async()=>dayActions(b.dataset.dayOptions));
   if(b.dataset.chooseWeek)return transition(async()=>{chooseWeek(b.dataset.chooseWeek);closeModal();});
   if(b.dataset.restoreDay)return transition(async()=>{await changeDay({kind:'restore',id:b.dataset.restoreDay});redoDays=[];selectDay(b.dataset.restoreDay);showDeletedDays();});
@@ -446,7 +644,7 @@ window.ScriptCallReports.onOpen(()=>reportBug());window.ScriptCallReports.onStat
 function settingsChoice(label,name,value,choices,help){
  return `<div class="settings-row"><div><strong id="${name}-label">${label}</strong><small id="${name}-help">${help}</small></div><div class="settings-options" role="radiogroup" aria-labelledby="${name}-label" aria-describedby="${name}-help">${choices.map(([id,title])=>`<label><input type="radio" name="${name}" value="${id}" ${value===id?'checked':''}>${title}</label>`).join('')}</div></div>`;
 }
-function settingsDialog(){modal('Settings & help',`<p><b>Script Call ${esc(boot?.version||'')}</b></p><p>Production Info stays on this computer. Export project includes preserved issued PDFs; Open project imports a separate copy. Production Desk imports are reviewed before applying changes.</p><p>Data: ${esc(boot?.dataDirectory)}</p><p>Font discovery: Reross ${boot?.fontAvailable?'available':'using fallback'}. G-Casper uses bundled Montserrat and Nunito.</p><div class="settings-display">${settingsChoice('Time display','time-display',timeMode(),[['24','24-hour (military)'],['12','12-hour (AM/PM)']],'Applies to this production and new productions on this device. Issued PDFs retain their original format.')}${settingsChoice('Temperature display','temperature-display',tempMode(),[['C','Celsius (°C)'],['F','Fahrenheit (°F)']],'Applies to this production and new productions on this device. Stored temperatures and issued PDFs stay as saved.')}</div>`,[{label:'Check for Updates',run:()=>updateDialog(true)},{label:'Delete Production',danger:true,run:deleteProductionDialog},{label:'Deleted productions',run:showDeletedProductions},{label:'Deleted members & locations',run:()=>showDeletedRecords()},{label:'Deleted scenes',run:()=>showDeletedRecords('scenes')},{label:'Reset Warnings',run:async()=>{writePreference('confirm-day-deletion',true);toast('Shooting day deletion confirmation restored.');}},{label:'Toggle light / dark',run:async()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';localStorage.setItem('callsheet-theme',dark?'dark':'light');}}]);$('modal-body').onchange=async event=>{const radio=event.target;if(!['time-display','temperature-display'].includes(radio.name)||!radio.checked)return;const controls=[...$('modal-body').querySelectorAll('[name="time-display"],[name="temperature-display"]')];controls.forEach(el=>el.disabled=true);try{commitPageLengths();const temperature=radio.name==='temperature-display';project[temperature?'temperatureUnit':'timeDisplayClock']=radio.value;mark();await flush();writePreference(temperature?'default-temperature-unit':'default-time-display',radio.value);render();toast(temperature?'Temperature display saved. Stored Celsius values are unchanged.':'Time display saved. Stored times are unchanged.');}catch(e){$('modal-error').textContent=e.message;}finally{controls.forEach(el=>el.disabled=false);}};}
+function settingsDialog(){modal('Settings & help',`<p><b>Script Call ${esc(boot?.version||'')}</b></p><p>Production Info stays on this computer. Export project includes preserved issued PDFs; Open project imports a separate copy. Production Desk imports are reviewed before applying changes.</p><p>Data: ${esc(boot?.dataDirectory)}</p><p>Font discovery: Reross ${boot?.fontAvailable?'available':'using fallback'}. G-Casper uses bundled Montserrat and Nunito.</p><div class="settings-display">${settingsChoice('Time display','time-display',timeMode(),[['24','24-hour (military)'],['12','12-hour (AM/PM)']],'Applies to this production and new productions on this device. Issued PDFs retain their original format.')}${settingsChoice('Temperature display','temperature-display',tempMode(),[['C','Celsius (°C)'],['F','Fahrenheit (°F)']],'Applies to this production and new productions on this device. Stored temperatures and issued PDFs stay as saved.')}</div>`,[{label:'Check for Updates',run:()=>updateDialog(true)},{label:'Delete Production',danger:true,run:deleteProductionDialog},{label:'Deleted productions',run:showDeletedProductions},{label:'Deleted members & locations',run:()=>showDeletedRecords()},{label:'Deleted scenes',run:()=>showDeletedRecords('scenes')},{label:'Reset Warnings',run:async()=>{writePreference('confirm-day-deletion',true);writePreference(calendarWarningPreference,true);toast('Shooting day deletion and calendar conflict warnings restored.');}},{label:'Toggle light / dark',run:async()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';localStorage.setItem('callsheet-theme',dark?'dark':'light');}}]);$('modal-body').onchange=async event=>{const radio=event.target;if(!['time-display','temperature-display'].includes(radio.name)||!radio.checked)return;const controls=[...$('modal-body').querySelectorAll('[name="time-display"],[name="temperature-display"]')];controls.forEach(el=>el.disabled=true);try{commitPageLengths();const temperature=radio.name==='temperature-display';project[temperature?'temperatureUnit':'timeDisplayClock']=radio.value;mark();await flush();writePreference(temperature?'default-temperature-unit':'default-time-display',radio.value);render();toast(temperature?'Temperature display saved. Stored Celsius values are unchanged.':'Time display saved. Stored times are unchanged.');}catch(e){$('modal-error').textContent=e.message;}finally{controls.forEach(el=>el.disabled=false);}};}
 async function productionChange(run){
  if(productionBusy)return;productionBusy=true;const controls=[...$('modal').querySelectorAll('button')];controls.forEach(b=>b.disabled=true);
  try{const result=await run();clearTimeout(saveTimer);clearTimeout(previewTimer);previewSerial++;productionBusy=false;closeModal();view='daily';section='overview';master='general';await useState(result.state);$('save-state').textContent='Saved on this device';return result;}finally{productionBusy=false;controls.forEach(b=>b.disabled=false);}

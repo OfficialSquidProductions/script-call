@@ -1,8 +1,8 @@
 # Script Call
 
-**0.3.21 adds Email Call Sheet to Daily Sheet.** Review Bcc recipients for the selected day and prepare one PDF or separate PNG attachments from the selected draft or issued revision. See [how to email a call sheet](#email-a-call-sheet) and [release verification](RELEASING.md). Production Desk imports continue to follow explicit scene location links. See [Shoot Location reconciliation](PRODUCTION-IMPORT-CALENDAR.md#shoot-location-reconciliation).
+**0.3.22 adds calendar moves to Shooting Days.** Drag a day grip to a date, or drag the arrow beside a scene to another shooting day. Activate either control with the keyboard to choose a destination. Review the move and any scheduling conflicts before confirming. See [calendar moves](PRODUCTION-IMPORT-CALENDAR.md#move-days-and-scenes) and [release verification](RELEASING.md).
 
-The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.21) targets Apple Silicon and macOS 13 or later. Choose **Settings & Help → Check for Updates** or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip).
+The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.22) targets Apple Silicon and macOS 13 or later. Choose **Settings & Help → Check for Updates** or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip).
 
 A Squid Productions Software
 

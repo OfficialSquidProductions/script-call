@@ -42,6 +42,7 @@ function read(bytes){
  for(const [sha,b64] of Object.entries(documents)){if(!/^[a-f0-9]{64}$/.test(sha)||typeof b64!=='string'||!b64||b64.length%4||!/^[A-Za-z0-9+/]*={0,2}$/.test(b64))fail('invalid PDF attachment.');const data=Buffer.from(b64,'base64');if(D.hash(data)!==sha||data.subarray(0,5).toString()!=='%PDF-')fail('PDF checksum mismatch.');}
  return {source:p,hash:D.hash(bytes),attachmentHashes:[...wanted],bytes:bytes.length};
 }
+const scheduleRowId=(dayId,sourceId,occurrence)=>'pd-'+D.hash(dayId+':'+sourceId+':'+occurrence).slice(0,32);
 function map(parsed,scenarioId){
  const p=parsed.source,scenario=p.stripboards.find(s=>s.id===scenarioId)||(!scenarioId?p.stripboards[0]:null);if(!scenario)fail('choose an existing schedule scenario.');
  const cats=new Map(p.categories.map(c=>[c.id,c])),el=new Map(p.elements.map(e=>[e.id,e])),breakdowns=new Map(p.breakdowns.map(b=>[b.id,b]));
@@ -76,7 +77,7 @@ function map(parsed,scenarioId){
  out.days=[];const outside=[];
  for(const group of board?.breakdownIds||[]){if(!Array.isArray(group)){outside.push(group);continue;}if(date){let limit=0;while(cal.daysOff.includes(new Date(date+'T12:00Z').getUTCDay())||off.has(date)){date=D.addDate(date,1);if(++limit>3660)fail('calendar cannot resolve a shooting date.');}if(!D.okDate(date))fail('shooting date is outside supported 1900–2100.');}
   const d=D.newDay({...out,days:[]},date);d.id='pd-'+D.hash(scenario.id+':'+board.id+':'+index).slice(0,32);d.sourceId=d.id;d.label='Day '+String(++index).padStart(2,'0');d.sourceScenarioId=scenario.id;d.sourceDayIndex=index-1;d.unit='';
-  const occurrences=new Map();d.schedule=group.map(id=>{const b=breakdowns.get(id),occurrence=occurrences.get(id)||0;occurrences.set(id,occurrence+1);return {id:'pd-'+D.hash(d.id+':'+id+':'+occurrence).slice(0,32),sourceId:id,type:b.type==='scene'?'scene':/^MEAL/i.test(b.bannerText)?'meal':'note',sceneId:b.type==='scene'?id:'',description:b.type==='scene'?'':text(b.bannerText),start:'',offset:0,duration:b.duration/60000};});
+  const occurrences=new Map();d.schedule=group.map(id=>{const b=breakdowns.get(id),occurrence=occurrences.get(id)||0;occurrences.set(id,occurrence+1);return {id:scheduleRowId(d.id,id,occurrence),sourceId:id,type:b.type==='scene'?'scene':/^MEAL/i.test(b.bannerText)?'meal':'note',sceneId:b.type==='scene'?id:'',description:b.type==='scene'?'':text(b.bannerText),start:'',offset:0,duration:b.duration/60000};});
   const ds=out.scenes.filter(s=>group.includes(s.id)),people=new Set(ds.flatMap(s=>s.castIds));d.unit=[...new Set(ds.map(s=>value(breakdowns.get(s.id),4)).filter(Boolean))].join(', ');
   // V1 day groups contain strip IDs only. Use the linked location when
   // every scheduled scene resolves to the same place, otherwise leave it blank.
@@ -130,6 +131,23 @@ function cleanUnusedImportedLocations(current,output,sourceLocations){
 }
 // Three-way merge. Source changes apply only where the local value still equals
 // the previous imported value. Local additions/removals/order and issued days win.
+function removeIncomingCopiesOfLocallyMovedScenes(current,target,conflicts){
+ const moved=new Map(),sourceDays=[...current.days,...(current.deletedDays||[])];
+ // An imported scene's row ID contains the ID of the day it first came from.
+ // A calendar move preserves that ID. Duplicated or newly added local rows have new IDs.
+ const possibleOrigins=[...new Set([...sourceDays,...current.productionDesk.baseline.days].filter(d=>d.sourceId===d.id).map(d=>d.id))];
+ for(const day of sourceDays)for(const row of day.schedule){
+  if(row.type!=='scene'||row.sourceId!==row.sceneId||!row.id.startsWith('pd-')||row.id===scheduleRowId(day.id,row.sceneId,0))continue;
+  if(possibleOrigins.some(id=>row.id===scheduleRowId(id,row.sceneId,0)))moved.set(row.sceneId,day);
+ }
+ for(const day of target.days)day.schedule=day.schedule.filter(row=>{
+  const destination=row.type==='scene'&&moved.get(row.sceneId);
+  if(!destination)return true;
+  if(day.id!==destination.id)conflicts.push('Scene '+(current.scenes.find(s=>s.id===row.sceneId)?.number||row.sceneId)+': local calendar move to '+destination.label+' retained');
+  return false;
+ });
+}
+
 function merge(current,incoming){
  if(current.productionDesk?.sourceId!==incoming.productionDesk.sourceId||current.productionDesk.scenarioId!==incoming.productionDesk.scenarioId)fail('reimport must target the same linked production and scenario.');
  const conflicts=[],old=current.productionDesk.baseline;
@@ -148,6 +166,7 @@ function merge(current,incoming){
   conflicts.push(path+': local edit preserved');return local;
  }
  const target=D.clone(incoming.productionDesk.baseline);
+ removeIncomingCopiesOfLocallyMovedScenes(current,target,conflicts);
  // A new importer default must not switch an existing legacy day's lunch mode.
  for(const next of target.days){const local=current.days.find(d=>d.id===next.id);if(local&&local.lunchMode===undefined)delete next.lunchMode;}
  const output=walk(D.clone(current),old,target,'production');
