@@ -1,0 +1,9 @@
+Script Call 0.3.19 — desktop editing and Shoot Locations
+
+Settings & Help has compact time and temperature controls and a Check for Updates action. The macOS app menu also offers update checks. Automatic local recovery backups continue to run.
+
+Template & Layout opens from the sidebar or View menu. The editor keeps its position, text selection and resized text boxes during edits. Daily Sheet stays focused on the shooting day. Cast and crew call lists scroll beneath their search bars.
+
+Production Desk imports use the Shoot Location links from scene breakdowns. Several scenes can share one location. Review missing or mixed locations before issuing. Reimport the same source and scenario to review eligible cleanup of older unused imported records. Local location edits, active references and issued PDFs are preserved.
+
+Apple Silicon, macOS 13 or later.

@@ -1,0 +1,32 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {playwright:{_electron},electron}=require('./runtime.cjs');
+const {fresh,seed,reconcile}=require('./support/shoot-location-upgrade.cjs');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'verification/shoot-locations');
+const legacy=process.env.CALLSHEET_PREVIOUS_APP;
+assert(legacy&&path.resolve(legacy).startsWith(path.join(root,'tmp')+path.sep),'Set CALLSHEET_PREVIOUS_APP to a disposable copy of signed 0.3.18 under tmp/');
+const current=process.env.CALLSHEET_PACKAGED_APP;
+const check=message=>console.log('PASS',message);
+const errors=[];
+let app,page;
+fs.mkdirSync(out,{recursive:true});
+async function launch(profile,bundle=current){
+ app=await _electron.launch({executablePath:bundle?path.join(bundle,'Contents/MacOS/Script Call'):electron,args:bundle?[]:[root],env:{...process.env,CALLSHEET_DATA_DIR:profile}});
+ page=await app.firstWindow();
+ page.on('pageerror',error=>errors.push(error.message));
+ await page.waitForFunction(()=>document.querySelector('#save-state')?.textContent==='Saved on this device');
+ assert.equal((await page.evaluate(()=>CallSheet.request('bootstrap'))).dataDirectory,profile);
+}
+(async()=>{try{
+ await launch(fs.mkdtempSync(path.join(root,'tmp/fresh-shoot-locations-')));
+ await fresh(app,page,check);
+ await app.close();app=null;
+ const profile=fs.mkdtempSync(path.join(root,'tmp/legacy-shoot-locations-'));
+ await launch(profile,legacy);
+ assert.equal(await app.evaluate(({app})=>app.getVersion()),'0.3.18');
+ const before=await seed(app,page,check);
+ await app.close();app=null;
+ await launch(profile);
+ await reconcile(app,page,before,out,check);
+ assert.deepEqual(errors,[]);
+}finally{if(app)await app.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,12 +1,12 @@
 # Script Call
 
-**0.3.18 adds the Shooting Days calendar and complete categorized Production Desk breakdown import.** Daily Sheet, Shooting Days and Production Info are peer sidebar tabs. Imported dates, scene assignments and cast roles remain linked; department requirements appear in scene details and daily instructions. Missing source dates and performer details stay blank. Existing projects, local edits and issued PDFs are preserved. See [mapping and limits](PRODUCTION-IMPORT-CALENDAR.md) and [release verification](RELEASING.md).
+**0.3.19 streamlines Settings & Help, keeps Template & Layout in its own workspace, and fixes scrolling in long cast and crew call lists.** Production Desk imports now use the Breakdown Shoot Location field. Earlier linked imports can review cleanup of eligible unused location records. See [Shoot Location reconciliation](PRODUCTION-IMPORT-CALENDAR.md#shoot-location-reconciliation) and [release verification](RELEASING.md).
 
 The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.18) is available for Apple Silicon/macOS 13+. Existing users can choose **Check for updates**, or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip). The actual 0.3.16 → 0.3.18 native upgrade passed 43 checks in a disposable installation.
 
 A Squid Productions Software
 
-Script Call **0.3.18** is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
+Script Call is local-first Electron software for production records, daily call sheets, schedule and cast/crew calls, G-Casper-style front/back layouts, Original Narrative templates, PDF export and immutable issued revisions. Production Desk project import and reviewed three-way reimport are included. Existing project records, scene/shot IDs, project formats and template choices are preserved.
 
 ## Run locally
 

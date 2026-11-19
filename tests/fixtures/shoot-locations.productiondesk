@@ -1,0 +1,948 @@
+{
+ "format": "org.squidproductions.productiondesk.project",
+ "formatVersion": 1,
+ "workspace": {
+  "version": 1,
+  "projects": [
+   {
+    "id": "fd09e022-1460-48b3-a3cc-a7fcd3d0945f",
+    "author": null,
+    "company": "Fictional unit",
+    "created": "2026-11-19T14:24:58.647Z",
+    "description": null,
+    "episode": null,
+    "episodeName": null,
+    "name": "Shooting schedule",
+    "project": "Shoot Location QA",
+    "schedColor": null,
+    "schedDate": "2026-11-19T14:24:58.647Z",
+    "scriptColor": null,
+    "scriptDate": "2026-11-19T14:24:58.647Z",
+    "season": null,
+    "source": "Production Desk — Local Film Scheduler",
+    "ussVersion": "1.0.0",
+    "breakdowns": [
+     {
+      "id": "0d801c53-9991-479e-b68e-5e615916374b",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "0618834d-7bcc-471c-a042-ba530208aed9",
+       "d4a7aa71-792e-4173-b94e-2782d93d6466",
+       "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "3f4cc9c7-715b-487c-99b0-50cdd4314f4a"
+      ],
+      "pages": 0.125,
+      "scene": "1",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "INT. KITCHEN - DAY\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "6a08c594-433d-4794-b7e1-3b7ae49bdef6",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "4eea2de7-4d9b-4e6f-b616-bffeb644c31c",
+       "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+       "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "3f4cc9c7-715b-487c-99b0-50cdd4314f4a",
+       "6c4e3317-a1df-45d8-ae8d-612cdc785876"
+      ],
+      "pages": 0.125,
+      "scene": "2",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "EXT. DRAWING ROOM - NIGHT\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "5bb46849-0635-4dfc-9cf0-d69418e7028c",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "f3a39fb7-2230-4de6-bf28-04e7a25d4ff9",
+       "d4a7aa71-792e-4173-b94e-2782d93d6466",
+       "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "3f4cc9c7-715b-487c-99b0-50cdd4314f4a"
+      ],
+      "pages": 0.125,
+      "scene": "3",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "INT. BEDROOM - DAY\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "d08637bc-880d-45a0-a3fd-bd25ca0bc7c1",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "62dbc47e-a6bb-415b-905c-697d149e3b6e",
+       "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+       "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "3f4cc9c7-715b-487c-99b0-50cdd4314f4a"
+      ],
+      "pages": 0.125,
+      "scene": "4",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "EXT. APARTMENT HALL - NIGHT\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "1d855619-cdf6-4822-b85d-52e3cd3d52ba",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "e03fb064-d621-452f-b6ad-0cd6f5691b86",
+       "d4a7aa71-792e-4173-b94e-2782d93d6466",
+       "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "24c42fee-929a-415d-a736-887e484f31b6"
+      ],
+      "pages": 0.125,
+      "scene": "5",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "INT. TRAIN PLATFORM - DAY\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "90f6656b-1b99-4586-87ec-65e417733c9b",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "e35dc192-dc6f-4fdc-a9cd-bfdd6798fa46",
+       "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+       "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "24c42fee-929a-415d-a736-887e484f31b6"
+      ],
+      "pages": 0.125,
+      "scene": "6",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "EXT. TICKET WINDOW - NIGHT\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "058da3aa-f649-4689-b738-06eea6aa0630",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "7dd5bb13-42c4-4004-bcfd-ca46afe0f86b",
+       "d4a7aa71-792e-4173-b94e-2782d93d6466",
+       "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "24c42fee-929a-415d-a736-887e484f31b6"
+      ],
+      "pages": 0.125,
+      "scene": "7",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "INT. TRACKSIDE - DAY\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "3c5480d3-e8e7-4c65-ac1e-fd0ab893cb45",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "e834cfdf-f0a4-4745-acc4-761e0d152a14",
+       "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+       "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "24c42fee-929a-415d-a736-887e484f31b6"
+      ],
+      "pages": 0.125,
+      "scene": "8",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "EXT. STATION EXIT - NIGHT\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "050cabe6-99cf-46c1-b0dc-6dbd8e5a9fb9",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "1e8bad98-d6b3-4e31-a088-23662d700b59",
+       "d4a7aa71-792e-4173-b94e-2782d93d6466",
+       "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "3f4cc9c7-715b-487c-99b0-50cdd4314f4a"
+      ],
+      "pages": 0.125,
+      "scene": "9",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "INT. COURTYARD - DAY\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "6d85b487-abdd-4f9d-8e2b-42f374a2f763",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "b57c487c-8c67-425a-9a59-2cf3fac1976a",
+       "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+       "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "34fd4c5a-e379-4e96-ba75-adec407e72fe",
+       "cafe3fea-7003-4b79-a87a-e2b2ea5c1258"
+      ],
+      "pages": 0.125,
+      "scene": "10",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "EXT. CORNER SHOP - NIGHT\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "d6ddb935-15ab-4994-b468-a8ee11e53122",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "e49d1c74-85c0-4631-9081-84acdfa8e8d4",
+       "d4a7aa71-792e-4173-b94e-2782d93d6466",
+       "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "3f4cc9c7-715b-487c-99b0-50cdd4314f4a",
+       "24c42fee-929a-415d-a736-887e484f31b6"
+      ],
+      "pages": 0.125,
+      "scene": "11",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "INT. SERVICE ROAD - DAY\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     },
+     {
+      "id": "6a2ce80d-1608-4a20-acda-890057174faa",
+      "bannerText": null,
+      "comments": "Fictional breakdown notes",
+      "created": "2026-11-19T14:24:58.649Z",
+      "description": "",
+      "elements": [
+       "00da8262-fb55-454c-948b-2ff71fce940e",
+       "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+       "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+       "dd6c3518-e915-4cde-9464-9d683bf29a21",
+       "24c42fee-929a-415d-a736-887e484f31b6"
+      ],
+      "pages": 0.125,
+      "scene": "12",
+      "scriptPage": "1",
+      "duration": 3600000,
+      "type": "scene",
+      "_scriptText": "EXT. ROOFTOP - NIGHT\n\nThe room is empty.\n\nRILEY\nWe start here.",
+      "_needsReview": true,
+      "_completed": false
+     }
+    ],
+    "elements": [
+     {
+      "id": "0618834d-7bcc-471c-a042-ba530208aed9",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "KITCHEN",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "d4a7aa71-792e-4173-b94e-2782d93d6466",
+      "category": "01057e67-349a-4e2d-9a00-f3d0e0505d03",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "INT",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "c3e33605-0eaf-4643-9fcf-ea1936c648da",
+      "category": "c5a2a5f1-104f-4fc3-b160-3dad6c68ff25",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "Day",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "dd6c3518-e915-4cde-9464-9d683bf29a21",
+      "category": "37222b69-13d3-4faf-94a3-688e31d2b5fb",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "RILEY",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": "1",
+      "events": [],
+      "isDood": true,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "4eea2de7-4d9b-4e6f-b616-bffeb644c31c",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "DRAWING ROOM",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "f1e3b304-aaf4-4c81-8d2e-6739473bcd06",
+      "category": "01057e67-349a-4e2d-9a00-f3d0e0505d03",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "EXT",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "004f05a9-30e2-4648-96a0-c1900b89a7cd",
+      "category": "c5a2a5f1-104f-4fc3-b160-3dad6c68ff25",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "Night",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "f3a39fb7-2230-4de6-bf28-04e7a25d4ff9",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "BEDROOM",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "62dbc47e-a6bb-415b-905c-697d149e3b6e",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "APARTMENT HALL",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "e03fb064-d621-452f-b6ad-0cd6f5691b86",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "TRAIN PLATFORM",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "e35dc192-dc6f-4fdc-a9cd-bfdd6798fa46",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "TICKET WINDOW",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "7dd5bb13-42c4-4004-bcfd-ca46afe0f86b",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "TRACKSIDE",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "e834cfdf-f0a4-4745-acc4-761e0d152a14",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "STATION EXIT",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "1e8bad98-d6b3-4e31-a088-23662d700b59",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "COURTYARD",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "b57c487c-8c67-425a-9a59-2cf3fac1976a",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "CORNER SHOP",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "e49d1c74-85c0-4631-9081-84acdfa8e8d4",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "SERVICE ROAD",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "00da8262-fb55-454c-948b-2ff71fce940e",
+      "category": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.649Z",
+      "name": "ROOFTOP",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "3f4cc9c7-715b-487c-99b0-50cdd4314f4a",
+      "category": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Harbor Studio Stage",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "24c42fee-929a-415d-a736-887e484f31b6",
+      "category": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Harbor Studio Yard",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "86aab8e1-6e59-410a-886b-4f3803e5bfd7",
+      "category": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Old audition room",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "6605921c-b279-417b-bc97-aa52207b9124",
+      "category": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Scouted warehouse",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "51507bc3-7f81-402a-b21f-2a859263423a",
+      "category": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Early location choice",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "cafe3fea-7003-4b79-a87a-e2b2ea5c1258",
+      "category": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "  ",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "34fd4c5a-e379-4e96-ba75-adec407e72fe",
+      "category": "dd509d06-d639-457d-bf35-70bd7a0add47",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Fictional script location",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     },
+     {
+      "id": "6c4e3317-a1df-45d8-ae8d-612cdc785876",
+      "category": "4a4f2543-6d8d-42d9-9167-814c5f958751",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Red production binder",
+      "daysOff": [],
+      "dropDayCount": 0,
+      "elementId": null,
+      "events": [],
+      "isDood": false,
+      "isDrop": true,
+      "isHold": true,
+      "isIdLock": false,
+      "linkedElements": []
+     }
+    ],
+    "categories": [
+     {
+      "id": "5fc49c90-8951-4ffe-be61-8db003346bc7",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Set",
+      "ucid": 0
+     },
+     {
+      "id": "01057e67-349a-4e2d-9a00-f3d0e0505d03",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "INT/EXT",
+      "ucid": 1
+     },
+     {
+      "id": "c5a2a5f1-104f-4fc3-b160-3dad6c68ff25",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Day/Night",
+      "ucid": 2
+     },
+     {
+      "id": "58f89896-cdae-4fc7-af99-d795139e6390",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Script Day",
+      "ucid": 3
+     },
+     {
+      "id": "ca1a0544-8d86-4c1c-adf2-62605a35d520",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Unit",
+      "ucid": 4
+     },
+     {
+      "id": "f62f8c1b-1adb-4e16-8275-ecc7afab6ff7",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Sequence",
+      "ucid": 5
+     },
+     {
+      "id": "eb7609f4-59f7-450a-8a56-d65943c77353",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Reserved shoot field renamed",
+      "ucid": 6
+     },
+     {
+      "id": "37222b69-13d3-4faf-94a3-688e31d2b5fb",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Cast Members",
+      "ucid": 100
+     },
+     {
+      "id": "dd015653-698a-4870-964b-ea8dadd75ea1",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Background Actors",
+      "ucid": 101
+     },
+     {
+      "id": "6c3040fe-fab7-4f25-968a-73d69f2ad908",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Stunts",
+      "ucid": 102
+     },
+     {
+      "id": "cb2dd1a9-8585-4f6e-8031-5faf4780bb54",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Vehicles",
+      "ucid": 103
+     },
+     {
+      "id": "4a4f2543-6d8d-42d9-9167-814c5f958751",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Props",
+      "ucid": 104
+     },
+     {
+      "id": "2b34d9eb-0b33-4e22-b0a2-db972417a47a",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Special Effects",
+      "ucid": 105
+     },
+     {
+      "id": "2f52ef88-b145-499a-80c9-418d9f354d9e",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Wardrobe",
+      "ucid": 106
+     },
+     {
+      "id": "ddda41e5-1eb7-428f-b670-1c970b54ec1e",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Makeup/Hair",
+      "ucid": 107
+     },
+     {
+      "id": "f63d84d8-9c40-4273-bab7-9467d8fbb61f",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Animals",
+      "ucid": 108
+     },
+     {
+      "id": "77a0798a-2770-4db2-ab3c-5f7c9ccd2566",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Animal Wranglers",
+      "ucid": 109
+     },
+     {
+      "id": "459f12f5-a2f3-4f0f-a634-687e460c1eab",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Camera",
+      "ucid": 110
+     },
+     {
+      "id": "17c37a19-2769-4638-8c24-7d58ce9ef3c0",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Grip",
+      "ucid": 111
+     },
+     {
+      "id": "d56d4542-b797-4210-955c-2e51ee1b455a",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Electric",
+      "ucid": 112
+     },
+     {
+      "id": "962ab55f-3340-400f-baaf-91e7fe71af82",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Sound",
+      "ucid": 113
+     },
+     {
+      "id": "c594cb29-cbd2-402e-9756-816f7967188a",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Music",
+      "ucid": 114
+     },
+     {
+      "id": "cadefb8b-4482-4c50-b714-6df083c6dd01",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Art Department",
+      "ucid": 115
+     },
+     {
+      "id": "bac16923-f5b7-4145-81d5-5686ba03444c",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Set Dressing",
+      "ucid": 116
+     },
+     {
+      "id": "5455f5a7-b89b-458a-ab44-fd40e7cb28d2",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Greenery",
+      "ucid": 117
+     },
+     {
+      "id": "3fa1525c-3383-45e7-a2fd-f61f318b2c84",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Security",
+      "ucid": 118
+     },
+     {
+      "id": "b1e21420-b806-4581-8cf8-94a9b696ea59",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Special Equipment",
+      "ucid": 119
+     },
+     {
+      "id": "de7d6009-7432-4946-9a60-cb73fd3cd5da",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Additional Labor",
+      "ucid": 120
+     },
+     {
+      "id": "888e3dde-2382-4dbf-bb1b-d50f88fd1e91",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Visual Effects",
+      "ucid": 121
+     },
+     {
+      "id": "555e4be5-67c8-476e-8662-84b891d64dd5",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Mechanical Effects",
+      "ucid": 122
+     },
+     {
+      "id": "e8b413dd-f501-4355-998f-f69e1f954024",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Notes",
+      "ucid": 123
+     },
+     {
+      "id": "1b6848da-757c-482f-ae81-bf94c216540b",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Comments",
+      "ucid": 124
+     },
+     {
+      "id": "ea4a1afa-a6c1-4e61-a805-8e6cc633b551",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Miscellaneous",
+      "ucid": 125
+     },
+     {
+      "id": "1c85e96f-f627-480a-b979-17d02b1e39bb",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Other",
+      "ucid": 126
+     },
+     {
+      "id": "dd509d06-d639-457d-bf35-70bd7a0add47",
+      "created": "2026-11-19T14:24:58.647Z",
+      "name": "Shoot Location",
+      "ucid": 347
+     }
+    ],
+    "stripboards": [
+     {
+      "id": "f3ea3826-bcf0-4f7b-b7c8-1131a32bd3fb",
+      "name": "Main schedule",
+      "calendar": "3b0d8536-9cae-4357-995f-207979c14172",
+      "boards": [
+       {
+        "id": "15da30e4-c773-4cd9-be85-62e80d166622",
+        "name": "stripboard",
+        "breakdownIds": [
+         [
+          "0d801c53-9991-479e-b68e-5e615916374b",
+          "6a08c594-433d-4794-b7e1-3b7ae49bdef6",
+          "5bb46849-0635-4dfc-9cf0-d69418e7028c",
+          "d08637bc-880d-45a0-a3fd-bd25ca0bc7c1"
+         ],
+         [
+          "1d855619-cdf6-4822-b85d-52e3cd3d52ba",
+          "90f6656b-1b99-4586-87ec-65e417733c9b",
+          "058da3aa-f649-4689-b738-06eea6aa0630",
+          "3c5480d3-e8e7-4c65-ac1e-fd0ab893cb45"
+         ],
+         [
+          "050cabe6-99cf-46c1-b0dc-6dbd8e5a9fb9",
+          "6d85b487-abdd-4f9d-8e2b-42f374a2f763"
+         ],
+         [
+          "d6ddb935-15ab-4994-b468-a8ee11e53122"
+         ]
+        ]
+       },
+       {
+        "id": "216090bf-342c-4387-b546-93a01b428c62",
+        "name": "boneyard",
+        "breakdownIds": [
+         "6a2ce80d-1608-4a20-acda-890057174faa"
+        ]
+       }
+      ]
+     }
+    ],
+    "calendars": [
+     {
+      "id": "3b0d8536-9cae-4357-995f-207979c14172",
+      "daysOff": [
+       0,
+       6
+      ],
+      "events": [
+       {
+        "id": "7d805af2-8e0d-455f-9647-e433fd02a73e",
+        "type": "start",
+        "date": "2026-12-04T12:00:00.000Z",
+        "name": null
+       }
+      ],
+      "name": "Production calendar"
+     }
+    ],
+    "_scriptFilename": "Shoot_Location_QA.fountain",
+    "_importNotes": "Page eighths are estimated from extracted text. Review lengths and cast before scheduling."
+   }
+  ],
+  "activeProject": "fd09e022-1460-48b3-a3cc-a7fcd3d0945f",
+  "_pdfDocuments": {}
+ }
+}

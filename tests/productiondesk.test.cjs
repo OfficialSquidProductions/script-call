@@ -45,3 +45,73 @@ test('reimport preserves actual issued snapshot/PDF bytes and stable strip IDs a
   const result=P.commit(s,P.preview(s,parse(e)));assert.deepEqual(result.project.days[0],s.get(p.id).project.days[0]);assert.equal(result.project.days[0].lockedRevisionId,snapshot.revision.id);const revision=s.revision(p.id,snapshot.revision.id);assert(revision.pdf.equals(bytes));assert.deepEqual(revision.snapshot,snapshot);assert.equal(revision.hash,D.hash(bytes));
  }finally{s.close();}
 });
+
+const shootLocations=fs.readFileSync(path.join(__dirname,'fixtures/shoot-locations.productiondesk'));
+
+test('Production Desk exporter fixture registers only explicit Shoot Locations and uses unambiguous scene/day links',()=>{
+ const {project,summary,warnings}=P.map(P.read(shootLocations));
+ const [stage,yard]=project.locations;
+ assert.deepEqual(project.locations.map(loc=>loc.name),['Harbor Studio Stage','Harbor Studio Yard']);
+ assert(project.locations.every(loc=>loc.id===loc.sourceId&&loc.address===''));
+ assert.equal(new Set(project.scenes.map(s=>s.slug)).size,12);
+ assert.deepEqual(project.scenes.map(s=>s.locationId),[stage.id,stage.id,stage.id,stage.id,yard.id,yard.id,yard.id,yard.id,stage.id,'','',yard.id]);
+ assert.deepEqual(project.days.map(d=>d.overrides.primaryLocationId),[stage.id,yard.id,'','']);
+ assert.deepEqual(summary.days.map(d=>d.date),['2026-12-04','2026-12-07','2026-12-08','2026-12-09']);
+ assert.equal(project.defaults.primaryLocationId,'');
+ assert.equal(project.people[0].character,'RILEY');
+ assert.equal(project.people[0].role,'Cast');
+ assert.match(project.days[0].sheetOverrides.departmentNotes,/Red production binder/);
+ assert.match(project.scenes[9].notes,/Shoot Location: Fictional script location/);
+ assert(warnings.some(w=>w.includes('Day 03, Day 04')));
+ assert(warnings.some(w=>w.includes('links need local review: 11')));
+ const alternate=JSON.parse(shootLocations);
+ const source=alternate.workspace.projects[0];
+ source.elements.find(e=>e.id===yard.id).name=stage.name;
+ assert.deepEqual(P.map(parse(alternate)).project.locations.map(l=>l.id),[stage.id,yard.id]);
+ source.categories.find(c=>c.ucid===6).ucid=348;
+ const missing=P.map(parse(alternate)).project;
+ assert.deepEqual(missing.locations,[]);
+ assert(missing.scenes.every(sc=>sc.locationId===''));
+ assert(missing.days.every(d=>d.overrides.primaryLocationId===''));
+});
+
+test('reviewed legacy same-file cleanup only drops unedited and unreferenced generated records',()=>{
+ const store=temp();try{
+  const parsed=P.read(shootLocations),legacy=P.map(parsed).project;
+  // Recreate the 0.3.18 baseline: every reserved element became a row, and
+  // the first matching scene supplied an inferred day/production location.
+  const reserved=parsed.source.categories.find(c=>c.ucid===6).id;
+  const blank=legacy.locations[0];
+  legacy.locations=parsed.source.elements.filter(e=>e.category===reserved).map(e=>({...blank,id:e.id,sourceId:e.id,name:e.name}));
+  const [stage,yard,edited,referenced,unused,empty]=legacy.locations;
+  legacy.scenes[9].locationId=empty.id;
+  legacy.scenes[10].locationId=stage.id;
+  legacy.defaults.primaryLocationId=stage.id;
+  legacy.days[2].overrides.primaryLocationId=stage.id;
+  legacy.days[3].overrides.primaryLocationId=stage.id;
+  const baseline=D.clone(legacy);delete baseline.productionDesk;delete baseline.id;
+  legacy.productionDesk.baseline=baseline;delete legacy.productionDesk.shootLocationMapping;
+  edited.address='123 Fictional Rd';
+  legacy.scenes[9].locationId=referenced.id;
+  const manual={...stage,id:D.id(),name:stage.name,address:'321 Fictional Rd'};delete manual.sourceId;
+  legacy.locations.push(manual);
+  const original=store.create(legacy),day=legacy.days[0],snapshot=D.resolve(legacy,day.id),pdf=Buffer.from('%PDF-1.7\nimmutable shoot location fixture');
+  snapshot.revision={id:D.id(),number:1,issued:new Date().toISOString()};store.issue(legacy.id,day.id,original.version,snapshot,pdf);
+  const before=store.get(legacy.id),review=P.preview(store,parsed);
+  assert(!review.duplicate);
+  assert.deepEqual(new Set(review.locationCleanup.map(l=>l.id)),new Set([unused.id,empty.id]));
+  assert.deepEqual(store.get(legacy.id),before);
+  const {project,importBackup}=P.commit(store,review);
+  assert(fs.existsSync(importBackup));
+  assert.deepEqual(project.locations.map(l=>l.id),[stage.id,yard.id,edited.id,referenced.id,manual.id]);
+  assert.equal(project.locations.find(l=>l.id===edited.id).address,'123 Fictional Rd');
+  assert.equal(project.scenes[9].locationId,referenced.id);
+  assert.equal(project.days[2].overrides.primaryLocationId,'');
+  assert.equal(project.days[3].overrides.primaryLocationId,'');
+  assert.deepEqual(project.days[0],before.project.days[0]);
+  const issued=store.revision(legacy.id,snapshot.revision.id);
+  assert.deepEqual(issued.snapshot,snapshot);
+  assert.deepEqual(issued.pdf,pdf);
+  assert(P.preview(store,parsed).duplicate);
+ }finally{store.close();}
+});

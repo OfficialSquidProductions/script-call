@@ -101,3 +101,11 @@ publication, submission or remote push was performed.
 On the original feature checkout, open `Start Import Calendar Preview.command` to inspect the separate local Mac preview. Its projects, backups, diagnostics and preferences live under `build/shooting-days-preview/profile`, not the installed application profile.
 
 Desktop 0.3.18 is published at https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.18 with Developer ID signature, Apple notarization and stapled ticket. The actual 0.3.16 → 0.3.18 native update passed 43 checks. Anonymous stable-feed/download verification and the unmodified previous-client offer passed. All 22 prior releases and assets remain unchanged.
+
+## Shoot Location reconciliation
+
+Production Desk stores its Breakdown **Shoot Location** under the reserved USS Location category (UCID 6). Script headings use **Set** (UCID 0). The importer follows the scene's location element IDs, so scenes linked to the same location share one Production Info record. Different IDs stay separate even when their labels match. No supported v1 field supplies an address or a day-level primary location. Script Call links a day when all its scenes share one explicit Shoot Location. Review blank or mixed days in **Daily Sheet → Overview**.
+
+For a production imported on 0.3.18 or earlier, open the linked production and choose **Import Production Desk** with the original or a newer export of the same scenario. Review **Unused imported locations to remove** before applying. The import creates a recovery backup and preserves edited location records, local references and issued PDFs. If older duplicates are still listed, move any address or logistics details to the correct location, update scene and day references, then remove the old row in **Production Info → Locations**. Removed rows can be restored from **Deleted locations**.
+
+The synthetic regression file `tests/fixtures/shoot-locations.productiondesk` was serialized with Production Desk's `projectFile()` exporter at `60d386374a0cb410fa11b4d9f472d3330940cbb3`. It contains twelve fictional scene headings, two linked locations, stale location elements, a custom category named Shoot Location, and blank and ambiguous links.

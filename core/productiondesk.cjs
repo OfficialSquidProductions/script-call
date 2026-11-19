@@ -1,7 +1,9 @@
 'use strict';
 // Production Desk portable project v1. Data only: never extract or follow paths.
 const D=require('./domain.cjs'),{validateUSS}=require('./productiondesk-validator.cjs');
+const Records=require('../web/record-recovery.js');
 const FORMAT='org.squidproductions.productiondesk.project',MAX_BYTES=25*1024*1024;
+const SHOOT_LOCATION_UCID=6;
 const text=x=>typeof x==='string'?x:'',same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const fail=m=>{throw Error('Production Desk: '+m);};
 function inspect(v,depth=0){
@@ -50,10 +52,23 @@ function map(parsed,scenarioId){
  out.defaults={generalCall:'',meal:'',wrap:'',zone:'',primaryLocationId:'',notes:[p.description,p._importNotes].filter(Boolean).join('\n\n')};
  out.sheetDefaults={...D.sheetDefaults(),safety:'',scriptColor:text(p.scriptColor),scheduleColor:text(p.schedColor)};
  out.people=p.elements.filter(e=>cats.get(e.category).ucid===100).map(e=>({id:e.id,sourceId:e.id,type:'cast',name:'',character:e.name,role:'Cast',department:'Cast',castNumber:e.elementId==null?'':String(e.elementId),phone:'',email:''}));
- out.locations=p.elements.filter(e=>cats.get(e.category).ucid===6).map(e=>({id:e.id,sourceId:e.id,name:e.name,address:'',latitude:null,longitude:null,zone:'',parking:'',hospital:'',emergencyPhone:'',verified:false}));
+ // Production Desk's Breakdown field reads the first reserved Location
+ // category (UCID 6) via scene element IDs. Set (UCID 0) feeds the slug.
+ const locationCategory=p.categories.find(c=>c.ucid===SHOOT_LOCATION_UCID)?.id;
+ const shootLocationIds=new Set();
+ const sceneLocations=new Map();
+ const ambiguousScenes=[];
+ for(const scene of p.breakdowns.filter(b=>b.type==='scene')){
+  const locations=scene.elements.map(id=>el.get(id)).filter(e=>e.category===locationCategory&&e.name.trim());
+  const ids=[...new Set(locations.map(e=>e.id))];
+  ids.forEach(id=>shootLocationIds.add(id));
+  if(ids.length===1)sceneLocations.set(scene.id,ids[0]);
+  else if(ids.length>1)ambiguousScenes.push(String(scene.scene??scene.id));
+ }
+ out.locations=p.elements.filter(e=>shootLocationIds.has(e.id)).map(e=>({id:e.id,sourceId:e.id,name:e.name.trim(),address:'',latitude:null,longitude:null,zone:'',parking:'',hospital:'',emergencyPhone:'',verified:false}));
  out.scenes=p.breakdowns.filter(b=>b.type==='scene').map(b=>{
   const notes=[text(b.comments),...p.categories.filter(c=>c.ucid>=100&&c.ucid!==100).map(c=>{const names=b.elements.map(id=>el.get(id)).filter(e=>e.category===c.id).map(e=>e.name);return names.length?c.name+': '+names.join(', '):'';})].filter(Boolean).join('\n');
-  return {id:b.id,sourceId:b.id,number:String(b.scene??''),slug:[value(b,1)+'.',value(b,0),value(b,2)?'— '+value(b,2):''].filter(Boolean).join(' '),synopsis:text(b.description),eighths:Math.round(b.pages*8),durationMinutes:b.duration/60000,castIds:values(b,100).map(e=>e.id),locationId:values(b,6)[0]?.id||'',script:text(b._scriptText),scriptDay:value(b,3),dayNight:value(b,2),notes,props:values(b,104).map(e=>e.name),breakdownElements:b.elements.map(id=>({...el.get(id),categoryName:cats.get(el.get(id).category).name,ucid:cats.get(el.get(id).category).ucid})),shots:(p._shots||[]).filter(s=>s.sceneId===b.id).map(s=>({...s,sourceId:s.id,number:String(b.scene??'')+s.number}))};
+  return {id:b.id,sourceId:b.id,number:String(b.scene??''),slug:[value(b,1)+'.',value(b,0),value(b,2)?'— '+value(b,2):''].filter(Boolean).join(' '),synopsis:text(b.description),eighths:Math.round(b.pages*8),durationMinutes:b.duration/60000,castIds:values(b,100).map(e=>e.id),locationId:sceneLocations.get(b.id)||'',script:text(b._scriptText),scriptDay:value(b,3),dayNight:value(b,2),notes,props:values(b,104).map(e=>e.name),breakdownElements:b.elements.map(id=>({...el.get(id),categoryName:cats.get(el.get(id).category).name,ucid:cats.get(el.get(id).category).ucid})),shots:(p._shots||[]).filter(s=>s.sceneId===b.id).map(s=>({...s,sourceId:s.id,number:String(b.scene??'')+s.number}))};
  });
  const cal=p.calendars.find(c=>c.id===scenario.calendar),board=scenario.boards.find(b=>b.name==='stripboard')||scenario.boards[0];
  let date=cal.events.find(e=>e.type==='start')?.date.slice(0,10)||'',index=0;
@@ -63,7 +78,10 @@ function map(parsed,scenarioId){
   const d=D.newDay({...out,days:[]},date);d.id='pd-'+D.hash(scenario.id+':'+board.id+':'+index).slice(0,32);d.sourceId=d.id;d.label='Day '+String(++index).padStart(2,'0');d.sourceScenarioId=scenario.id;d.sourceDayIndex=index-1;d.unit='';
   const occurrences=new Map();d.schedule=group.map(id=>{const b=breakdowns.get(id),occurrence=occurrences.get(id)||0;occurrences.set(id,occurrence+1);return {id:'pd-'+D.hash(d.id+':'+id+':'+occurrence).slice(0,32),sourceId:id,type:b.type==='scene'?'scene':/^MEAL/i.test(b.bannerText)?'meal':'note',sceneId:b.type==='scene'?id:'',description:b.type==='scene'?'':text(b.bannerText),start:'',offset:0,duration:b.duration/60000};});
   const ds=out.scenes.filter(s=>group.includes(s.id)),people=new Set(ds.flatMap(s=>s.castIds));d.unit=[...new Set(ds.map(s=>value(breakdowns.get(s.id),4)).filter(Boolean))].join(', ');
-  d.overrides={primaryLocationId:ds.find(s=>s.locationId)?.locationId||''};d.calls=out.people.filter(e=>people.has(e.id)).map(e=>({id:'pd-'+D.hash(d.id+':'+e.id).slice(0,32),sourceId:e.id,personId:e.id,call:'',pickup:'',makeup:'',ready:'',offset:0,notes:''}));
+  // V1 day groups contain strip IDs only. Use the linked location when
+  // every scheduled scene resolves to the same place, otherwise leave it blank.
+  const dayLocations=new Set(ds.map(s=>s.locationId));
+  d.overrides={primaryLocationId:dayLocations.size===1?[...dayLocations][0]:''};d.calls=out.people.filter(e=>people.has(e.id)).map(e=>({id:'pd-'+D.hash(d.id+':'+e.id).slice(0,32),sourceId:e.id,personId:e.id,call:'',pickup:'',makeup:'',ready:'',offset:0,notes:''}));
   d.sheetOverrides.departmentNotes=p.categories.filter(c=>c.ucid>=100&&c.ucid!==100).map(c=>{
    const rows=group.map(id=>out.scenes.find(s=>s.id===id)).filter(Boolean).map(s=>{const names=s.breakdownElements.filter(e=>e.category===c.id).map(e=>e.name);return names.length?'Scene '+s.number+': '+names.join(', '):'';}).filter(Boolean);
    return rows.length?c.name+'\n'+rows.join('\n'):'';
@@ -71,18 +89,43 @@ function map(parsed,scenarioId){
   d.weather={mode:'manual',summary:'Unavailable — enter and review weather.',approved:false};out.days.push(d);if(date)date=D.addDate(date,1);
  }
  if(!out.days.length){out.days.push(D.newDay({...out,days:[]},''));out.days[0].unit='';}
- out.defaults.primaryLocationId=out.days[0].overrides.primaryLocationId||'';
  const scheduled=new Set(out.days.flatMap(d=>d.schedule.filter(s=>s.type==='scene').map(s=>s.sceneId)));
  const warnings=['Performer names, crew, contacts, call/preparation times, weather, timezone and verified location/emergency details are absent from the Production Desk v1 model. Enter them before issue.','Shot-list start time is a shot estimate setting and is not a crew call.','PDF originals and editable lined-script marks are validated but not imported into Call Sheet. Source model and annotation metadata are retained; keep the .productiondesk file.','Department elements are grouped by source category in scene notes and daily department instructions. Availability, linked elements and custom extensions remain in Source details; review availability locally before issuing.','Day IDs derive from scenario, board and day position because v1 day groups have no IDs. Review regrouped or inserted days on reimport.'];
+ if(ambiguousScenes.length)warnings.push('Scenes with several Shoot Location links need local review: '+ambiguousScenes.join(', ')+'.');
+ const unresolvedDays=out.days.filter(d=>d.schedule.some(s=>s.type==='scene')&&!d.overrides.primaryLocationId);
+ if(unresolvedDays.length)warnings.push('Choose a primary location for days with missing or mixed Shoot Locations: '+unresolvedDays.map(d=>d.label).join(', ')+'.');
  if(out.scenes.some(s=>s.eighths/8!==breakdowns.get(s.id).pages))warnings.push('Fractional page values were rounded to the nearest eighth; exact source values are retained.');
  if(!date)warnings.push('Calendar has no start date. Shooting dates remain blank.');
  if(outside.length)warnings.push(outside.length+' strips outside day groups are retained in the source model, not assigned to daily sheets.');
  const unscheduled=out.scenes.filter(s=>!scheduled.has(s.id)).map(s=>s.number);if(unscheduled.length)warnings.push('Unscheduled scenes: '+unscheduled.join(', ')+'. Retained in Production data.');
  const model=D.clone(p); // all categories, availability, scenarios, calendars, notes and extensions
  const baseline=D.clone(out);delete baseline.id;
- out.productionDesk={format:FORMAT,formatVersion:1,sourceId:p.id,scenarioId:scenario.id,hash:parsed.hash,importedAt:new Date().toISOString(),attachmentHashes:parsed.attachmentHashes,model,baseline};
+ out.productionDesk={format:FORMAT,formatVersion:1,sourceId:p.id,scenarioId:scenario.id,shootLocationMapping:1,hash:parsed.hash,importedAt:new Date().toISOString(),attachmentHashes:parsed.attachmentHashes,model,baseline};
  D.validateProject(out);
- return {project:out,warnings,summary:{title:out.title,sourceId:p.id,scenario:scenario.name,scenes:out.scenes.length,cast:out.people.length,shots:out.scenes.flatMap(s=>s.shots).length,days:out.days.map(d=>({id:d.id,date:d.date,scenes:d.schedule.filter(s=>s.type==='scene').map(s=>out.scenes.find(x=>x.id===s.sceneId).number)})),unscheduled},scenarios:p.stripboards.map(s=>({id:s.id,name:s.name}))};
+ return {project:out,warnings,summary:{title:out.title,sourceId:p.id,scenario:scenario.name,scenes:out.scenes.length,locations:out.locations.length,cast:out.people.length,shots:out.scenes.flatMap(s=>s.shots).length,days:out.days.map(d=>({id:d.id,date:d.date,scenes:d.schedule.filter(s=>s.type==='scene').map(s=>out.scenes.find(x=>x.id===s.sceneId).number)})),unscheduled},scenarios:p.stripboards.map(s=>({id:s.id,name:s.name}))};
+}
+// The old importer registered every Location element, including unused
+// elements left behind when a Shoot Location was changed in Production Desk.
+function cleanLegacyLocations(current,output,sourceLocations){
+ const {baseline,model}=current.productionDesk;
+ const prior=new Map(baseline.locations.map(loc=>[loc.id,loc]));
+ const sourceIds=new Set(model.elements.map(e=>e.id));
+ const references=new Set([output.defaults.primaryLocationId,...output.scenes.map(s=>s.locationId)]);
+ for(const day of [...output.days,...(output.deletedDays||[])]){
+  references.add(day.overrides.primaryLocationId);
+  for(const key of [day.solarOverrides?.context,day.weather?.key]){
+   if(key)try{references.add(JSON.parse(key)?.[1]);}catch{}
+  }
+ }
+ const cleanup=[];
+ output.locations=output.locations.filter(loc=>{
+  const imported=prior.get(loc.id);
+  if(sourceLocations.has(loc.id)||references.has(loc.id)||Records.deleted(current,'locations',loc.id)||
+     loc.sourceId!==loc.id||!sourceIds.has(loc.id)||!same(loc,imported))return true;
+  cleanup.push({id:loc.id,name:loc.name});
+  return false;
+ });
+ return cleanup;
 }
 // Three-way merge. Source changes apply only where the local value still equals
 // the previous imported value. Local additions/removals/order and issued days win.
@@ -94,7 +137,7 @@ function merge(current,incoming){
    const bm=new Map(before.map(x=>[x.id,x])),nm=new Map(next.map(x=>[x.id,x])),lm=new Map(local.map(x=>[x.id,x]));
    const orderUnchanged=same(local.map(x=>x.id),before.map(x=>x.id));
    let order=orderUnchanged?[...next.map(x=>x.id),...local.filter(x=>!nm.has(x.id)).map(x=>x.id)]:[...local.map(x=>x.id),...next.filter(x=>!bm.has(x.id)&&!lm.has(x.id)).map(x=>x.id)];
-   return order.filter(id=>lm.has(id)||!bm.has(id)).map(id=>{const l=lm.get(id),b=bm.get(id),n=nm.get(id);const entity=path==='production.people'?'people':path==='production.locations'?'locations':path==='production.scenes'?'scenes':null;if(l&&entity&&require('../web/record-recovery.js').deleted(current,entity,id)){if(!same(b,n))conflicts.push(path+' '+id+': deleted record retained for recovery');return l;}if(l?.lockedRevisionId){if(!same(b,n))conflicts.push(path+' '+id+': issued day preserved');return l;}if(!n){conflicts.push(path+' '+id+': removed at source; local record retained');return l;}if(!b)return l||D.clone(n);return walk(l,b,n,path+'.'+id);});
+   return order.filter(id=>lm.has(id)||!bm.has(id)).map(id=>{const l=lm.get(id),b=bm.get(id),n=nm.get(id);const entity=path==='production.people'?'people':path==='production.locations'?'locations':path==='production.scenes'?'scenes':null;if(l&&entity&&Records.deleted(current,entity,id)){if(!same(b,n))conflicts.push(path+' '+id+': deleted record retained for recovery');return l;}if(l?.lockedRevisionId){if(!same(b,n))conflicts.push(path+' '+id+': issued day preserved');return l;}if(!n){conflicts.push(path+' '+id+': removed at source; local record retained');return l;}if(!b)return l||D.clone(n);return walk(l,b,n,path+'.'+id);});
   }
   if(same(local,before))return D.clone(next);
   if(same(local,next)||same(before,next))return local;
@@ -107,15 +150,18 @@ function merge(current,incoming){
  // A new importer default must not switch an existing legacy day's lunch mode.
  for(const next of target.days){const local=current.days.find(d=>d.id===next.id);if(local&&local.lunchMode===undefined)delete next.lunchMode;}
  const output=walk(D.clone(current),old,target,'production');
- output.id=current.id;output.productionDesk=D.clone(incoming.productionDesk);D.validateProject(output);return {project:output,conflicts:[...new Set(conflicts)]};
+ const locationCleanup=current.productionDesk.shootLocationMapping?[]:cleanLegacyLocations(current,output,new Set(target.locations.map(loc=>loc.id)));
+ const removedMessages=new Set(locationCleanup.map(loc=>'production.locations '+loc.id+': removed at source; local record retained'));
+ output.id=current.id;output.productionDesk=D.clone(incoming.productionDesk);D.validateProject(output);
+ return {project:output,conflicts:[...new Set(conflicts.filter(message=>!removedMessages.has(message)))],locationCleanup};
 }
 function preview(store,parsed,scenarioId,targetId){
  const result=map(parsed,scenarioId),matches=store.list().map(x=>store.get(x.id)).filter(x=>x.project.productionDesk?.sourceId===result.project.sourceId&&x.project.productionDesk.scenarioId===result.project.productionDesk.scenarioId);
  let target=targetId?matches.find(x=>x.project.id===targetId):matches.length===1?matches[0]:null;
  if(targetId&&!target)fail('linked target no longer exists.');
  if(matches.length>1&&!target)fail('multiple linked copies exist; choose the target production first.');
- if(target){const m=merge(target.project,result.project);result.project=m.project;result.conflicts=m.conflicts;result.targetId=target.project.id;result.version=target.version;result.duplicate=target.project.productionDesk.hash===parsed.hash;}
- else result.conflicts=[];
+ if(target){const m=merge(target.project,result.project);result.project=m.project;result.conflicts=m.conflicts;result.locationCleanup=m.locationCleanup;result.targetId=target.project.id;result.version=target.version;result.duplicate=target.project.productionDesk.hash===parsed.hash&&target.project.productionDesk.shootLocationMapping===result.project.productionDesk.shootLocationMapping;}
+ else{result.conflicts=[];result.locationCleanup=[];}
  return result;
 }
 function commit(store,preview){
