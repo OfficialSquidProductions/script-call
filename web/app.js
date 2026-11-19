@@ -230,7 +230,15 @@ function sceneElements(scene){
 }
 function calendarDay(d){
  const revision=revisions.find(r=>r.id===d.lockedRevisionId),scenes=d.schedule.filter(row=>row.type==='scene'&&!Records.deleted(project,'scenes',row.sceneId)).map(row=>({row,scene:project.scenes.find(s=>s.id===row.sceneId)})).filter(x=>x.scene);
- return `<article class="calendar-day ${d.id===dayId?'selected-day':''}" data-calendar-day="${esc(d.id)}"><div class="calendar-day-heading"><button class="calendar-grip day-grip" draggable="true" data-drag-day="${esc(d.id)}" aria-label="Move shooting day ${esc(d.label)}, Unit ${esc(d.unit||'—')}" title="Drag to another date or activate to change the date">⠿</button><button data-day="${esc(d.id)}" class="day-row ${d.id===dayId?'active':''}" aria-current="${d.id===dayId?'date':'false'}"><strong>${esc(d.label)}</strong><small>Unit ${esc(d.unit||'—')} · ${revision?'Issued R'+revision.number:'Draft'}</small></button><button data-day-options="${esc(d.id)}" aria-label="Actions for ${esc(d.label)}" title="Change date or delete">⋯</button></div><div class="calendar-scenes">${scenes.length?scenes.map(({row,scene:s})=>`<div class="calendar-scene-row" data-calendar-row="${esc(row.id)}"><button data-script="${esc(s.id)}" class="calendar-scene"><b>${esc(s.number)}</b> ${esc(s.slug)}<small>${esc(s.synopsis)}</small></button>${d.lockedRevisionId?'':`<button class="calendar-grip scene-grip" draggable="true" data-drag-scene="${esc(row.id)}" aria-label="Move scene ${esc(CalendarMoves.sceneLabel(s))}" title="Drag to a shooting day or activate to choose a day">↗</button>`}</div>`).join(''):'<p class="tiny">No scenes scheduled</p>'}</div><button data-open-daily="${esc(d.id)}" class="calendar-open">Open Daily Sheet →</button></article>`;
+ const sceneRows=scenes.map(({row,scene})=>`<button data-script="${esc(scene.id)}" data-calendar-row="${esc(row.id)}" class="calendar-scene" ${d.lockedRevisionId?'':`draggable="true" data-drag-scene="${esc(row.id)}" aria-keyshortcuts="Shift+F10" title="Drag to another shooting day or press Shift+F10 to move"`}><b>${esc(scene.number)}</b> ${esc(scene.slug)}<small>${esc(scene.synopsis)}</small></button>`).join('');
+ return `<article class="calendar-day ${d.id===dayId?'selected-day':''}" data-calendar-day="${esc(d.id)}">
+  <div class="calendar-day-heading">
+   <button data-day="${esc(d.id)}" draggable="true" data-drag-day="${esc(d.id)}" class="day-row ${d.id===dayId?'active':''}" aria-current="${d.id===dayId?'date':'false'}" aria-keyshortcuts="Shift+F10" title="Drag to another date or press Shift+F10 for actions"><strong>${esc(d.label)}</strong><small>Unit ${esc(d.unit||'—')} · ${revision?'Issued R'+revision.number:'Draft'}</small></button>
+   <button data-day-options="${esc(d.id)}" aria-label="Actions for ${esc(d.label)}" title="Change date or delete">⋯</button>
+  </div>
+  <div class="calendar-scenes">${sceneRows||'<p class="tiny">No scenes scheduled</p>'}</div>
+  <button data-open-daily="${esc(d.id)}" class="calendar-open">Open Daily Sheet →</button>
+ </article>`;
 }
 function renderCalendar(){
  const months=Days.months(project.days);if(!Days.validDate(calendarMonth+'-01'))calendarMonth=Days.validDate(day()?.date)?day().date.slice(0,7):months[0]||new Date().toISOString().slice(0,7);
@@ -240,7 +248,7 @@ function renderCalendar(){
  $('calendar-range').textContent=`${project.days.length} shooting days · ${dated.length?dated[0].date+' – '+dated.at(-1).date:'No production dates entered'}${undated.length?' · '+undated.length+' dates needed':''}`;
  const byDate=new Map();for(const d of dated){if(!byDate.has(d.date))byDate.set(d.date,[]);byDate.get(d.date).push(d);}
  const container=$('days'),previous=container.querySelector('.calendar-month-body:not(.drag-parked)');
- if(previous&&calendarDrag&&previous.contains(calendarDrag.handle)){
+ if(previous&&calendarDrag&&previous.contains(calendarDrag.element)){
   previous.classList.add('drag-parked');previous.inert=true;previous.setAttribute('aria-hidden','true');
  }else previous?.remove();
  container.insertAdjacentHTML('beforeend',`<div class="calendar-month-body"><div class="calendar-grid">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(n=>`<div class="calendar-weekday">${n}</div>`).join('')}${Days.monthGrid(calendarMonth).map(date=>`<section class="calendar-cell ${date.slice(0,7)!==calendarMonth?'outside-month':''}" aria-label="${date}"><div class="calendar-date"><time datetime="${date}">${Number(date.slice(8))}</time>${Days.validDate(date)?`<button data-add-date="${date}" aria-label="Add shooting day on ${date}">+</button>`:''}</div>${(byDate.get(date)||[]).map(calendarDay).join('')}</section>`).join('')}</div>${undated.length?`<section class="calendar-undated"><h2>Dates needed</h2><p class="tiny">These source days have no dates. Use a day’s actions to set one.</p><div>${undated.map(calendarDay).join('')}</div></section>`:''}</div>`);
@@ -340,8 +348,8 @@ const calendarWarningPreference='confirm-calendar-conflicts';
 function calendarFocus(kind,id,rowId){
  const root=$('days').querySelector('.calendar-month-body:not(.drag-parked)');
  const card=[...root?.querySelectorAll('[data-calendar-day]')||[]].find(el=>el.dataset.calendarDay===id);
- const handle=kind==='scene'?[...card?.querySelectorAll('[data-drag-scene]')||[]].find(el=>el.dataset.dragScene===rowId):card?.querySelector('[data-drag-day]');
- (handle||$('days-overview')).focus();
+ const control=kind==='scene'?[...card?.querySelectorAll('[data-drag-scene]')||[]].find(el=>el.dataset.dragScene===rowId):card?.querySelector('[data-day]');
+ (control||$('days-overview')).focus();
 }
 function restoreCalendarFocus(session){
  if(view!=='calendar'||project.id!==session.projectId)return;
@@ -442,20 +450,16 @@ async function replayCalendarChange(source,destination,buttonID){
 }
 $('undo-day').onclick=()=>transition(()=>replayCalendarChange(undoDays,redoDays,'undo-day'));
 $('redo-day').onclick=()=>transition(()=>replayCalendarChange(redoDays,undoDays,'redo-day'));
-function calendarHandle(element){
- const handle=element.closest('[data-drag-day],[data-drag-scene]');
- if(!handle)return;
- return {handle,kind:handle.dataset.dragDay?'date':'scene',id:handle.closest('[data-calendar-day]').dataset.calendarDay,rowId:handle.dataset.dragScene};
+function calendarDragSource(target){
+ const element=target.closest('[data-drag-day],[data-drag-scene]');
+ if(!element)return;
+ return {element,kind:element.dataset.dragDay?'date':'scene',id:element.closest('[data-calendar-day]').dataset.calendarDay,rowId:element.dataset.dragScene};
 }
 function calendarActionMenu(e){
- const handle=calendarHandle(e.target),row=e.target.closest('[data-day],[data-day-options]'),scene=e.target.closest('[data-calendar-row]');
- if(handle?.kind==='scene'||scene?.querySelector('[data-drag-scene]')){
+ const source=calendarDragSource(e.target),overflow=e.target.closest('[data-day-options]');
+ if(source||overflow){
   e.preventDefault();
-  const source=handle||calendarHandle(scene.querySelector('[data-drag-scene]'));
-  transition(async()=>calendarReviewDialog(source));
- }else if(handle||row){
-  e.preventDefault();
-  transition(async()=>dayActions(handle?.id||row.dataset.day||row.dataset.dayOptions));
+  transition(async()=>source?.kind==='scene'?calendarReviewDialog(source):dayActions(source?.id||overflow.dataset.dayOptions));
  }
 }
 $('days').addEventListener('contextmenu',calendarActionMenu);
@@ -494,7 +498,7 @@ function dropTarget(element,drag){
  if(possible.length)return {element:cell,targetDate:date};
 }
 $('days').addEventListener('dragstart',e=>{
- const source=calendarHandle(e.target);
+ const source=calendarDragSource(e.target);
  if(!source||$('modal').open){e.preventDefault();return;}
  finishCalendarDrag(false);
  calendarDrag={...source,token:uid(),projectId:project.id,dirty,originMonth:calendarMonth,originScroll:window.scrollY};
@@ -581,11 +585,14 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
   if(b.hasAttribute('data-calendar-selected'))return transition(async()=>{if(Days.validDate(day()?.date))calendarMonth=day().date.slice(0,7);renderCalendar();document.querySelector('.calendar-day.selected-day')?.scrollIntoView({block:'nearest'});});
   if(b.dataset.addDate)return transition(async()=>dayDialog(false,b.dataset.addDate));
   if(b.dataset.openDaily)return transition(async()=>{view='daily';selectDay(b.dataset.openDaily);});
-  if(b.matches('[data-drag-day],[data-drag-scene]'))return transition(async()=>calendarReviewDialog(calendarHandle(b)));
   if(b.dataset.dayOptions)return transition(async()=>dayActions(b.dataset.dayOptions));
   if(b.dataset.chooseWeek)return transition(async()=>{chooseWeek(b.dataset.chooseWeek);closeModal();});
   if(b.dataset.restoreDay)return transition(async()=>{await changeDay({kind:'restore',id:b.dataset.restoreDay});redoDays=[];selectDay(b.dataset.restoreDay);showDeletedDays();});
-  if(b.dataset.day)return transition(async()=>{selectDay(b.dataset.day);if($('modal').open)closeModal();});
+  if(b.dataset.day)return transition(async()=>{
+   selectDay(b.dataset.day);
+   if($('modal').open)closeModal();
+   if(b.hasAttribute('data-drag-day'))calendarFocus('date',b.dataset.day);
+  });
   if(b.dataset.view)return transition(async()=>{view=b.dataset.view;render();});
   if(b.dataset.section)return transition(async()=>{view='daily';section=b.dataset.section;render();});
   if(b.dataset.master){master=b.dataset.master;await flush();return renderProduction();}
@@ -595,7 +602,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
   if(b.dataset.action){await actions[b.dataset.action]?.();return;}
   if(b.dataset.move){const [kind,a,delta]=b.dataset.move.split(':'),i=Number(a),list=kind==='layout'?day().layout.order:day().schedule,j=kind==='schedule'?Records.scheduleNeighbor(project,list,i,Number(delta)):i+Number(delta);if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];mark();return render();}
   if(b.dataset.remove){const [kind,i]=b.dataset.remove.split(':');(kind==='custom'?day().layout.custom:kind==='background'?day().background:day().schedule).splice(Number(i),1);mark();return render();}
-  if(b.dataset.script){const s=project.scenes.find(s=>s.id===b.dataset.script);modal(s.number+' · '+s.slug,`<p>${esc(s.synopsis)}</p><p class="tiny">Local scene ID: ${esc(s.id)}<br>Source ID: ${esc(s.sourceId||'User-created')}</p>${s.script?'<pre>'+esc(s.script)+'</pre>':'<p>No screenplay text supplied by this source.</p>'}${s.shots?.length?'<h3>Source shots & camera setups</h3>'+s.shots.map(shot=>'<article class="row-card"><p><b>'+esc(shot.number)+' · '+esc(shot.name)+'</b><br>'+esc(shot.description||'')+'</p><p>'+esc(shot.size)+' / Camera '+esc(shot.camera||'—')+' / '+esc(shot.lens)+' mm / '+esc(shot.movement||'')+' / '+esc(shot.equipment||'')+'</p><p>'+esc(shot.day||'Unscheduled')+' · '+esc(shot.status||'')+' · takes '+esc(shot.takes??'')+' · circle '+esc(shot.circleTake||'—')+'<br>Setup '+esc(shot.setupMinutes??'—')+' min / shoot '+esc(shot.shootMinutes??'—')+' min / actual '+esc(shot.actualMinutes||'—')+' min</p><p class="tiny">Shot ID: '+esc(shot.id)+'<br>Source shot ID: '+esc(shot.sourceId||'Not supplied')+'<br>Camera object: '+esc(shot.cameraObjectId||'Not supplied')+'</p><p>'+esc(shot.notes)+'</p></article>').join(''):''}`,[]);return;}
+  if(b.dataset.script){const s=project.scenes.find(s=>s.id===b.dataset.script);
+   const source=calendarDragSource(b),sceneActions=source?[{label:'Move Scene',run:()=>transition(async()=>calendarReviewDialog(source))}]:[];
+   modal(s.number+' · '+s.slug,`<p>${esc(s.synopsis)}</p><p class="tiny">Local scene ID: ${esc(s.id)}<br>Source ID: ${esc(s.sourceId||'User-created')}</p>${s.script?'<pre>'+esc(s.script)+'</pre>':'<p>No screenplay text supplied by this source.</p>'}${s.shots?.length?'<h3>Source shots & camera setups</h3>'+s.shots.map(shot=>'<article class="row-card"><p><b>'+esc(shot.number)+' · '+esc(shot.name)+'</b><br>'+esc(shot.description||'')+'</p><p>'+esc(shot.size)+' / Camera '+esc(shot.camera||'—')+' / '+esc(shot.lens)+' mm / '+esc(shot.movement||'')+' / '+esc(shot.equipment||'')+'</p><p>'+esc(shot.day||'Unscheduled')+' · '+esc(shot.status||'')+' · takes '+esc(shot.takes??'')+' · circle '+esc(shot.circleTake||'—')+'<br>Setup '+esc(shot.setupMinutes??'—')+' min / shoot '+esc(shot.shootMinutes??'—')+' min / actual '+esc(shot.actualMinutes||'—')+' min</p><p class="tiny">Shot ID: '+esc(shot.id)+'<br>Source shot ID: '+esc(shot.sourceId||'Not supplied')+'<br>Camera object: '+esc(shot.cameraObjectId||'Not supplied')+'</p><p>'+esc(shot.notes)+'</p></article>').join(''):''}`,sceneActions);return;}
   if(b.dataset.revisionExport)return pdfExport(b.dataset.revisionExport);
   if(b.dataset.revisionPreview){const r=await api.request('revision',{projectId:project.id,revisionId:b.dataset.revisionPreview});modal('Issued R'+r.number,`<p>Issued ${esc(r.issued)}. SHA-256 ${esc(r.hash)}</p><iframe id="revision-frame" sandbox="allow-same-origin" title="Issued revision preview" width="100%" height="500"></iframe>`,[]);$('revision-frame').srcdoc=r.html;}
  }catch(err){error(err);}

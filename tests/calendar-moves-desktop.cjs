@@ -10,7 +10,7 @@ const state=()=>page.evaluate(()=>CallSheet.request('get',{id:document.body.data
 const card=id=>page.locator(`.calendar-month-body:not(.drag-parked) [data-calendar-day="${id}"]`);
 const cell=date=>page.locator(`.calendar-month-body:not(.drag-parked) .calendar-cell[aria-label="${date}"]`);
 const scene=id=>page.locator(`.calendar-month-body:not(.drag-parked) [data-drag-scene="${id}"]`);
-const dayGrip=id=>card(id).locator('[data-drag-day]');
+const dayLabel=id=>card(id).locator('[data-day]');
 const body=()=>page.locator('#modal-body');
 const action=name=>page.locator('#modal').getByRole('button',{name,exact:true});
 const closed=()=>page.waitForFunction(()=>!document.querySelector('#modal').open);
@@ -50,8 +50,26 @@ async function create(project){
  return id;
 }
 async function focus(el){
- const grip=await el.elementHandle();
- await page.waitForFunction(grip=>document.activeElement===grip,grip);
+ const control=await el.elementHandle();
+ await page.waitForFunction(control=>document.activeElement===control,control);
+}
+async function hoverDrag(box){
+ const x=box.x+box.width/2,y=box.y+box.height/2;
+ await page.mouse.move(x,y,{steps:12});
+ await page.mouse.move(x+1,y);
+}
+async function beginDrag(box){
+ const x=box.x+box.width/2,y=box.y+box.height/2;
+ await page.mouse.move(x,y);
+ await page.mouse.down();
+ await page.mouse.move(x+12,y,{steps:5});
+}
+async function pointerDrag(source,target){
+ await source.scrollIntoViewIfNeeded();
+ await target.scrollIntoViewIfNeeded();
+ const start=await source.boundingBox(),end=await target.boundingBox();
+ assert(start&&end);
+ await beginDrag(start);await hoverDrag(end);await page.mouse.up();
 }
 async function dragAcrossMonth(source,target,{cancelDrag=false}={}){
  // Drive native HTML drag events with mouse motion. Keep the button held while the
@@ -61,18 +79,12 @@ async function dragAcrossMonth(source,target,{cancelDrag=false}={}){
  await source.scrollIntoViewIfNeeded();
  const from=await source.boundingBox(),nav=await after.boundingBox();
  assert(from&&nav&&nav.y>=0);
- const x=from.x+from.width/2,y=from.y+from.height/2;
- await page.mouse.move(x,y);await page.mouse.down();
- await page.mouse.move(x+10,y,{steps:5});
- await page.mouse.move(nav.x+nav.width/2,nav.y+nav.height/2,{steps:12});
- await page.mouse.move(nav.x+nav.width/2+1,nav.y+nav.height/2);
+ await beginDrag(from);await hoverDrag(nav);
  await page.waitForFunction(()=>document.querySelector('#calendar-month').value==='2026-12');
  if(cancelDrag){await page.mouse.move(10,10,{steps:6});await page.mouse.up();return;}
  const to=await target.boundingBox();
  assert(to&&to.y>=0&&to.y+to.height/2<await page.evaluate(()=>innerHeight),'cross-month target needs to be within the test window');
- await page.mouse.move(to.x+to.width/2,to.y+to.height/2,{steps:12});
- await page.mouse.move(to.x+to.width/2+1,to.y+to.height/2);
- await page.mouse.up();
+ await hoverDrag(to);await page.mouse.up();
 }
 async function pdf(name){
  const file=path.join(out,name);
@@ -85,10 +97,55 @@ async function pdf(name){
  await launch();
  const project=calendarFixture(),id=await create(project);
  const original=await state();
+ await dayLabel('cal-b').locator('strong').click();
+ await page.waitForFunction(()=>document.querySelector('[data-day="cal-b"]').getAttribute('aria-current')==='date');
+ assert.equal(await page.locator('#modal').isVisible(),false);
+ await dayLabel('cal-a').press('Enter');await focus(dayLabel('cal-a'));
+ assert.equal(await dayLabel('cal-a').getAttribute('aria-current'),'date');
+ const appearance=await page.evaluate(()=>{
+  const style=(el,fields)=>fields.map(field=>getComputedStyle(el)[field]);
+  return [...document.querySelectorAll('[data-calendar-day="cal-a"],[data-calendar-day="cal-b"]')].map(card=>{
+   const header=card.querySelector('.calendar-day-heading'),label=header.querySelector('[data-day]'),row=card.querySelector('[data-calendar-row]');
+   return {
+    card:style(card,['backgroundColor','borderColor','borderWidth']),
+    label:style(label,['backgroundColor','boxShadow']),
+    sceneAccent:style(row,['borderLeftColor','borderLeftWidth']),
+    headButtons:header.querySelectorAll('button').length,
+    draggables:[...card.querySelectorAll('[draggable="true"]')].every(el=>el===label||el.matches('button[data-calendar-row][data-script]'))
+   };
+  });
+ });
+ assert.deepEqual(appearance[0],appearance[1]);
+ assert.equal(appearance[0].label[1],'none');
+ assert.equal(appearance[0].sceneAccent[1],'3px');
+ assert.equal(appearance[0].headButtons,2);
+ assert.equal(appearance[0].draggables,true);
+ assert.equal(await dayLabel('cal-a').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+ await dayLabel('cal-a').blur();
+ await card('cal-a').screenshot({path:path.join(out,'day-card-direct-drag.png')});
+ await scene('cal-row-0').locator('b').click();
+ await page.waitForFunction(()=>document.querySelector('#modal-title').textContent.includes('Moving scene'));
+ assert.match(await body().innerText(),/Local scene ID/);
+ await action('Move Scene').click();
+ await page.locator('#calendar-scene-destination').waitFor();
+ await cancel();await focus(scene('cal-row-0'));
+ await scene('cal-row-0').locator('b').click({button:'right'});
+ await page.locator('#calendar-scene-destination').waitFor();
+ await cancel();
+ assert.deepEqual(await state(),original);
+ check('day tiles have neutral selected styling and no grips; normal clicks and Enter still select days or show scene details, which offer Move Scene');
  const occupied=()=>cell('2026-11-04');
  assert.equal(await occupied().locator('.calendar-day').count(),2);
- await dayGrip('cal-a').dragTo(occupied().locator('time'));
+ await page.evaluate(()=>{
+  window.testDropFeedback=[];
+  document.querySelector('#shooting-calendar').addEventListener('dragover',e=>{
+   const target=e.target.closest('.calendar-drop-target');
+   if(target)window.testDropFeedback.push(target.getAttribute('aria-label'));
+  });
+ });
+ await pointerDrag(dayLabel('cal-a').locator('strong'),occupied().locator('time'));
  await action('Change Date Anyway').waitFor();
+ assert((await page.evaluate(()=>window.testDropFeedback)).includes('2026-11-04'));
  assert.match(await body().innerText(),/Already on this date/);
  assert.match(await body().innerText(),/Day 02 Splinter · Unit B/);
  assert.match(await body().innerText(),/Ari Example.+2026-11-04 9:00 AM/);
@@ -96,15 +153,16 @@ async function pdf(name){
  assert(!/Casey Example/.test((await body().locator('.issues').allTextContents()).join(' ')));
  assert.deepEqual(await state(),original);
  await page.check('#suppress-calendar-warning');
- await cancel();await focus(dayGrip('cal-a'));
+ await cancel();await focus(dayLabel('cal-a'));
  assert.deepEqual(await state(),original);
  check('native whole-day drag reviews occupied units and named, formatted availability and overlap warnings; cancel preserves data, focus and warnings');
- await dayGrip('cal-a').press('Enter');
+ await dayLabel('cal-a').press('Shift+F10');
+ await action('Change Date').click();
  await page.fill('#change-day-date','2026-11-04');
  assert.equal(await page.locator('#suppress-calendar-warning').isChecked(),false);
  await page.check('#suppress-calendar-warning');
  await confirm('Change Date Anyway');
- await focus(dayGrip('cal-a'));
+ await focus(dayLabel('cal-a'));
  assert.equal(await occupied().locator('.calendar-day').count(),3);
  assert.equal(await card('cal-a').locator('[aria-current="date"]').count(),1);
  const moved=await savedDay('cal-a');
@@ -118,7 +176,7 @@ async function pdf(name){
  await app.close();app=null;await launch();await select(id);await calendar();
  assert.equal(await occupied().locator('.calendar-day').count(),3);
  assert.deepEqual(await savedDay('cal-a'),moved);
- await scene('cal-row-0').press('Enter');await selectScene('cal-b');
+ await scene('cal-row-0').press('Shift+F10');await selectScene('cal-b');
  assert.match(await body().innerText(),/Calendar conflict warnings are hidden/);
  assert.equal(await page.locator('#suppress-calendar-warning').count(),0);
  await cancel();
@@ -134,9 +192,9 @@ async function pdf(name){
  assert.match(await body().innerText(),/Scheduling conflicts/);
  await cancel();await focus(scene('cal-row-0'));
  check('confirmed suppression persists through relaunch, manual and inherited call starts still warn in issue review, and Settings restores calendar warnings');
- await scene('cal-row-0').dragTo(cell('2026-11-06').locator('time'));
+ await pointerDrag(scene('cal-row-0').locator('b'),cell('2026-11-06').locator('time'));
  assert.equal(await page.locator('#modal').isVisible(),false);
- await scene('cal-row-0').dragTo(occupied().locator('time'));
+ await pointerDrag(scene('cal-row-0').locator('b'),occupied().locator('time'));
  await page.locator('#calendar-scene-destination').waitFor();
  assert.equal(await page.locator('#calendar-scene-destination').inputValue(),'');
  assert.deepEqual(await page.locator('#calendar-scene-destination option').evaluateAll(list=>list.map(o=>o.value)),['','cal-b','cal-c']);
@@ -145,12 +203,13 @@ async function pdf(name){
  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1050,700));
  await page.waitForFunction(()=>innerWidth<=1100);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- await scene('cal-row-0').dragTo(card('cal-b').locator('[data-day]'));
+ await pointerDrag(scene('cal-row-0').locator('b'),dayLabel('cal-b').locator('strong'));
  assert.equal(await page.locator('#calendar-scene-destination').inputValue(),'cal-b');
  await cancel();await focus(scene('cal-row-0'));
  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1450,960));
+ await page.waitForFunction(()=>innerWidth>1100);
  const originalCalls=(await state()).project.days.map(d=>d.calls);
- await scene('cal-row-0').dragTo(scene('cal-row-1'));
+ await pointerDrag(scene('cal-row-0').locator('b'),scene('cal-row-1').locator('b'));
  assert.equal(await page.locator('#calendar-scene-destination').inputValue(),'cal-b');
  assert.match(await body().innerText(),/Insert before 2 · Destination scene/);
  assert.match(await body().innerText(),/Other unit scene/);
@@ -168,7 +227,7 @@ async function pdf(name){
  check('empty drop cancels, shared dates require a unit, and compact and full-size direct drops preserve row ID, notes, order and calls with undo/redo');
  const stale=await state(),duplicate=structuredClone(stale);
  duplicate.project.days[2].schedule.push({...original.project.days[0].schedule[0],id:'fixture-duplicate'});
- await scene('cal-row-0').press('Enter');await selectScene('cal-c');
+ await scene('cal-row-0').press('Shift+F10');await selectScene('cal-c');
  await page.evaluate(s=>CallSheet.request('save',{project:s.project,version:s.version}),duplicate);
  await page.locator('#modal-actions [data-modal-action]').click();
  await page.waitForFunction(()=>document.querySelector('#modal-error').textContent.includes('changed during review'));
@@ -176,16 +235,16 @@ async function pdf(name){
  assert.deepEqual((await state()).project.days,duplicate.project.days);
  await page.reload();await page.waitForFunction(()=>document.querySelector('#save-state')?.textContent==='Saved on this device');
  await select(id);await calendar();
- await scene('cal-row-0').dragTo(card('cal-c').locator('[data-day]'));
+ await pointerDrag(scene('cal-row-0').locator('b'),dayLabel('cal-c').locator('strong'));
  assert.equal(await page.locator('#modal').isVisible(),false);
- await scene('cal-row-0').press('Enter');await selectScene('cal-c');
+ await scene('cal-row-0').press('Shift+F10');await selectScene('cal-c');
  assert.match(await page.locator('#modal-error').innerText(),/already has this scene/);
  assert(await action('Move Scene').isDisabled());await cancel();
  check('obsolete reviews are rejected and direct or keyboard drops cannot duplicate a scheduled scene on the destination');
- await dragAcrossMonth(scene('cal-row-2'),card('cal-d').locator('[data-day]'),{cancelDrag:true});
+ await dragAcrossMonth(scene('cal-row-2').locator('small'),card('cal-d').locator('[data-day]'),{cancelDrag:true});
  await page.waitForFunction(()=>document.querySelector('#calendar-month').value==='2026-11');
  await focus(scene('cal-row-2'));
- await dragAcrossMonth(scene('cal-row-2'),card('cal-d').locator('[data-day]'));
+ await dragAcrossMonth(scene('cal-row-2').locator('small'),card('cal-d').locator('[data-day]'));
  assert.equal(await page.locator('#calendar-scene-destination').inputValue(),'cal-d');
  await confirm('Move Scene');
  assert.equal((await savedDay('cal-d')).schedule[0].id,'cal-row-2');
@@ -206,12 +265,12 @@ async function pdf(name){
  await page.click('[data-view="daily"]');await page.click('#issue');await page.check('#ack-warnings');await confirm('Issue revision');
  const issued=await state(),issuedDay=issued.project.days[0],pdfBefore=await pdf('issued-before-move.pdf');
  await calendar();assert.equal(await card(issuedDay.id).locator('[data-drag-scene]').count(),0);
- await dayGrip(issuedDay.id).click();await page.fill('#change-day-date','2026-11-08');
+ await card(issuedDay.id).locator('[data-day-options]').click();await action('Change Date').click();await page.fill('#change-day-date','2026-11-08');
  await page.locator('#modal-actions [data-modal-action]').click();await closed();
  const issuedAfter=await savedDay(issuedDay.id);
  assert.equal(issuedAfter.lockedRevisionId,issuedDay.lockedRevisionId);assert.equal(issuedAfter.date,'2026-11-08');
  await page.click('[data-view="daily"]');assert.deepEqual(await pdf('issued-after-move.pdf'),pdfBefore);
- check('issued scene grips stay unavailable and rescheduling the issued day preserves original PDF bytes');
+ check('issued scene rows cannot be dragged and rescheduling the issued day preserves original PDF bytes');
  assert.deepEqual(errors,[]);
  fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({status:'passed',version:(await page.evaluate(()=>CallSheet.request('bootstrap'))).version,profile,checks,errors},null,2)+'\n');
 }finally{if(app)await app.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

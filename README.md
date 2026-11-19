@@ -1,6 +1,6 @@
 # Script Call
 
-**0.3.22 adds calendar moves to Shooting Days.** Drag a day grip to a date, or drag the arrow beside a scene to another shooting day. Activate either control with the keyboard to choose a destination. Review the move and any scheduling conflicts before confirming. See [calendar moves](PRODUCTION-IMPORT-CALENDAR.md#move-days-and-scenes) and [release verification](RELEASING.md).
+**0.3.22 adds calendar moves to Shooting Days.** Drag a day label to a date or a scene to another shooting day. Press Shift+F10 on either for move actions. Review the move and any scheduling conflicts before confirming. See [calendar moves](PRODUCTION-IMPORT-CALENDAR.md#move-days-and-scenes) and [release verification](RELEASING.md).
 
 The [signed and notarized Mac release](https://github.com/OfficialSquidProductions/script-call-updates/releases/tag/v0.3.22) targets Apple Silicon and macOS 13 or later. Choose **Settings & Help → Check for Updates** or [download the Mac ZIP](https://github.com/OfficialSquidProductions/script-call-updates/releases/latest/download/Script-Call-Mac.zip).
 

@@ -2,8 +2,8 @@
 
 ## Move days and scenes
 
-- Drag the grip beside a shooting day to another date. Existing days on that date are listed in the review and keep their separate cards. A date change resets weather approval.
-- Drag the arrow beside a scene onto another day's card to append it, or onto a scene to insert it before that scene. Dropping on the date number opens a picker for shooting days on that date. Activate a grip or arrow with Enter or Space for the same review. While dragging, hold over a month arrow to browse.
+- Drag the shooting day label to another date. Existing days on that date are listed in the review and keep their separate cards. A date change resets weather approval.
+- Drag a scene onto another day's card to append it, or onto a scene to insert it before that scene. Dropping on the date number opens a picker for shooting days on that date. Press Shift+F10 on a day label or scene for move actions. Use the day’s actions menu or the Move Scene button in scene details for the same options. While dragging, hold over a month arrow to browse.
 - Review known scheduling overlaps and availability conflicts before confirming. Missing call times or availability appear separately. You can confirm anyway or hide future calendar conflict warnings on this device. **Settings & Help → Reset Warnings** restores them. Daily Sheet issue review continues to show availability warnings.
 - Scene moves keep the existing scene's timing and cast links. Personal calls stay on their original days. Review the resulting calls on both Daily Sheets. To move a scene into or out of an issued day, first create a new draft. Issued PDF files retain their original contents. **Undo day change** and **Redo** reverse or repeat calendar moves during the current session.
 
