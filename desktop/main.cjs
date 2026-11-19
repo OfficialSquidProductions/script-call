@@ -5,6 +5,7 @@ const {Store}=require('../core/store.cjs'),D=require('../core/domain.cjs'),A=req
 const P=require('../core/productiondesk.cjs');
 const {Updates}=require('./updates.cjs'),updateConfig=require('./update-config.json');
 const {Diagnostics}=require('./diagnostics.cjs'),{openDraft}=require('./report-delivery.cjs');
+const {CallSheetEmail}=require('./call-sheet-email.cjs');
 const ROOT=path.resolve(__dirname,'..');let win,store,font,logo,updates,issueBusy=false,pendingImport=null;
 protocol.registerSchemesAsPrivileged([{scheme:'callsheet',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 app.setName('Script Call');
@@ -37,7 +38,19 @@ async function pdf(snapshot){
  }finally{output.destroy();}
 }
 function frozen(projectId,dayId){const s=store.get(projectId),day=s.project.days.find(d=>d.id===dayId);if(!day)throw Error('Day not found.');return day.lockedRevisionId?store.revision(projectId,day.lockedRevisionId).snapshot:D.resolve(s.project,dayId);}
-async function saveFile(bytes,defaultPath,filter){const r=await dialog.showSaveDialog(win,{defaultPath,filters:[filter]});if(r.canceled)return {canceled:true};const target=r.filePath,tmp=target+'.'+D.id()+'.tmp';try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,target);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}return {path:target};}
+async function saveFile(bytes,defaultPath,filter,beforeWrite){const r=await dialog.showSaveDialog(win,{defaultPath,filters:[filter]});if(r.canceled)return {canceled:true};beforeWrite?.();const target=r.filePath,tmp=target+'.'+D.id()+'.tmp';try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,target);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}return {path:target};}
+const sheetEmail=new CallSheetEmail({
+ getProject:id=>store.get(id),
+ getRevision:(projectId,revisionId)=>store.revision(projectId,revisionId),
+ printPDF:pdf,
+ savePDF:(bytes,name,beforeWrite)=>saveFile(bytes,name,{name:'PDF document',extensions:['pdf']},beforeWrite),
+ chooseFolder:async()=>{
+  const result=await dialog.showOpenDialog(win,{title:'Export call sheet PNG pages',properties:['openDirectory','createDirectory']});
+  return result.canceled?null:result.filePaths[0];
+ },
+ copy:text=>clipboard.writeText(text),
+ filename:safeName
+});
 const actions={
  bootstrap(){if(!store.list().length)store.create(D.newProject());return {projects:store.list(),fontAvailable:!!font,version:app.getVersion(),dataDirectory:store.dir,updates:updates.status(),diagnostics:diagnostics.status()};},
  diagnosticStatus:()=>diagnostics.status(),diagnosticDismiss:()=>diagnostics.dismiss(),
@@ -46,6 +59,11 @@ const actions={
  reportCopy:a=>{clipboard.writeText(diagnostics.draft(a.id).text);return {copied:true};},
  reportExport:a=>saveFile(Buffer.from(diagnostics.draft(a.id).text),'Script-Call-Bug-Report.txt',{name:'Reviewed bug report',extensions:['txt']}),
  reportMail:a=>openDraft(diagnostics.draft(a.id),{app,shell}),
+ emailReview:a=>sheetEmail.review(a.projectId,a.dayId),
+ emailCancel:a=>sheetEmail.cancel(a.token),
+ emailCopy:a=>sheetEmail.copyReview(a.token,a.part),
+ emailExport:a=>sheetEmail.export(a.token,a.format),
+ emailOpen:a=>sheetEmail.open(a.token,a.format),
  updateStatus:()=>updates.status(),updateCheck:()=>updates.check(),updateDownload:()=>{if(previewProfile)throw Error('Preview builds cannot download or install updates.');return updates.download();},updateInstall:()=>{if(previewProfile)throw Error('Preview builds cannot install updates.');if(profileLocation.error)throw Error(profileLocation.error);return updates.install();},updatePreferences:a=>updates.preferences(a.automatic),
  async chooseCompanyImage(a){store.get(a.projectId);const selected=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Company header image (PNG or JPEG)',extensions:['png','jpg','jpeg']}]});if(selected.canceled)return {canceled:true};const imageTools=require('../core/company-image.cjs'),fd=fs.openSync(selected.filePaths[0],'r');let bytes;try{const stat=fs.fstatSync(fd);if(!stat.isFile()||stat.size>imageTools.MAX_INPUT)throw Error('Choose a regular PNG or JPEG file under 5 MB.');bytes=Buffer.alloc(stat.size);let n=0;while(n<bytes.length){const count=fs.readSync(fd,bytes,n,bytes.length-n,null);if(!count)throw Error('Image changed while reading.');n+=count;}}finally{fs.closeSync(fd);}imageTools.inspectInput(bytes);let image=nativeImage.createFromBuffer(bytes);if(image.isEmpty())throw Error('This image could not be decoded; choose a valid PNG or JPEG.');const size=image.getSize(),scale=Math.min(1,imageTools.MAX_SIDE/size.width,imageTools.MAX_SIDE/size.height);if(scale<1)image=image.resize({width:Math.max(1,Math.round(size.width*scale)),height:Math.max(1,Math.round(size.height*scale)),quality:'best'});let encoded=image.toPNG();while(encoded.length>imageTools.MAX_PNG&&Math.max(image.getSize().width,image.getSize().height)>128){const size=image.getSize();image=image.resize({width:Math.max(1,Math.floor(size.width*.75)),height:Math.max(1,Math.floor(size.height*.75)),quality:'best'});encoded=image.toPNG();}return {image:imageTools.encode(encoded,path.basename(selected.filePaths[0]))};},
  list:()=>store.list(),get:a=>store.get(a.id),save:a=>store.save(a.project,a.version),
@@ -111,11 +129,11 @@ app.whenReady().then(()=>{
  win.webContents.on('render-process-gone',(_,details)=>{if(details.reason!=='clean-exit'){diagnostics.capture(['crashed','oom','abnormal-exit','integrity-failure'].includes(details.reason)?'renderer-crash':'renderer-interrupted',undefined,details);dialog.showMessageBox(win,{type:'error',title:'Script Call window stopped',message:'The editing window stopped unexpectedly.',detail:(diagnostics.available?'A minimal diagnostic summary was saved locally for review next time you open Script Call.':'Local diagnostic storage is unavailable; you can report this manually after reopening.')+' Unsaved edits may not have been saved. Nothing was sent.',buttons:['OK']}).catch(()=>{});}});
  // No renderer HTTP access: forecast traffic only originates from the explicit main-process action.
  win.webContents.session.webRequest.onBeforeRequest((details,callback)=>callback({cancel:details.webContentsId===win.webContents.id&&/^https?:/.test(details.url)}));
- ipcMain.handle('callsheet',async(event,action,args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!Object.hasOwn(actions,action))throw Error('Unsupported request.');if(!args||typeof args!=='object')throw Error('Invalid request.');try{return await actions[action](args);}catch(error){if(!action.startsWith('report')&&!action.startsWith('diagnostic')&&(error?.code||error instanceof TypeError||error instanceof RangeError||error instanceof ReferenceError||error instanceof SyntaxError))diagnostics.capture('operation-failure',error);throw error;}});
+ ipcMain.handle('callsheet',async(event,action,args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!Object.hasOwn(actions,action))throw Error('Unsupported request.');if(!args||typeof args!=='object')throw Error('Invalid request.');try{return await actions[action](args);}catch(error){if(!action.startsWith('report')&&!action.startsWith('diagnostic')&&!action.startsWith('email')&&(error?.code||error instanceof TypeError||error instanceof RangeError||error instanceof ReferenceError||error instanceof SyntaxError))diagnostics.capture('operation-failure',error);throw error;}});
  const template=[...(process.platform==='darwin'?[{label:'Script Call',submenu:[{role:'about'},{label:'Check for Updates…',click:()=>win.webContents.send('check-updates')},{type:'separator'},{role:'hide'},{role:'quit'}]}]:[]),{label:'File',submenu:[{label:'Save',accelerator:'CmdOrCtrl+S',click:()=>win.webContents.send('menu-save')},{role:'close'}]},{role:'editMenu'},{role:'viewMenu',submenu:[{label:'Template & Layout',click:()=>win.webContents.send('open-layout')},{type:'separator'},{role:'reload'},{role:'forceReload'},{role:'toggleDevTools'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]},{role:'windowMenu'}];
  template.push({label:'Help',submenu:[{label:'Report a Bug…',click:()=>win.webContents.send('report-bug')}]});Menu.setApplicationMenu(Menu.buildFromTemplate(template));
  win.on('close',event=>{if(win&&!win.forceClose&&!win.webContents.isCrashed()){event.preventDefault();win.webContents.send('before-close');}});
  ipcMain.on('close-ready',event=>{if(event.sender===win.webContents){win.forceClose=true;win.close();}});
  win.loadURL('callsheet://app/index.html');if(!previewProfile)updates.start();
 }).catch(error=>{diagnostics.capture('startup-failure',error);dialog.showErrorBox('Script Call could not start',error.message);app.quit();});
-app.on('window-all-closed',()=>app.quit());app.on('will-quit',()=>{updates?.close();if(store)store.close();if(primaryInstance)diagnostics.clean();});
+app.on('window-all-closed',()=>app.quit());app.on('will-quit',()=>{sheetEmail.close();updates?.close();if(store)store.close();if(primaryInstance)diagnostics.clean();});

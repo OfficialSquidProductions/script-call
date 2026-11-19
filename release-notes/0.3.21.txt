@@ -1,0 +1,7 @@
+Script Call 0.3.21 — Email Call Sheet
+
+Open Daily Sheet → Email Call Sheet to review the listed cast and crew for the selected day. Script Call uses the sheet's visible call sections, combines duplicate addresses and flags missing or invalid emails. Issued days attach the original revision. Drafts are labeled unissued.
+
+Choose one PDF containing every page, or one PNG per page on Mac. Open in Apple Mail loads the prepared message with Bcc addresses and attachments. In Mail, choose Message → Send Again to open the editable, unsent draft. Manual export and copy controls are available for any mail client. Script Call never sends the message.
+
+Apple Silicon, macOS 13 or later.

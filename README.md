@@ -31,6 +31,12 @@ The native app ID remains `org.squidproductions.callsheet.prototype`. The defaul
 
 Production Desk imports are previewed before commitment, backed up before changes, and merged against the prior imported baseline. Manual edits, explicit blanks, saved layouts and issued days win. Original issued PDF bytes remain in SQLite and portable archives. Keep the original `.productiondesk` export for its embedded original PDF attachments. A changing import never auto-issues a sheet. No real productions, output PDFs, private samples, development sibling snapshots or local profiles are tracked in this repository.
 
+## Email a call sheet
+
+Open **Daily Sheet → Email Call Sheet** for the selected day. Review the listed cast and crew, combined Bcc addresses, and missing or invalid emails. The list follows the visible call sections of the selected draft or issued revision. For an issued revision, the attachment is the original stored PDF and the addresses are the current contacts for the people on that revision.
+
+Choose a single PDF containing every rendered page or one PNG per page. **Open in Apple Mail** opens a prepared message with the selected attachments. Choose **Message → Send Again** in Mail to create an editable, unsent draft. Review Bcc and the attachments there. If Mail is unavailable, export the attachments and copy the subject, body, and Bcc addresses into your mail client. Keep To and Cc empty. A sheet that prints personal email addresses can be exported for separate review. To prepare a private draft, turn off **Include personal phone / email in PDF** in **Template & Layout**.
+
 ## Updates
 
 The updater implementation uses `electron-updater`, an Ed25519-signed metadata envelope and SHA-512 artifact verification. It checks only compatible stable versions for the current platform and architecture, refuses downgrades, and requires native code-signature checks. Automatic checks run after startup and daily when enabled; download and restart require a choice. Installation flushes pending edits and makes a SQLite backup. Failed or offline checks keep the current app usable.

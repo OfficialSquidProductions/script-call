@@ -7,6 +7,7 @@ fs.mkdirSync(installation);fs.mkdirSync(out,{recursive:true});const checks=[],er
 const candidateURL=process.env.CALLSHEET_CANDIDATE_FEED||null;let targetRelease,deletedBeforeUpdate,locationFixture,minimumReaderVersion=0;
 if(candidateURL&&candidateURL!==repo+'/releases/download/v'+to+'/stable-darwin-'+process.arch+'.json')throw Error('Use the exact candidate release metadata path.');
 const locationUpgrade=((from==='0.3.18'&&to==='0.3.19')||(from==='0.3.19'&&to==='0.3.20'))?require('./support/shoot-location-upgrade.cjs'):null;
+const emailUpgrade=from==='0.3.20'&&to==='0.3.21'?require('./support/email-desktop.cjs'):null;
 const check=s=>{checks.push(s);console.log('PASS',s);},wait=ms=>new Promise(r=>setTimeout(r,ms)),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 async function state(){return page.evaluate(()=>CallSheet.request('get',{id:document.querySelector('#production').value}));}
 async function select(id){await page.selectOption('#production',id);await page.waitForFunction(id=>document.body.dataset.projectId===id,id);}
@@ -31,8 +32,13 @@ async function checkForUpdates(page){
   await page.click('#new-production');await page.fill('#new-production-title','Disposable pre-upgrade recovery record');await page.locator('[data-modal-action="0"]').click();await page.waitForFunction(()=>!document.querySelector('#modal').open);deletedBeforeUpdate=await state();await page.click('#settings');await page.getByRole('button',{name:'Delete Production',exact:true}).click();await page.getByRole('button',{name:'Delete Production',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('#modal').open);assert((await page.evaluate(()=>CallSheet.request('deletedProductions'))).some(p=>p.id===deletedBeforeUpdate.project.id));
  }
  if(locationUpgrade)locationFixture=from==='0.3.18'?await locationUpgrade.seed(app,page,check):await locationUpgrade.seedSceneLinks(app,page,out,check);
+ let emailFixture;
+ if(emailUpgrade){
+  emailFixture=await emailUpgrade.issueFixture(page);
+  emailFixture.pdf=await exportPDF(path.join(out,'email-issued-before-update.pdf'));
+ }
  const preUpgradeIDs=(await page.evaluate(()=>CallSheet.request('list'))).map(p=>p.id);
- assert.equal(preUpgradeIDs.length,locationFixture?4:3);
+ assert.equal(preUpgradeIDs.length,locationFixture||emailFixture?4:3);
  await select(demoID);await checkForUpdates(page);await page.waitForFunction(()=>document.querySelector('#modal-title').textContent==='Script Call updates');const available=await page.evaluate(()=>CallSheet.request('updateStatus'));assert.equal(available.status,'available');assert.equal(available.version,to);await page.getByRole('button',{name:'Download update',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#modal-body').textContent.includes('downloaded'),null,{timeout:180000});const downloaded=await page.evaluate(()=>CallSheet.request('updateStatus'));assert.equal(downloaded.status,'downloaded');assert.equal(downloaded.version,to);check('shipped Check for Updates UI downloads the real signed next-version public artifact');if(process.env.CALLSHEET_UPGRADE_DIAGNOSTICS==='1'){const diagnosticFile=path.join(work,'native-events.jsonl');await require('./support/upgrade-diagnostics.cjs').observeNativeUpgrade(app,diagnosticFile);page.on('console',message=>fs.appendFileSync(path.join(work,'renderer-console.txt'),message.type()+': '+message.text()+'\n'));const child=app.process();child.stdout?.on('data',chunk=>fs.appendFileSync(path.join(work,'main-stdout.txt'),chunk));child.stderr?.on('data',chunk=>fs.appendFileSync(path.join(work,'main-stderr.txt'),chunk));console.log('DIAGNOSTICS',work);}
  await page.click('#modal-close');await page.click('[data-view="production"]');await page.click('[data-master="general"]');const company='Preserved pending edit across real native update';await page.locator('[data-bind="company"]').fill(company);const dirtyState=await page.evaluate(()=>{clearTimeout(saveTimer);clearTimeout(previewTimer);return {dirty,saved};});assert(dirtyState.dirty>dirtyState.saved);assert.notEqual((await state()).project.company,company);const expectedDemo=(await state()).project;expectedDemo.company=company;const backupNamesBefore=fs.readdirSync(path.join(profile,'backups')),backupsBefore=backupNamesBefore.length;
  const marker=path.join(installation,'.script-call-profile-'+process.getuid()+'.json');assert.equal(JSON.parse(fs.readFileSync(marker)).directory,profile);await checkForUpdates(page);await page.waitForFunction(()=>document.querySelector('#modal-body').textContent.includes('downloaded'));const oldPID=app.process().pid;let closed=false;app.on('close',()=>{closed=true;});await page.getByRole('button',{name:'Save, back up & restart',exact:true}).click().catch(e=>{if(!/closed|Target/.test(e.message))throw e;});
@@ -96,6 +102,12 @@ async function checkForUpdates(page){
  if(locationUpgrade){
   if(from==='0.3.18')await locationUpgrade.reconcile(app,page,locationFixture,out,check);
   else await locationUpgrade.reconcileSceneLinks(app,page,locationFixture,out,check);
+ }
+ if(emailUpgrade){
+  await select(emailFixture.projectId);
+  await page.click('[data-view="daily"]');
+  const attachment=await emailUpgrade.verifyIssuedReview(app,page,out,check);
+  assert.deepEqual(fs.readFileSync(attachment),emailFixture.pdf);
  }
  await checkForUpdates(page);await page.waitForFunction(()=>document.querySelector('#modal-title').textContent==='Script Call updates');assert.equal((await page.evaluate(()=>CallSheet.request('updateStatus'))).status,'current');await page.screenshot({path:path.join(out,'after-upgrade-current.png'),fullPage:true});assert.deepEqual(errors,[]);check('updated app checks the real public signed feed and reports current, with no renderer errors');
  fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({status:'passed',from,to,checks,metadataURL,candidateMetadataURL:candidateURL,targetArtifactURL:targetRelease?.artifact.url,targetArtifactSHA512:targetRelease?.artifact.sha512,bootstrapArtifact:release.artifact.url,publicFeed:config.manifestUrl,profile,installation,beforePDFSHA256:sha(beforePDF),afterPDFSHA256:sha(afterPDF),originalPID:oldPID,nativeRelaunchPID:newPID,launcherEnvironmentRequiredAfterUpdate:false,profileMarkerSurvived:true,actualRecoveryBackupVerified:true,imagesBefore,imagesAfter,demoScenes:8,demoShots:16,demoDays:3,demoID,importID,rendererErrors:errors},null,2));

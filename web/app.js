@@ -61,7 +61,7 @@ function renderSide(){
 }
 function renderHeader(){
  document.body.dataset.projectId=project.id;
- const d=day();for(const id of ['duplicate-day','export-pdf','issue'])$(id).disabled=!d;if(!d){$('breadcrumb').textContent=`Workspace / ${project.title}`;$('heading').textContent=view==='calendar'?'Shooting Days':'No shooting days';$('subtitle').textContent='Add a shooting day or restore one from Deleted days.';$('summary').innerHTML='';$('previous').disabled=true;$('next').disabled=true;$('project-notice').hidden=true;return;}const loc=primaryLocation(),r=revisions.find(r=>r.id===d.lockedRevisionId),frozen=lockedDisplay[project.id+':'+d.lockedRevisionId];
+ const d=day();$('email-call-sheet').hidden=view!=='daily';for(const id of ['duplicate-day','export-pdf','email-call-sheet','issue'])$(id).disabled=!d;if(!d){$('breadcrumb').textContent=`Workspace / ${project.title}`;$('heading').textContent=view==='calendar'?'Shooting Days':'No shooting days';$('subtitle').textContent='Add a shooting day or restore one from Deleted days.';$('summary').innerHTML='';$('previous').disabled=true;$('next').disabled=true;$('project-notice').hidden=true;return;}const loc=primaryLocation(),r=revisions.find(r=>r.id===d.lockedRevisionId),frozen=lockedDisplay[project.id+':'+d.lockedRevisionId];
  $('breadcrumb').textContent=`Workspace / ${project.title} / ${d.label}`;$('heading').textContent=view==='calendar'?'Shooting Days':view==='production'?'Production Info':view==='revisions'?'Issued revisions':view==='layout'?'Template & Layout':`${d.label} - Unit ${d.unit}`;
  $('eyebrow').textContent=view==='calendar'?'PRODUCTION CALENDAR':view==='production'?'REUSABLE PRODUCTION REGISTER':view==='revisions'?'PRESERVED ISSUED ARTIFACTS':'DAILY CALL SHEET';
  $('subtitle').textContent=view==='calendar'?'Every shooting date, unit and scheduled scene. Select a day to open its daily sheet.':view==='production'?'Common records feed every draft. Issued sheets stay frozen.':view==='revisions'?'Original PDFs remain unchanged as your production evolves.':`${d.date||'Set a shooting date'} / ${locked()?(frozen?.zone||'Issued timezone in preview'):effectiveZone()||'Choose a timezone'}`;
@@ -267,8 +267,55 @@ function bindFields(){
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(()=>refreshPreview().catch(error),550);}
 function fitPreview(frame){const fit=()=>{if(!frame?.isConnected)return;const doc=frame.contentDocument;if(!doc?.body)return;const width=day().layout.paper==='Letter'?816:794;doc.documentElement.style.zoom=String(Math.min(1,Math.max(.2,frame.clientWidth/width)));frame.style.height=Math.ceil(doc.body.getBoundingClientRect().height+25)+'px';};frame.onload=()=>frame.contentDocument.fonts.ready.then(fit);previewObserver?.disconnect();previewObserver=new ResizeObserver(fit);previewObserver.observe(frame.parentElement);}
 async function refreshPreview(){if(!$('preview')||!day())return;const serial=++previewSerial;try{await flush();const result=await api.request('preview',{projectId:project.id,dayId});if(serial!==previewSerial||!$('preview'))return;if(locked()){lockedDisplay[project.id+':'+day().lockedRevisionId]=result.display;renderHeader();}const frame=$('preview');fitPreview(frame);frame.srcdoc=result.html;refreshSolarSummary(result.solar);$('preview-note').textContent=locked()?'Preserved issued values / original PDF retained':`Draft preview / ${day().layout.paper} / ${result.review.errors.length} required fixes / ${result.review.warnings.length} review notes`;}catch(e){if(serial===previewSerial&&$('preview-note'))$('preview-note').textContent='Preview not updated: '+e.message;}}
-function modal(title,body,actions=[]){$('modal-body').onclick=null;$('modal-body').onchange=null;$('modal-body').onkeydown=null;$('modal-title').textContent=title;$('modal-body').innerHTML=body;$('modal-error').textContent='';$('modal-actions').innerHTML='<button data-modal-cancel>Cancel</button>'+actions.map((a,i)=>`<button data-modal-action="${i}" class="${a.primary?'primary':''} ${a.danger?'danger':''}">${esc(a.label)}</button>`).join('');modalAction=actions;if(!$('modal').open)$('modal').showModal();}
-function closeModal(){if(!productionBusy)$('modal').close();}
+function modal(title,body,actions=[]){cancelEmailReview();$('modal-body').onclick=null;$('modal-body').onchange=null;$('modal-body').onkeydown=null;$('modal-title').textContent=title;$('modal-body').innerHTML=body;$('modal-error').textContent='';$('modal-actions').innerHTML='<button data-modal-cancel>Cancel</button>'+actions.map((a,i)=>`<button data-modal-action="${i}" class="${a.primary?'primary':''} ${a.danger?'danger':''}">${esc(a.label)}</button>`).join('');modalAction=actions;if(!$('modal').open)$('modal').showModal();}
+let emailReviewToken;
+function cancelEmailReview(){
+ if(!emailReviewToken)return;
+ const token=emailReviewToken;
+ emailReviewToken=null;
+ api.request('emailCancel',{token}).catch(()=>{});
+}
+$('modal').addEventListener('cancel',cancelEmailReview);
+async function emailCallSheet(){
+ const review=await api.request('emailReview',{projectId:project.id,dayId});
+ const args={token:review.token};
+ const status=text=>{if(emailReviewToken===review.token)$('sheet-email-status').textContent=text;};
+ const copy=async(part,label)=>{
+  await api.request('emailCopy',{...args,part});
+  status(label);
+ };
+ const exportFiles=async()=>{
+  const result=await api.request('emailExport',{...args,format:$('sheet-email-format').value});
+  status(result.canceled?'Export canceled.':'Attachments saved to '+result.path);
+ };
+ const open=async()=>{
+  const result=await api.request('emailOpen',{...args,format:$('sheet-email-format').value});
+  status(result.reason);
+ };
+ const attachmentOptions='<option value="pdf">PDF · one document, all pages</option>'+(review.canRenderPNGs?'<option value="png">PNG · one image per page</option>':'');
+ const issues=(label,items)=>items.length?'<li>'+label+' ('+items.length+') · '+items.map(esc).join(', ')+'</li>':'';
+ const recipients=review.recipients.length;
+ const actions=[
+  {label:'Copy subject',run:()=>copy('subject','Subject copied.')},
+  {label:'Copy body',run:()=>copy('body','Message body copied.')},
+  ...(recipients?[{label:'Copy Bcc addresses',run:()=>copy('addresses','Addresses copied. Paste into Bcc and leave To and Cc empty.')}]:[]),
+  {label:'Export attachments…',run:exportFiles},
+  ...(recipients&&review.canOpenMail&&!review.printedEmail?[{label:'Open in Apple Mail',primary:true,run:open}]:[])
+ ];
+ modal('Email Call Sheet',`<p><strong>${esc(review.revisionLabel)}</strong> · ${review.counts.cast} listed cast · ${review.counts.crew} listed crew</p>
+ <p><strong>${recipients} Bcc ${recipients===1?'recipient':'recipients'}</strong>${review.counts.duplicates?' · '+review.counts.duplicates+' duplicate '+(review.counts.duplicates===1?'address':'addresses')+' combined':''}</p>
+ ${recipients?'<details><summary>Review Bcc addresses</summary><ul>'+review.recipients.map(address=>'<li>'+esc(address)+'</li>').join('')+'</ul></details>':'<p class="inline-notice">No valid email addresses. You can export attachments or copy the message.</p>'}
+ <ul class="issues">${issues('Missing email',review.missing)}${issues('Invalid email',review.invalid)}</ul>
+ ${review.printedEmail?'<p class="inline-notice">This attachment prints personal email addresses. Turn off personal contacts on a draft to share a private copy.</p>':''}
+ <label class="field">Attachment format<select id="sheet-email-format">${attachmentOptions}</select></label>
+ <label class="field">Subject<input readonly value="${esc(review.subject)}"></label>
+ <label class="field">Message<textarea readonly rows="7">${esc(review.body)}</textarea></label>
+ ${recipients&&review.canOpenMail&&!review.printedEmail?'<p>In Apple Mail, choose <strong>Message → Send Again</strong> to make an editable, unsent draft with attachments.</p>':''}
+ <p class="tiny">For manual composition, export the attachments, copy the subject and body, and paste any copied addresses into Bcc. Leave To and Cc empty.</p>
+ <p id="sheet-email-status" role="status"></p>`,actions);
+ emailReviewToken=review.token;
+}
+function closeModal(){if(!productionBusy){cancelEmailReview();$('modal').close();}}
 $('modal').addEventListener('cancel',e=>{if(productionBusy)e.preventDefault();});
 function addCall(personId){if(Records.deleted(project,'people',personId))return;if(day().calls.some(c=>c.personId===personId))return;day().calls.push({id:uid(),personId,...CallDefaults.initial(project,day(),project.people.find(p=>p.id===personId)),offset:0,pickup:'',makeup:'',ready:'',notes:''});}
 function addDayData(date,label){return {id:uid(),label,date,unit:day()?.unit||'A',lunchMode:'auto',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:clone(day()?.layout||{preset:'gcasper',sceneColors:true,paper:'A4',clock:'24',temperature:'C',mono:false,includeContacts:false,order:Object.keys(sectionLabel),hidden:[],custom:[]}),baseRevisionId:null};}
@@ -366,6 +413,7 @@ $('save').onclick=()=>Promise.resolve().then(()=>{commitPageLengths();return flu
 $('new-production').onclick=()=>transition(async()=>modal('New production','<label class="field">Production title<input id="new-production-title" value="Untitled production"></label>',[{label:'Create production',primary:true,run:async()=>{let state=await api.request('create',{title:$('new-production-title').value});const clock=readPreference('default-time-display',null),unit=readPreference('default-temperature-unit',null);if(['12','24'].includes(clock))state.project.timeDisplayClock=clock;if(['C','F'].includes(unit))state.project.temperatureUnit=unit;if(['12','24'].includes(clock)||['C','F'].includes(unit))state=await api.request('save',{project:state.project,version:state.version});closeModal();view='production';master='general';await useState(state);}}]));
 $('add-day').onclick=()=>transition(async()=>dayDialog());$('duplicate-day').onclick=()=>transition(async()=>dayDialog(true));
 $('previous').onclick=()=>transition(async()=>{const days=Days.ordered(project.days);selectDay(days[days.findIndex(d=>d.id===dayId)-1].id);});$('next').onclick=()=>transition(async()=>{const days=Days.ordered(project.days);selectDay(days[days.findIndex(d=>d.id===dayId)+1].id);});
+$('email-call-sheet').onclick=()=>transition(emailCallSheet);
 $('issue').onclick=()=>issue().catch(error);$('export-pdf').onclick=()=>pdfExport().catch(error);
 $('export-project').onclick=()=>transition(async()=>{const r=await api.request('exportProject',{projectId:project.id});if(!r.canceled)toast('Portable project saved: '+r.path);});
 $('import-project').onclick=()=>transition(async()=>{const r=await api.request('importProject');if(!r.canceled){view='daily';await useState(r);toast('Imported as a separate production. Existing files were preserved.');}});
