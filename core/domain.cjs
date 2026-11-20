@@ -35,6 +35,7 @@ function validateProject(p){
  guard(p);if(p.companyImage!==undefined)CompanyImage.validate(p.companyImage);Availability.validate(p);Records.validate(p);if(Buffer.byteLength(JSON.stringify(p))>10*1024*1024)throw Error('Project exceeds 10 MB.');
  if(p.temperatureUnit!==undefined&&!['C','F'].includes(p.temperatureUnit))throw Error('Invalid temperature unit.');
  if(p.timeDisplayClock!==undefined&&!['12','24'].includes(p.timeDisplayClock))throw Error('Invalid time display preference.');
+ if(p.productionZoneSelected!==undefined&&(p.productionZoneSelected!==true||!okZone(p.defaults?.zone)))throw Error('Invalid production time zone selection.');
  if(p.schema!==1||!ID.test(p.id)||typeof p.title!=='string'||p.title.length>200||typeof p.company!=='string')throw Error('Unsupported or invalid project.');
  if(!p.defaults||['generalCall','zone','meal','wrap','primaryLocationId','notes'].some(k=>typeof p.defaults[k]!=='string'))throw Error('Missing production defaults.');
  const people=records(p.people,'person'),locations=records(p.locations,'location'),scenes=records(p.scenes,'scene');records(p.days,'day');if(p.deletedDays!==undefined)records(p.deletedDays,'deleted day');const allDays=[...p.days,...(p.deletedDays||[])];records(allDays,'day');
@@ -70,7 +71,7 @@ function newDay(p,date=Days.nextDayDate(p.days)){
  return {id:id(),label:'Day '+String(p.days.length+1).padStart(2,'0'),date,unit:'A',lunchMode:'auto',overrides:{},sheetOverrides:{},background:[],schedule:[],calls:[],weather:{mode:'manual',summary:'',approved:false},layout:p.days.length?clone(p.days.at(-1).layout):defaultLayout(),baseRevisionId:null};
 }
 function newProject(title='Untitled production'){
- const p={schema:1,id:id(),title,company:'',defaults:{generalCall:'07:00',meal:'12:30',wrap:'18:00',zone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Etc/UTC',primaryLocationId:'',notes:''},sheetDefaults:sheetDefaults(),people:[],locations:[],scenes:[],days:[]};p.days.push(newDay(p));return p;
+ const p={schema:1,id:id(),title,company:'',defaults:{generalCall:'07:00',meal:'12:30',wrap:'18:00',zone:Availability.defaultZone,primaryLocationId:'',notes:''},sheetDefaults:sheetDefaults(),people:[],locations:[],scenes:[],days:[]};p.days.push(newDay(p));return p;
 }
 function localParts(ms,zone){const parts=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(ms));return Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,Number(p.value)]));}
 function addDate(date,offset){if(!okDate(date))return '';return new Date(Date.parse(date+'T12:00Z')+offset*86400000).toISOString().slice(0,10);}
@@ -85,18 +86,29 @@ function solar(date,loc,zone,overrides){return Solar.calculate(date,loc,zone,ove
 
 function resolve(p,dayId){
  const d=p.days.find(d=>d.id===dayId);if(!d)throw Error('Shooting day not found.');const values={...p.defaults,...d.overrides};const lunch=Lunch.resolve(p,d);values.meal=lunch.time;values.mealOffset=lunch.offset;
- const selected=p.locations.find(l=>l.id===values.primaryLocationId)||null,loc=selected&&!Records.deleted(p,'locations',selected.id)?selected:null;const zone=Object.hasOwn(d.overrides,'zone')?values.zone:selected?.zone||values.zone;
+ const selected=p.locations.find(l=>l.id===values.primaryLocationId)||null,loc=selected&&!Records.deleted(p,'locations',selected.id)?selected:null;
+ const zone=Availability.dayZone(p,d);
  const people=new Map(p.people.map(x=>[x.id,x])),scenes=new Map(p.scenes.map(x=>[x.id,x]));
  const weather=clone(d.weather);weather.stale=!!weather.key&&weather.key!==weatherKey(d,loc,zone)||weather.mode==='nws'&&(!Number.isFinite(Date.parse(weather.fetchedAt))||Date.now()-Date.parse(weather.fetchedAt)<0||Date.now()-Date.parse(weather.fetchedAt)>3600000);
  if(weather.stale)weather.approved=false;
  const activePeople=new Set(Records.active(p,'people').map(p=>p.id)),activeCalls=d.calls.filter(c=>activePeople.has(c.personId));
  const activeSchedule=d.schedule.filter(s=>s.type!=='scene'||!Records.deleted(p,'scenes',s.sceneId));
  const sceneCopy=s=>s?{...clone(s),castIds:s.castIds.filter(id=>activePeople.has(id))}:null;
- const sheet={...sheetDefaults(),...p.sheetDefaults,...d.sheetOverrides};for(const k of ['high','low'])sheet[k]=Details.temperature(p,d,loc,zone,k);
+ const sheet={...sheetDefaults(),...p.sheetDefaults,...d.sheetOverrides,header:p.sheetDefaults?.header||'',basecamp:loc?.basecampAddress||''};
+ for(const k of ['high','low'])sheet[k]=Details.temperature(p,d,loc,zone,k);
  const calls=activeCalls.map(c=>({...clone(c),person:clone(people.get(c.personId)),call:CallDefaults.resolve(p,d,people.get(c.personId),c),onCall:Availability.record(p,c.personId,d.date).state==='on-call',inherited:!c.call}));
  if(!d.layout.includeContacts)for(const c of calls){c.person.email='';c.person.phone='';}
  const snapshotDay=clone(d);delete snapshotDay.unplacedCustom;
- return {schema:1,...(p.companyImage!==undefined?{companyImage:clone(p.companyImage)}:{}),callPresentation:'availability-on-call',productionDetails:1,keyPositions:Details.keyPositions(p,d),schedulePresentation:'scene-notes',importedFromProductionDesk:!!p.productionDesk,productionId:p.id,title:p.title,company:p.company,demo:!!p.demo,day:{...snapshotDay,layout:{...snapshotDay.layout,clock:p.timeDisplayClock||d.layout.clock,temperature:Temperature.mode(p,d)},calls:clone(activeCalls),schedule:clone(activeSchedule)},values:{...values,zone},location:clone(loc),schedule:activeSchedule.map(s=>({...clone(s),scene:s.type==='scene'?sceneCopy(scenes.get(s.sceneId)):null})),calls,weather,solar:solar(d.date,loc,zone,d.solarOverrides),lunch,sheet,dayNumber:p.days.indexOf(d)+1,totalDays:p.days.length,locations:clone(Records.active(p,'locations')),advanceSchedule:p.days[p.days.indexOf(d)+1]?.schedule.filter(s=>s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId)).map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))}))||[],advanceDay:p.days[p.days.indexOf(d)+1]?{label:p.days[p.days.indexOf(d)+1].label,date:p.days[p.days.indexOf(d)+1].date}:null,advanceDays:[1,2].map((offset,index)=>{const next=p.days[p.days.indexOf(d)+offset];return {day:next?{id:next.id,label:next.label,date:next.date,unit:next.unit}:null,notes:index?d.advanceSecond||'':d.advance||'',schedule:next?next.schedule.filter(s=>s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId)).map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))})):[]};}),castNumbers:Object.fromEntries(p.people.filter(p=>p.type==='cast').map((p,i)=>[p.id,p.castNumber||String(i+1)])),resolvedAt:new Date().toISOString()};
+ // Freeze the catalog address, including an empty address, in the existing
+ // snapshot format. The original manual text stays on the editable project.
+ snapshotDay.sheetOverrides={...snapshotDay.sheetOverrides,basecamp:sheet.basecamp};
+ const datedDays=Days.ordered(p.days).filter(day=>Days.validDate(day.date));
+ const position=datedDays.indexOf(d);
+ const advanceDays=[1,2].map(offset=>{
+  const next=position<0?undefined:datedDays[position+offset];
+  return {day:next?{id:next.id,label:next.label,date:next.date,unit:next.unit}:null,notes:'',schedule:next?next.schedule.filter(s=>s.type==='scene'&&!Records.deleted(p,'scenes',s.sceneId)).map(s=>({...clone(s),scene:sceneCopy(scenes.get(s.sceneId))})):[]};
+ });
+ return {schema:1,...(p.companyImage!==undefined?{companyImage:clone(p.companyImage)}:{}),callPresentation:'availability-on-call',productionDetails:1,keyPositions:Details.keyPositions(p,d),schedulePresentation:'scene-notes',importedFromProductionDesk:!!p.productionDesk,productionId:p.id,title:p.title,company:p.company,demo:!!p.demo,day:{...snapshotDay,layout:{...snapshotDay.layout,clock:p.timeDisplayClock||d.layout.clock,temperature:Temperature.mode(p,d)},calls:clone(activeCalls),schedule:clone(activeSchedule)},values:{...values,zone},location:clone(loc),schedule:activeSchedule.map(s=>({...clone(s),scene:s.type==='scene'?sceneCopy(scenes.get(s.sceneId)):null})),calls,weather,solar:solar(d.date,loc,zone,d.solarOverrides),lunch,sheet,dayNumber:p.days.indexOf(d)+1,totalDays:p.days.length,locations:clone(Records.active(p,'locations')),advanceSchedule:advanceDays[0].schedule,advanceDay:advanceDays[0].day,advanceDays,castNumbers:Object.fromEntries(p.people.filter(p=>p.type==='cast').map((p,i)=>[p.id,p.castNumber||String(i+1)])),resolvedAt:new Date().toISOString()};
 }
 function review(p,dayId){
  const r=resolve(p,dayId),errors=[],warnings=[];const {day:d,values:v,location:loc}=r;

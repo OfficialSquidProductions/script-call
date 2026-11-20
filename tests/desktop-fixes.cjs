@@ -42,7 +42,7 @@ async function verifySettings(){
  assert.equal(await page.getByRole('button',{name:/check for updates/i}).count(),0);
  assert(fs.readdirSync(path.join(profile,'backups')).some(name=>name.endsWith('.sqlite')));
  await openSettings();
- assert.equal(await page.locator('#modal .settings-row').count(),2);
+ assert.equal(await page.locator('#modal .settings-row').count(),3);
  assert.equal(await page.getByRole('button',{name:'Check for Updates',exact:true}).count(),1);
  await configured('[name="time-display"][value="12"]').check();
  await page.waitForFunction(()=>!document.querySelector('[name="time-display"]').disabled);

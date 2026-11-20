@@ -4,6 +4,7 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.Availability=factory();})(globalThis,()=>{
  const TimeDisplay=typeof module==='object'&&module.exports?require('./time-display.js'):globalThis.TimeDisplay,CallDefaults=typeof module==='object'&&module.exports?require('./call-defaults.js'):globalThis.CallDefaults;
  const Records=typeof module==='object'&&module.exports?require('./record-recovery.js'):globalThis.RecordRecovery;
+ const defaultZone='America/New_York';
  const DAY=86400000,MINUTE=60000,ID=/^[a-zA-Z0-9_.-]{1,100}$/,TIME=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
  const copy=x=>JSON.parse(JSON.stringify(x)),dateOK=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&s>='1900-01-01'&&s<='2100-12-31'&&Number.isFinite(Date.parse(s+'T12:00Z'))&&new Date(s+'T12:00Z').toISOString().slice(0,10)===s;
  const addDate=(s,n)=>new Date(Date.parse(s+'T12:00Z')+n*DAY).toISOString().slice(0,10);
@@ -30,7 +31,12 @@
  const hasData=p=>Object.values(p.availability?.byPerson||{}).some(d=>Object.keys(d).length);
  function set(project,id,date,value){if(typeof id!=='string'||!ID.test(id)||['__proto__','prototype','constructor'].includes(id)||!dateOK(date))throw Error('Choose a valid person and date.');if(value!==null)validateRecord(value);const before=project.availability?.byPerson?.[id]?.[date];project.availability||={schema:1,byPerson:{}};project.availability.byPerson[id]||={};if(!value||value.state==='unknown')delete project.availability.byPerson[id][date];else project.availability.byPerson[id][date]=copy(value);return before?copy(before):null;}
  function summary(r,clock='24'){return r.state==='on-call'?'O/C — On Call (available, not on set)':r.state==='all-day'?'All day':r.state==='unavailable'?'Unavailable':r.state==='unknown'?'Unknown / not entered':'Restricted · '+r.windows.map(w=>`${TimeDisplay.format(w.start,clock)}–${TimeDisplay.format(w.end,clock)}${w.nextDay?' (+1 day)':''}`).join(', ');}
- function dayZone(p,d){const v={...p.defaults,...d.overrides},loc=p.locations.find(l=>l.id===v.primaryLocationId);return Object.hasOwn(d.overrides,'zone')?v.zone:loc?.zone||v.zone;}
+ function dayZone(p,d){
+  if(Object.hasOwn(d.overrides,'zone'))return d.overrides.zone;
+  if(p.productionZoneSelected)return p.defaults.zone;
+  const id=d.overrides.primaryLocationId??p.defaults.primaryLocationId;
+  return p.locations.find(l=>l.id===id)?.zone||p.defaults.zone;
+ }
  function duty(p,d,person){
   const zone=dayZone(p,d),call=d.calls.find(c=>c.personId===person.id),reasons=[],starts=[],ends=[],sceneMap=new Map(p.scenes.map(s=>[s.id,s]));let scheduled=false;
   if(!dateOK(d.date)||!zoneOK(zone))return {reasons:['Set a valid shooting date and shooting-day timezone.'],start:null,end:null,zone};
@@ -85,5 +91,5 @@
  }
 
  const hasOnCall=p=>Object.values(p.availability?.byPerson||{}).some(d=>Object.values(d).some(r=>r.state==='on-call'));
- return {hasOnCall,dateOK,addDate,zoneOK,epoch,parts,validate,validateRecord,record,set,summary,hasData,dayZone,duty,personalStart,assess,assessDay,span};
+ return {defaultZone,hasOnCall,dateOK,addDate,zoneOK,epoch,parts,validate,validateRecord,record,set,summary,hasData,dayZone,duty,personalStart,assess,assessDay,span};
 });

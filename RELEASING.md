@@ -4,6 +4,20 @@ Source: https://github.com/OfficialSquidProductions/script-call — public. Orig
 
 Binary assets and signed update metadata: https://github.com/OfficialSquidProductions/script-call-updates. A source push does not ship an update.
 
+## macOS 0.3.25 — daily sheet controls and time zones
+
+Based on public `v0.3.24` at `57545fa`. Template & Layout keeps preset recall, reset, undo, Save Template and section ordering. Paper, ink saving and existing named layout values remain stored. Time and temperature display are available in Settings alongside the production and shooting-day time zone selector.
+
+Daily Sheet owns per-day weather and logistics selections. Existing legacy production weather and notes remain available to inheriting drafts. Basecamp prints the selected Locations catalog address and the separate daily directions. Legacy address text remains available in the Daily Sheet for review. Draft company header text comes from Production Info, and Advance uses the next two dated shooting days in calendar order. Issued PDFs and snapshots retain their original content.
+
+New productions use Eastern Time. A production time zone explicitly saved in Settings governs inheriting days, while previously assigned day overrides take precedence. Legacy location time zones still apply to existing drafts until a production setting is saved. Explicit production-wide time zone selections use portable reader 13. Reimport retains the existing production and day choices.
+
+Apple accepted notarization job `4c3a255b-53d5-45c3-89f9-0910e7ad5768`. Developer ID, staple, Gatekeeper and arm64 checks passed. All 53 shipped source files match this checkout. The 131,372,599-byte immutable ZIP has SHA-256 `ad9c1adb992ca119375aeaec4dd6ddd8f6578f76e5aba9aaafa24bbae879ca7a`.
+
+219 unit tests passed with two optional provenance skips. The exact notarized app passed the targeted editor, draft preview/PDF, DST, saved settings, packaged smoke and Production Desk tests. The desktop and G-Casper suites passed in disposable profiles.
+
+The real v0.3.24 → v0.3.25 public-candidate upgrade passed 47 checks, including signed download, native replacement and relaunch, legacy location and time zone choices, a saved Letter/monochrome preset, pending edits, and recovery backup contents. The issued PDF re-export had the same SHA-256 before and after upgrade: `f76d14942e8d08e1d3b4bf615e4296b60e80652f03f0caff3964cbf4555142e6`. Two earlier trials reached replacement and exposed date assumptions in the test fixture. The candidate ZIP stayed identical while those test checks were corrected.
+
 ## macOS 0.3.24 — restore preset defaults
 
 Based on public `v0.3.23` at `6319788`. The exact 0.3.23 app reproduced the reported sequence: after switching away and returning, G-Casper retained Letter paper, monochrome, and hidden cast calls. 0.3.24 restores the built-in defaults or the exact named layout. Reload Preset restores the active selection, Undo reverses the last preset change before further layout edits, and Save Template keeps a separate named copy. Captured custom headings are independent from draft text. Draft text unavailable to the selected preset stays recoverable in Unplaced custom sections. Portable project archives using that storage require reader 12.

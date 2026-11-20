@@ -9,7 +9,7 @@ test('released v1 complete source maps exact IDs, script, all shots, notes, cale
  assert.deepEqual(r.summary.days.map(d=>d.scenes),[['3','4','5'],['6','7'],['1','2']]);assert.deepEqual(r.summary.days.map(d=>d.date),['2026-11-02','2026-11-03','2026-11-04']);assert.deepEqual(r.summary.unscheduled,['8']);
  assert.deepEqual(p.scenes.map(s=>s.id),src.breakdowns.filter(b=>b.type==='scene').map(b=>b.id));assert.equal(p.productionDesk.model._sourceScript.text,src._sourceScript.text);assert.deepEqual(p.productionDesk.model,src);
  assert(p.scenes.every(s=>s.notes.includes('Fictional planning example')&&s.breakdownElements.length));assert(p.scenes.every(s=>s.script===src.breakdowns.find(b=>b.id===s.id)._scriptText));
- assert.equal(p.defaults.generalCall,'');assert.equal(p.defaults.zone,'');assert(p.people.every(p=>p.name===''&&p.phone===''));assert(p.days.flatMap(d=>d.calls).every(c=>!c.call&&!c.ready&&!c.makeup));assert(p.days.every(d=>d.layout.preset==='gcasper'&&!d.weather.approved));
+ assert.equal(p.defaults.generalCall,'');assert.equal(p.defaults.zone,'America/New_York');assert(p.people.every(p=>p.name===''&&p.phone===''));assert(p.days.flatMap(d=>d.calls).every(c=>!c.call&&!c.ready&&!c.makeup));assert(p.days.every(d=>d.layout.preset==='gcasper'&&!d.weather.approved));
  assert(P.map(P.read(raw),src.stripboards[1].id).summary.scenario.includes('Story'));assert.throws(()=>P.map(P.read(raw),'absent'),/scenario/);
 });
 test('preview is read-only, commit backed up, duplicate no-op, save/reopen and archive retain source',()=>{

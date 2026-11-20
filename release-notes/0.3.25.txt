@@ -1,0 +1,9 @@
+Script Call 0.3.25 — Daily sheet controls and time zones
+
+Template & Layout keeps the preset picker, Reload Preset, Undo, Save Template and section ordering. Existing named layouts and output preferences are retained.
+
+Set the primary location and day-specific logistics in Daily Sheet. The Basecamp address comes from Production Info → Locations, with separate daily directions and read-only access to saved legacy address text. Daily weather controls keep the existing saved values until edited. The company header comes from Production Info. The advance schedule follows the next two scheduled shooting days in calendar order.
+
+Set production and individual shooting-day time zones in Settings, next to Time and Temperature display. New productions start in Eastern Time. Existing assigned zones and original issued PDFs are preserved. Portable project archives using an explicit production-wide time zone selection require 0.3.25 or later.
+
+Apple Silicon, macOS 13 or later.

@@ -2,6 +2,7 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./department-groups.js'));else root.ProductionDetails=factory(root.DepartmentGroups);})(globalThis,groups=>{
  const positions=[['director','Director'],['producer','Producer'],['upm','UPM'],['firstAD','1st AD'],['secondAD','2nd AD']];
  const extraFields=['basecampNotes',...positions.map(([k])=>k+'PersonId')];
+ const dailyFields=['basecamp','basecampNotes','hospitalNotes','parkingNotes','high','low','weatherIcon'];
  const places={shoot:{label:'Shooting location',link:'mapsUrl',address:'address'},parking:{label:'Parking',link:'parkingMapsUrl',address:'parking'},basecamp:{label:'Basecamp',link:'basecampMapsUrl',address:'basecampAddress'},hospital:{label:'Hospital',link:'hospitalMapsUrl',address:'hospital'}};
  const norm=s=>String(s||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
  function keyPositions(p,d){const x={...p.sheetDefaults,...d.sheetOverrides},trash=new Set((p.recordTrash?.people||[]).map(r=>r.id)),people=p.people.filter(w=>w.type==='crew'&&!trash.has(w.id));return positions.filter(([key])=>String(x[key]||'').trim()).map(([key,label])=>{const name=x[key],link=x[key+'PersonId'],matches=link?people.filter(w=>w.id===link):people.filter(w=>norm(w.name)===norm(name)),person=matches.length===1?matches[0]:null;return {key,label,name,personId:person?.id||'',phone:d.layout.includeKeyPhones===true?person?.phone||'':'',ambiguous:matches.length>1};});}
@@ -9,5 +10,5 @@
  function logistics(r){const x=r.sheet||{},l=r.location||{},over=r.day.sheetOverrides||{};return {parking:{address:l.parking||'',notes:x.parkingNotes||''},basecamp:{address:Object.hasOwn(over,'basecamp')?over.basecamp:x.basecamp||l.basecampAddress||l.address||'',notes:x.basecampNotes||''},hospital:{address:l.hospital||'',notes:x.hospitalNotes||'',phone:l.emergencyPhone||''}};}
  const department=groups.normalize;
  function hasData(p){return p.temperatureUnit!==undefined||p.locations.some(l=>['basecampAddress','basecampMapsUrl','hospitalMapsUrl','basecampLatitude','basecampLongitude','hospitalLatitude','hospitalLongitude'].some(k=>Object.hasOwn(l,k)))||[p.sheetDefaults,...p.days.map(d=>d.sheetOverrides),...(p.deletedDays||[]).map(d=>d.sheetOverrides)].some(x=>x&&extraFields.some(k=>Object.hasOwn(x,k)))||[...p.days,...(p.deletedDays||[])].some(d=>Object.hasOwn(d.layout,'includeKeyPhones')||Object.hasOwn(d.weather,'highC')||Object.hasOwn(d.weather,'lowC'));}
- return {positions,extraFields,places,keyPositions,temperature,logistics,department,hasData};
+ return {positions,extraFields,dailyFields,places,keyPositions,temperature,logistics,department,hasData};
 });

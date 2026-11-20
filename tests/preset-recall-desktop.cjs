@@ -41,14 +41,12 @@ async function pdf(name){
  await page.waitForFunction(()=>document.querySelector('#heading').textContent.includes('Day 01'));
  const baseline=await state(),first=baseline.project.days[0],pid=baseline.project.id;
  await layout();
- await page.selectOption('[data-bind="timeDisplayClock"]','12');
- await page.selectOption('[data-bind="temperatureUnit"]','F');
+ await require('./support/legacy-layout.cjs').displayChoices(page,{clock:'12',temperature:'F'});
  await flush();
  assert.deepEqual((await draft()).layout,D.defaultLayout());
  const before=await pdf('default-before-edit.pdf');
  assert(before.pages().some(p=>p.includes('crewcalls/unit')));
- await pane().locator('[data-bind="days.0.layout.paper"]').selectOption('Letter');
- await pane().locator('[data-bind="days.0.layout.mono"]').check();
+ await require('./support/legacy-layout.cjs').seedLayout(page,{paper:'Letter',mono:true});
  await pane().locator('[data-bind="days.0.layout.sceneColors"]').uncheck();
  await pane().locator('[data-hide="cast"]').uncheck();
  await pane().locator('[data-layout-move="cast:down"]').click();
@@ -72,8 +70,7 @@ async function pdf(name){
  const after=await pdf('default-after-return.pdf');
  assert.deepEqual(after.pages(),before.pages());assert(!after.pages().some(p=>p.includes('synthetictexttokeep')));
  check('exact G-Casper default settings and PDF restored after G-Casper changes → Narrative → G-Casper; original calls and draft text preserved');
- await pane().locator('[data-bind="days.0.layout.paper"]').selectOption('Letter');
- await pane().locator('[data-bind="days.0.layout.mono"]').check();await flush();
+ await require('./support/legacy-layout.cjs').seedLayout(page,{paper:'Letter',mono:true});await flush();
  const preReload=(await draft()).layout;
  await reloadPreset();await flush();assert.deepEqual((await draft()).layout,D.defaultLayout());
  await undoPreset().click();await flush();assert.deepEqual((await draft()).layout,preReload);
@@ -84,7 +81,7 @@ async function pdf(name){
  assert.equal(await pane().locator('[data-layout-custom] textarea').inputValue(),privateSection.text);
  assert.equal(await pane().locator('.layout-unplaced').count(),0);
  check('Reload Preset restores the current selection, Undo restores the edited layout, and unplaced text can be returned to the sheet');
- await pane().locator('[data-bind="days.0.layout.paper"]').selectOption('Letter');
+ await require('./support/legacy-layout.cjs').seedLayout(page,{paper:'Letter'});
  await pane().locator('[data-layout-move^="custom:"][data-layout-move$=":up"]').click();
  await pane().locator('[data-hide="advance"]').uncheck();
  await saveTemplate('Synthetic saved layout');
@@ -92,7 +89,7 @@ async function pdf(name){
  assert.equal(named.layout.paper,'Letter');
  assert.equal(named.layout.custom[0].text,'');
  assert.equal(await modified().isVisible(),false);
- await pane().locator('[data-bind="days.0.layout.paper"]').selectOption('A4');
+ await require('./support/legacy-layout.cjs').seedLayout(page,{paper:'A4'});
  await pane().locator('[data-hide="cast"]').uncheck();
  await pane().locator('[data-layout-custom] input').fill('Unsaved renamed heading');
  await pane().locator('[data-layout-custom] textarea').fill('Synthetic new day text to retain');
@@ -105,7 +102,7 @@ async function pdf(name){
  assert.equal(recalled.layout.custom[0].title,privateSection.title);
  assert.equal(recalled.layout.custom[0].text,'Synthetic new day text to retain');
  assert.deepEqual(await presets(),[namedFirst]);
- await pane().locator('[data-bind="days.0.layout.paper"]').selectOption('A4');
+ await require('./support/legacy-layout.cjs').seedLayout(page,{paper:'A4'});
  await reloadPreset();await flush();
  assert.equal((await draft()).layout.paper,'Letter');
  assert.deepEqual(await presets(),[namedFirst]);
@@ -122,8 +119,7 @@ async function pdf(name){
  await page.locator('#modal [data-modal-action="0"]').click();await closed();
  const other=await state();assert.notEqual(other.project.id,pid);
  await layout();
- await page.selectOption('[data-bind="timeDisplayClock"]','24');
- await page.selectOption('[data-bind="temperatureUnit"]','C');
+ await require('./support/legacy-layout.cjs').displayChoices(page,{clock:'24',temperature:'C'});
  await page.selectOption('#layout-preset',named.id);await flush();
  const otherDay=await draft();
  assert.equal(otherDay.layout.paper,'Letter');assert.equal(otherDay.layout.custom[0].text,'');

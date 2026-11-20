@@ -50,7 +50,7 @@ function map(parsed,scenarioId){
  const out=D.newProject(p.project||p.name);out.sourceId=p.id;out.title=p.project||p.name;out.company=text(p.company);out.demo=!!p._demo;
  // None of these operational values exists in the v1 model; never infer calls
  // from shot-list start settings or invent a timezone from an address.
- out.defaults={generalCall:'',meal:'',wrap:'',zone:'',primaryLocationId:'',notes:[p.description,p._importNotes].filter(Boolean).join('\n\n')};
+ out.defaults={generalCall:'',meal:'',wrap:'',zone:out.defaults.zone,primaryLocationId:'',notes:[p.description,p._importNotes].filter(Boolean).join('\n\n')};
  out.sheetDefaults={...D.sheetDefaults(),safety:'',scriptColor:text(p.scriptColor),scheduleColor:text(p.schedColor)};
  out.people=p.elements.filter(e=>cats.get(e.category).ucid===100).map(e=>({id:e.id,sourceId:e.id,type:'cast',name:'',character:e.name,role:'Cast',department:'Cast',castNumber:e.elementId==null?'':String(e.elementId),phone:'',email:''}));
  // Production Desk's Breakdown field reads the first reserved Location
@@ -91,7 +91,7 @@ function map(parsed,scenarioId){
  }
  if(!out.days.length){out.days.push(D.newDay({...out,days:[]},''));out.days[0].unit='';}
  const scheduled=new Set(out.days.flatMap(d=>d.schedule.filter(s=>s.type==='scene').map(s=>s.sceneId)));
- const warnings=['Performer names, crew, contacts, call/preparation times, weather, timezone and verified location/emergency details are absent from the Production Desk v1 model. Enter them before issue.','Shot-list start time is a shot estimate setting and is not a crew call.','PDF originals and editable lined-script marks are validated but not imported into Call Sheet. Source model and annotation metadata are retained; keep the .productiondesk file.','Department elements are grouped by source category in scene notes and daily department instructions. Availability, linked elements and custom extensions remain in Source details; review availability locally before issuing.','Day IDs derive from scenario, board and day position because v1 day groups have no IDs. Review regrouped or inserted days on reimport.'];
+ const warnings=['Performer names, crew, contacts, call/preparation times, weather and verified location/emergency details are absent from the Production Desk v1 model. Enter them before issue.','New productions default to Eastern Time. Confirm the shooting time zone in Settings.','Shot-list start time is a shot estimate setting and is not a crew call.','PDF originals and editable lined-script marks are validated but not imported into Call Sheet. Source model and annotation metadata are retained; keep the .productiondesk file.','Department elements are grouped by source category in scene notes and daily department instructions. Availability, linked elements and custom extensions remain in Source details; review availability locally before issuing.','Day IDs derive from scenario, board and day position because v1 day groups have no IDs. Review regrouped or inserted days on reimport.'];
  if(ambiguousScenes.length)warnings.push('Scenes with several Shoot Location links need local review: '+ambiguousScenes.join(', ')+'.');
  const unresolvedDays=out.days.filter(d=>d.schedule.some(s=>s.type==='scene')&&!d.overrides.primaryLocationId);
  if(unresolvedDays.length)warnings.push('Choose a primary location for days with missing or mixed Shoot Locations: '+unresolvedDays.map(d=>d.label).join(', ')+'.');
@@ -166,6 +166,8 @@ function merge(current,incoming){
   conflicts.push(path+': local edit preserved');return local;
  }
  const target=D.clone(incoming.productionDesk.baseline);
+ // Time zones are set in Script Call and cannot change during source reimport.
+ target.defaults.zone=old.defaults.zone;
  removeIncomingCopiesOfLocallyMovedScenes(current,target,conflicts);
  // A new importer default must not switch an existing legacy day's lunch mode.
  for(const next of target.days){const local=current.days.find(d=>d.id===next.id);if(local&&local.lunchMode===undefined)delete next.lunchMode;}

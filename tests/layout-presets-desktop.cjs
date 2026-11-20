@@ -82,8 +82,7 @@ async function openDemo(){
  assert.equal(await row(first).locator('[data-layout-order-name]').innerText(),'Synthetic safety placeholder');
  assert.equal(await pane().getByText('Fixed in header',{exact:true}).count(),1);
  assert.equal(await pane().getByText('Fixed on back',{exact:true}).count(),1);
- await pane().locator('[data-bind="days.0.layout.paper"]').selectOption('Letter');
- await pane().locator('[data-bind="days.0.layout.mono"]').check();
+ await require('./support/legacy-layout.cjs').seedLayout(page,{paper:'Letter',mono:true});
  await pane().locator('[data-bind="days.0.layout.includeContacts"]').check();
  await flush();
  const beforeDrag=await order();
@@ -167,8 +166,7 @@ async function openDemo(){
  await page.locator('#modal [data-modal-action="0"]').click();await modalClosed();
  const other=await state();assert.notEqual(other.project.id,productionId);
  await layout();
- await page.selectOption('[data-bind="timeDisplayClock"]','12');
- await page.selectOption('[data-bind="temperatureUnit"]','F');
+ await require('./support/legacy-layout.cjs').displayChoices(page,{clock:'12',temperature:'F'});
  await page.selectOption('#layout-preset',preset.id);await flush();
  const applied=(await state()).project.days[0].layout;
  assert.deepEqual(applied.custom.map(c=>c.title),preset.layout.custom.map(c=>c.title));
@@ -183,8 +181,10 @@ async function openDemo(){
   const {project:appliedProject}=await state();
   assert.equal(appliedProject.timeDisplayClock,'12');
   assert.equal(appliedProject.temperatureUnit,'F');
-  assert.equal(await page.inputValue('[data-bind="timeDisplayClock"]'),'12');
-  assert.equal(await page.inputValue('[data-bind="temperatureUnit"]'),'F');
+  await page.click('#settings');
+  assert(await page.locator('[name="time-display"][value="12"]').isChecked());
+  assert(await page.locator('[name="temperature-display"][value="F"]').isChecked());
+  await page.click('#modal-close');
   const file='after-relaunch-'+style+'.pdf';
   await pdf(file);verifyPrintedOrder(file,style);
  }
