@@ -8,9 +8,12 @@ async function save(){await page.click('#save');await page.waitForFunction(()=>d
 async function select(value){await page.selectOption('#production',value);await page.waitForFunction(value=>document.body.dataset.projectId===value,value);}
 async function reload(){await select(other);await select(id);}
 async function launch(){app=await _electron.launch({executablePath:path.join(bundle,'Contents/MacOS/Script Call'),args:[],env:{...process.env,CALLSHEET_DATA_DIR:profile}});page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));await page.waitForFunction(()=>document.querySelector('#save-state')?.textContent==='Saved on this device');}
-async function daily(section){await page.click('[data-view="daily"]');await page.click(`[data-section="${section}"]`);}
+async function daily(section){
+ if(section==='layout')return page.click('[data-view="layout"]');
+ await page.click('[data-view="daily"]');await page.click(`[data-section="${section}"]`);
+}
 async function input(path,value){await page.locator(`[data-bind="${path}"]`).fill(value);await page.locator(`[data-bind="${path}"]`).press('Tab');await save();}
-async function preview(){await save();return page.evaluate(()=>CallSheet.request('preview',{projectId:document.querySelector('#production').value,dayId:document.querySelector('[data-day][aria-current="date"]').dataset.day}));}
+async function preview(){await save();return page.evaluate(()=>CallSheet.request('preview',{projectId:project.id,dayId}));}
 async function production(){await page.click('[data-view="production"]');await page.click('[data-master="general"]');}
 async function choose(file,canceled=false){await app.evaluate(({dialog},{file,canceled})=>{dialog.showOpenDialog=async()=>canceled?{canceled:true,filePaths:[]}:{canceled:false,filePaths:[file]};},{file,canceled});await page.locator('[data-action="company-image"]').click();}
 async function exportFile(file,button='#export-pdf'){await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});},file);await page.click(button);await page.waitForFunction(file=>document.querySelector('#toast').textContent.includes(file),file);return fs.readFileSync(file);}

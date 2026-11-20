@@ -18,6 +18,8 @@ Apple accepted notarization job `4c3a255b-53d5-45c3-89f9-0910e7ad5768`. Develope
 
 The real v0.3.24 → v0.3.25 public-candidate upgrade passed 47 checks, including signed download, native replacement and relaunch, legacy location and time zone choices, a saved Letter/monochrome preset, pending edits, and recovery backup contents. The issued PDF re-export had the same SHA-256 before and after upgrade: `f76d14942e8d08e1d3b4bf615e4296b60e80652f03f0caff3964cbf4555142e6`. Two earlier trials reached replacement and exposed date assumptions in the test fixture. The candidate ZIP stayed identical while those test checks were corrected.
 
+Promoted to public stable on 20 November 2026. Anonymous verification matched the signed stable envelope and SHA-512 for both the immutable ZIP and stable download alias. GitHub's five asset sizes and SHA-256 digests matched the prepared files. Unmodified v0.3.24 offered v0.3.25 on the stable feed, and unmodified v0.3.25 reported current. All installations and profiles used for acceptance were disposable.
+
 ## macOS 0.3.24 — restore preset defaults
 
 Based on public `v0.3.23` at `6319788`. The exact 0.3.23 app reproduced the reported sequence: after switching away and returning, G-Casper retained Letter paper, monochrome, and hidden cast calls. 0.3.24 restores the built-in defaults or the exact named layout. Reload Preset restores the active selection, Undo reverses the last preset change before further layout edits, and Save Template keeps a separate named copy. Captured custom headings are independent from draft text. Draft text unavailable to the selected preset stays recoverable in Unplaced custom sections. Portable project archives using that storage require reader 12.
